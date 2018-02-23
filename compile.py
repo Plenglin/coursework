@@ -10,7 +10,7 @@ import subprocess as sp
 import shutil
 
 WORKING_DIR = os.getcwd()
-projects = [f for f in os.listdir('.') if isdir(f) and f not in ('build', 'result')]
+projects = [f for f in os.listdir('.') if isdir(f) and f not in ('build', 'result', '.git')]
 
 def clrdir(dr):
 	shutil.rmtree(dr, True)
@@ -19,7 +19,9 @@ def clrdir(dr):
 clrdir('build')
 clrdir('result')
 
-for proj in projects:
+scriptResult = ''
+
+for proj in sorted(projects):
 	projdir = join(WORKING_DIR, proj)
 	outdir = join('build', proj)
 	print('compiling %s' % proj)
@@ -30,4 +32,15 @@ for proj in projects:
 		fdir = join(proj, fullname)
 		proc = os.system('g++ -o {buildpath} -c {fdir}'.format(buildpath=outpath, fdir=fdir))
 	print('  bundling')
-	os.system('g++ {outdir}/* -o result/{proj}.bin'.format(outdir=outdir, proj=proj))
+	fname = '%s.bin' % proj
+	os.system('g++ {outdir}/* -o result/{fname}'.format(outdir=outdir, fname=fname))
+	scriptResult += 'echo ====== %s ======\n' % fname
+	scriptResult += './' + fname + '\n'
+	scriptResult += 'echo\n'
+
+with open('result/run-all.sh', 'w') as f:
+	print('writing script to run everything')
+	f.write('cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"\n')
+	f.write(scriptResult)
+
+os.system('chmod +x result/run-all.sh')
