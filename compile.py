@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 GAPE YE, in AWE, of my SHITTY BUILDSCRIPT!
 

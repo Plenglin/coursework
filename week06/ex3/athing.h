@@ -14,7 +14,7 @@ public:
 
 template <class T>
 AThing<T>::AThing() {
-	setWeight(0);
+	setWeight(0.0);
 }
 
 template <class T>
@@ -24,7 +24,7 @@ AThing<T>::AThing(T weight) {
 
 template <class T>
 void AThing<T>::setWeight(T x) {
-	this->weight = weight;
+	this->weight = x;
 }
 
 template <class T>
