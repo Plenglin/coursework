@@ -31,10 +31,10 @@ for proj in sorted(projects):
 	for fullname in filter(lambda f: '.cpp' in f, os.listdir(projdir)):
 		outpath = join(outdir, fullname[:-4] + '.o')
 		fdir = join(proj, fullname)
-		proc = os.system('g++ -o {buildpath} -c {fdir}'.format(buildpath=outpath, fdir=fdir))
+		proc = os.system('g++ -std=c++11 -o {buildpath} -c {fdir}'.format(buildpath=outpath, fdir=fdir))
 	print('  bundling')
 	fname = '%s.bin' % proj
-	os.system('g++ {outdir}/* -o result/{fname}'.format(outdir=outdir, fname=fname))
+	os.system('g++ -std=c++11 {outdir}/* -o result/{fname}'.format(outdir=outdir, fname=fname))
 	scriptResult += 'echo ====== %s ======\n' % fname
 	scriptResult += './' + fname + '\n'
 	scriptResult += 'echo\n'
