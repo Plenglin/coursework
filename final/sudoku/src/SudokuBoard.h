@@ -19,9 +19,9 @@ public:
 	SudokuBoard();
 
 	/**
-	 * Populates the grid with a completely valid sudoku configuration.
+	 * Populates the grid with the given values.
 	 */
-	void populate();
+	void populateWith(int values[81]);
 
 	/**
 	 * Gets the number at a position.

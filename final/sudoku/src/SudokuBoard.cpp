@@ -8,12 +8,15 @@
 #include "SudokuBoard.h"
 
 SudokuBoard::SudokuBoard() {
-	// TODO Auto-generated constructor stub
 
 }
 
-void SudokuBoard::populate() {
-
+void SudokuBoard::populateWith(int values[81]) {
+	for (int i=0; i < 9; i++) {
+		for (int j=0; j < 9; j++) {
+			set(i, j, values[i * 9 + j]);
+		}
+	}
 }
 
 bool SudokuBoard::isFilled() {
@@ -48,11 +51,25 @@ bool SudokuBoard::isValid() {
 			}
 		}
 	}
+
 	// Check subgrids for unique and non-empty cells
+	Subgrid subgrids[9];
+	getSubgrids(subgrids);
+	for (int i=0; i < 9; i++) {
+		if (!subgrids[i].isValid()) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 int SudokuBoard::get(int x, int y) {
 	return board[x][y];
+}
+
+void SudokuBoard::set(int x, int y, int val) {
+	board[x][y] = val;
 }
 
 Subgrid SudokuBoard::getSubgrid(int i, int j) {
@@ -68,4 +85,12 @@ Subgrid SudokuBoard::getSubgrid(int i, int j) {
 		}
 	}
 	return out;
+}
+
+void SudokuBoard::getSubgrids(Subgrid grids[9]) {
+	for (int i=0; i < 3; i++) {
+		for (int j=0; j < 3; j++) {
+			grids[i * 3 + j] = getSubgrid(i, j);
+		}
+	}
 }
