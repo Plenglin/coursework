@@ -15,14 +15,8 @@ using namespace std;
 class SudokuParameters {
 public:
 	string dataPath;
-	string difficultyLocalizations[5] = {
-			"Simple",
-			"Easy",
-			"Medium",
-			"Hard",
-			"Extremely Hard"
-	};
+	string difficultyLocalizations[5] = { "Simple", "Easy", "Medium", "Hard",
+			"Extremely Hard" };
 };
-
 
 #endif /* SUDOKUPARAMETERS_H_ */
