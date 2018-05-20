@@ -18,7 +18,7 @@ void Subgrid::set(int i, int j, int val) {
 
 
 bool Subgrid::isValid() {
-	bool exists[10];
+	bool exists[10] = {true, false, false, false, false, false, false, false, false, false};
 	for (int x=0; x < 3; x++) {
 		for (int y=0; y < 3; y++) {
 			int cell = get(x, y);

@@ -16,8 +16,10 @@
 using namespace std;
 
 class SudokuLoader {
+	string path;
 public:
-	vector<SudokuBoard> loadFromPath(string path);
+	void setPath(string path);
+	vector<SudokuBoard> load();
 };
 
 #endif /* SUDOKULOADER_H_ */

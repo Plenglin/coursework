@@ -9,13 +9,14 @@
 
 #include <fstream>
 #include <string>
-#include <iostream>
-
-#include "SudokuBoard.h"
 
 using namespace std;
 
-vector<SudokuBoard> SudokuLoader::loadFromPath(string path) {
+void SudokuLoader::setPath(string path) {
+	this->path = path;
+}
+
+vector<SudokuBoard> SudokuLoader::load() {
 	vector<SudokuBoard> out;
 	ifstream infile;
 	infile.open(path.c_str(), ifstream::in);

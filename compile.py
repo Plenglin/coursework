@@ -36,12 +36,12 @@ for proj in sorted(projects):
 	fname = '%s.bin' % proj
 	os.system('g++ -std=c++11 {outdir}/* -o result/{fname}'.format(outdir=outdir, fname=fname))
 	scriptResult += 'echo ====== %s ======\n' % fname
-	scriptResult += './' + fname + '\n'
+	scriptResult += WORKING_DIR + "/result/" + fname + '\n'
 	scriptResult += 'echo\n'
 
 with open('result/run-all.sh', 'w') as f:
 	print('writing script to run everything')
-	f.write('cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"\n')
+	#f.write('cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"\n')
 	f.write(scriptResult)
 
 os.system('chmod +x result/run-all.sh')

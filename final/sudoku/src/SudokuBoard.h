@@ -15,8 +15,8 @@
  */
 class SudokuBoard {
 	int board[9][9];
+	bool immutable[9][9];
 public:
-	SudokuBoard();
 
 	/**
 	 * Populates the grid with the given values.
@@ -34,6 +34,12 @@ public:
 	void set(int x, int y, int val);
 
 	/**
+	 * Attempts to set the value of a grid cell, returning true if successful and
+	 * false if it's an immutable cell.
+	 */
+	bool setPlayer(int x, int y, int val);
+
+	/**
 	 * Returns true if none of the cells have a value of 0 (unfilled)
 	 */
 	bool isFilled();
@@ -46,6 +52,11 @@ public:
 	bool isValid();
 
 	/**
+	 * Updates the immutable board mask.
+	 */
+	void updateImmutable();
+
+	/**
 	 * Fills the provided array with the 9 subgrids of this board.
 	 */
 	void getSubgrids(Subgrid grids[9]);
@@ -54,6 +65,8 @@ public:
 	 * Returns the subgrid of the subgrid coordinates.
 	 */
 	Subgrid getSubgrid(int i, int j);
+
+	void display();
 };
 
 #endif /* SUDOKUBOARD_H_ */
