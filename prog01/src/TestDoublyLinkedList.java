@@ -1,4 +1,4 @@
-public class Main {
+public class TestDoublyLinkedList {
 
     public static void main(String[] args) {
         // DO NOT CHANGE THE FOLLOWING CODE.
@@ -93,6 +93,31 @@ public class Main {
         }
         if (l.size != 0) {
             System.out.println("size is wrong.");
+        }
+        System.out.println();
+
+        // find cases
+
+        System.out.println("TESTING find cases");
+        l = new DoublyLinkedList<>();
+        l.insertBack(0);
+        l.insertBack(1);
+        l.insertBack(2);
+        l.insertBack(3);
+        l.insertBack(4);
+        l.insertBack(5);
+
+        System.out.println(l);
+        System.out.println("first element from head = 0: " + l.findFromHead(0));
+        System.out.println("third element from tail = 2: " + l.findFromTail(3));
+
+        System.out.println("6th element from head should throw error");
+        try {
+            System.out.println(l.findFromHead(6));
+            System.out.println("6th element from head failed to throw error");
+        } catch (IndexOutOfBoundsException e) {
+            System.out.println("6th element did throw error");
+            e.printStackTrace();
         }
     }
 }

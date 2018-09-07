@@ -60,6 +60,9 @@ public class DoublyLinkedList<T> {
     }
 
     public T findFromHead(int i) {
+        if (0 > i || i >= size) {
+            throw new IndexOutOfBoundsException(String.format("%s is out of bounds! (size = %s)", i, size));
+        }
         Node<T> node = head.next;
         while (i > 0 && node != head) {
             node = node.next;
@@ -69,6 +72,9 @@ public class DoublyLinkedList<T> {
     }
 
     public T findFromTail(int i) {
+        if (0 > i || i >= size) {
+            throw new IndexOutOfBoundsException(String.format("%s is out of bounds! (size = %s)", i, size));
+        }
         Node<T> node = head.prev;
         while (i > 0 && node != head) {
             node = node.prev;
