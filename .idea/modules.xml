@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/CS2-Data-Structures.iml" filepath="$PROJECT_DIR$/CS2-Data-Structures.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab01/lab01.iml" filepath="$PROJECT_DIR$/lab01/lab01.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab02/lab02.iml" filepath="$PROJECT_DIR$/lab02/lab02.iml" />
+      <module fileurl="file://$PROJECT_DIR$/prog01/prog01.iml" filepath="$PROJECT_DIR$/prog01/prog01.iml" />
     </modules>
   </component>
 </project>
