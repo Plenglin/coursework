@@ -143,6 +143,8 @@ class SibTreeNode extends TreeNode {
       throw new InvalidNodeException();
     }
 
+    myTree.size++;
+
     SibTreeNode newNode = new SibTreeNode(myTree, item);
     newNode.valid = true;
     newNode.parent = this;
@@ -173,6 +175,26 @@ class SibTreeNode extends TreeNode {
    */
   public void removeLeaf() throws InvalidNodeException {
     // FILL IN YOUR SOLUTION TO PART III HERE.
+    if (!valid) throw new InvalidNodeException();
+    if (firstChild != null) return;
+    valid = false;
+    myTree.size--;
+
+    if (parent == null) {
+        return;
+    }
+
+    SibTreeNode c1 = parent.firstChild;
+    if (c1 == this) {
+      parent.firstChild = nextSibling;
+      return;
+    }
+    SibTreeNode prev = c1;
+    while (prev.nextSibling != this) {
+      prev = prev.nextSibling;
+    }
+
+    prev.nextSibling = nextSibling;
   }
 
 }
