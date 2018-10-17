@@ -151,16 +151,63 @@ public class BinaryTree implements Dictionary {
      *          no entry contains the specified key.
      **/
     public Entry remove(Object key) {
-        BinaryTreeNode node = findHelper((Comparable) key, root);
-        System.out.println(node);
-        if (node != null) {
-            if (node.parent.leftChild == node) {
-                node.parent.leftChild = null;
-            } else {
-                node.parent.rightChild = null;
-            }
+        Entry out = new Entry();
+        root = removeHelper(root, (Comparable) key, out);
+        return out;
+    }
+
+    /**
+     * Removes a node with the key, starting from the node provided.
+     * @param node the node to take its place
+     * @param key the key to lok for
+     * @param out the entry to overwrite with the data that was removed
+     * @return what to replace the the provided node with
+     */
+    private BinaryTreeNode removeHelper(BinaryTreeNode node, Comparable key, Entry out) {
+        //System.out.println("{node = " + node + "}");
+        if (node == null) {
+            return null;
         }
-        return node == null ? null : node.entry;
+        int result = key.compareTo(node.entry.key);
+        if (result > 0) {
+            node.rightChild = removeHelper(node.rightChild, key, out);
+        } else if (result < 0) {
+            node.leftChild = removeHelper(node.leftChild, key, out);
+        } else {
+            if (node.leftChild == null) {
+                return node.rightChild;
+            } else if (node.rightChild == null) {
+                return node.leftChild;
+            }
+
+            out.key = node.entry.key;
+            out.value = node.entry.value;
+
+            BinaryTreeNode successor = node.rightChild;
+            while (successor.leftChild != null) {
+                successor = successor.leftChild;
+            }
+            // Overwrite the current node with its successor's data
+            node.entry = successor.entry;
+            removeHelper(successor, key, out);
+
+        }
+        return node;
+    }
+
+    /**
+     * Delete the specified node.
+     * @param node
+     */
+    private void deleteNode(BinaryTreeNode node) {
+        // Get the immediate successor and remove it
+        BinaryTreeNode successor = node.rightChild;
+        while (successor.leftChild != null) {
+            successor = successor.leftChild;
+        }
+        // Overwrite the current node with its successor's data
+        node.entry = successor.entry;
+        deleteNode(successor);
     }
 
     /**
