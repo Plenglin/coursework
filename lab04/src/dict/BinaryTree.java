@@ -153,6 +153,9 @@ public class BinaryTree implements Dictionary {
     public Entry remove(Object key) {
         Entry out = new Entry();
         root = removeHelper(root, (Comparable) key, out);
+        if (out.key == null) {  // it was not initialized with any values
+            return null;
+        }
         return out;
     }
 
@@ -180,16 +183,19 @@ public class BinaryTree implements Dictionary {
                 return node.leftChild;
             }
 
-            out.key = node.entry.key;
-            out.value = node.entry.value;
+            if (out != null) {
+                out.key = node.entry.key;
+                out.value = node.entry.value;
+            }
 
             BinaryTreeNode successor = node.rightChild;
             while (successor.leftChild != null) {
                 successor = successor.leftChild;
             }
-            // Overwrite the current node with its successor's data
             node.entry = successor.entry;
-            removeHelper(successor, key, out);
+            size--;
+            // Overwrite the current node with its successor's data
+            removeHelper(successor, key, null);
 
         }
         return node;
