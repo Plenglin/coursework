@@ -184,9 +184,8 @@ public class SplayTree implements Dictionary {
         BinaryTreeNode a = x.leftChild;
         BinaryTreeNode b = x.rightChild;
 
-        if (z.parent.rightChild == z) {
-
-        }
+        BinaryTreeNode ggp = z.parent;
+        boolean resultOnRight = z.parent.rightChild == z;
 
         if (y.leftChild == x) {  // Rotate clockwise
             BinaryTreeNode c = y.rightChild;
@@ -212,6 +211,30 @@ public class SplayTree implements Dictionary {
         } else {  // Rotate counterclockwise
             BinaryTreeNode c = y.leftChild;
             BinaryTreeNode d = z.leftChild;
+
+            x.leftChild = y;
+            y.parent = x;
+
+            x.rightChild = b;
+            b.parent = x;
+
+            y.leftChild = z;
+            z.parent = y;
+
+            y.rightChild = a;
+            a.parent = y;
+
+            z.leftChild = d;
+            d.parent = z;
+
+            z.rightChild = c;
+            c.parent = z;
+        }
+
+        if (resultOnRight) {
+            ggp.rightChild = x;
+        } else {
+            ggp.leftChild = x;
         }
     }
 
