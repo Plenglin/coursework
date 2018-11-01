@@ -87,7 +87,7 @@ public class BinaryHeap<T> {
     public static void main(String[] args) {
         BinaryHeap<String> heap = new BinaryHeap<>(4);
 
-        System.out.println("1.");
+        System.out.println("0");
         heap.insert(5, "A");
         System.out.println(heap.toString());
         heap.insert(4, "B");
@@ -97,7 +97,7 @@ public class BinaryHeap<T> {
         heap.insert(1, "D");
         System.out.println(heap.toString());
 
-        System.out.println("2.");
+        System.out.println("4.");
         heap.removeMin( );
         System.out.println(heap.toString());
         heap.insert(3, "J");
@@ -107,7 +107,7 @@ public class BinaryHeap<T> {
         heap.removeMin( );
         System.out.println(heap.toString());
 
-        System.out.println("3.");
+        System.out.println("8.");
         heap.removeMin( );
         System.out.println(heap.toString());
         heap.insert(8, "G");
@@ -116,10 +116,10 @@ public class BinaryHeap<T> {
         System.out.println(heap.toString());
         heap.insert(2, "H");
         System.out.println(heap.toString());
+
+        System.out.println("12.");
         heap.removeMin( );
         System.out.println(heap.toString());
-
-        System.out.println("4.");
         heap.removeMin( );
         System.out.println(heap.toString());
     }
