@@ -185,7 +185,14 @@ public class SplayTree implements Dictionary {
         BinaryTreeNode b = x.rightChild;
 
         BinaryTreeNode ggp = z.parent;
-        boolean resultOnRight = z.parent.rightChild == z;
+        int finish;
+        if (ggp == null) {  // Is root?
+            finish = 0;
+        } else if (ggp.rightChild == z) {
+            finish = 1;
+        } else {
+            finish = -1;
+        }
 
         if (y.leftChild == x) {  // Rotate clockwise
             BinaryTreeNode c = y.rightChild;
@@ -231,10 +238,10 @@ public class SplayTree implements Dictionary {
             c.parent = z;
         }
 
-        if (resultOnRight) {
-            ggp.rightChild = x;
-        } else {
-            ggp.leftChild = x;
+        switch (finish) {
+            case -1: ggp.leftChild = x; break;
+            case 0: root = x; break;
+            case 1: ggp.rightChild = x; break;
         }
     }
 
