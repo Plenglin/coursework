@@ -198,50 +198,49 @@ public class SplayTree implements Dictionary {
             BinaryTreeNode c = y.rightChild;
             BinaryTreeNode d = z.rightChild;
 
-            x.leftChild = a;
-            a.parent = x;
-
-            x.rightChild = y;
-            y.parent = x;
-
-            y.leftChild = b;
-            b.parent = y;
-
-            y.rightChild = z;
-            z.parent = y;
-
-            z.leftChild = c;
-            c.parent = z;
-
-            z.rightChild = d;
-            d.parent = z;
+            setLeftChild(x, a);
+            setRightChild(x, y);
+            setLeftChild(y, b);
+            setRightChild(y, z);
+            setLeftChild(z, c);
+            setRightChild(z, d);
         } else {  // Rotate counterclockwise
             BinaryTreeNode c = y.leftChild;
             BinaryTreeNode d = z.leftChild;
 
-            x.leftChild = y;
-            y.parent = x;
-
-            x.rightChild = b;
-            b.parent = x;
-
-            y.leftChild = z;
-            z.parent = y;
-
-            y.rightChild = a;
-            a.parent = y;
-
-            z.leftChild = d;
-            d.parent = z;
-
-            z.rightChild = c;
-            c.parent = z;
+            setLeftChild(x, y);
+            setRightChild(x, b);
+            setLeftChild(y, z);
+            setRightChild(y, a);
+            setLeftChild(z, d);
+            setRightChild(z, c);
         }
 
         switch (finish) {
-            case -1: ggp.leftChild = x; break;
-            case 0: root = x; break;
-            case 1: ggp.rightChild = x; break;
+            case -1:
+                setLeftChild(ggp, x);
+                break;
+            case 0:
+                root = x;
+                x.parent = null;
+                break;
+            case 1:
+                setRightChild(ggp, x);
+                break;
+        }
+    }
+
+    private void setLeftChild(BinaryTreeNode parent, BinaryTreeNode child) {
+        parent.leftChild = child;
+        if (child != null) {
+            child.parent = parent;
+        }
+    }
+
+    private void setRightChild(BinaryTreeNode parent, BinaryTreeNode child) {
+        parent.rightChild = child;
+        if (child != null) {
+            child.parent = parent;
         }
     }
 
@@ -255,7 +254,24 @@ public class SplayTree implements Dictionary {
         // When you do Part II of the lab, please replace the following faulty code
         // with your solution.
         while (node.parent != null) {
-            zig(node);
+            BinaryTreeNode parent = node.parent;
+            if (parent.leftChild == node) {
+                if (parent.parent == null) {
+                    zig(node);
+                } else if (parent.parent.leftChild == parent) {
+                    zigZig(node);
+                } else {
+                    zigZag(node);
+                }
+            } else {
+                if (parent.parent == null) {
+                    zig(node);
+                } else if (parent.parent.rightChild == parent) {
+                    zigZig(node);
+                } else {
+                    zigZag(node);
+                }
+            }
         }
         // The following line isn't really necessary, as the rotations update the
         // root correctly if splayNode() successfully splays "node" to the root,
