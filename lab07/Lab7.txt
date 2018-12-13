@@ -71,8 +71,9 @@ You will see a ">" prompt.  Plot the files using a command like
   gnuplot>  plot "select.dat" t "SELECT" w l lt 1 lw 3\
 , "merge.dat" t "MERGE"  w l lt 2 lw 3\
 , "quick.dat" t "QUICK"  w l lt 3 lw 3\
-, "insert.dat" t "INSERT"  w l lt 4 lw 3
-  
+, "insert.dat" t "INSERT"  w l lt 4 lw 3\
+, "best.dat" t "BEST"  w l lt 4 lw 3
+
 
 You should observe that the algorithms behave asymptotically as expected, but
 it is unclear which algorithm is faster for small array sizes.  At what values

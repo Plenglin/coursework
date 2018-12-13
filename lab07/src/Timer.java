@@ -29,7 +29,7 @@ public class Timer {
    **/
   public void start() {
     running = true;
-    tStart = System.currentTimeMillis();
+    tStart = System.nanoTime();
     tFinish = tStart;
   }
 
@@ -38,7 +38,7 @@ public class Timer {
    *  to start(), or zero if no such matching call was made.
    **/
   public long stop() {
-    tFinish = System.currentTimeMillis();
+    tFinish = System.nanoTime();
     if (running) {
       running = false;
 
@@ -55,7 +55,7 @@ public class Timer {
    **/
   public long elapsed() {
     if (running) {
-      return System.currentTimeMillis() - tStart;
+      return System.nanoTime() - tStart;
     }
 
     return tAccum;
