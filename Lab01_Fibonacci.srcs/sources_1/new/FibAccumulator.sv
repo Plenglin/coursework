@@ -27,7 +27,7 @@ module FibAccumulator#(parameter WIDTH=16)(
     output reg [WIDTH-1:0] sum = 1
     );
     
-    reg [WIDTH-1:0] prev;
+    reg [WIDTH-1:0] prev = 0;
     
     always_ff @(posedge clk) begin
         if (clr) begin

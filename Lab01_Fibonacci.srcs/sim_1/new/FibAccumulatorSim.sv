@@ -47,8 +47,13 @@ module FibAccumulatorSim(
         en = 0;
         #10;
         
+        clr = 1;
+        #20;
         clr = 0;
-        #10;
+        en = 1;
+        #20;
+        
+        
     end;
     
 endmodule
