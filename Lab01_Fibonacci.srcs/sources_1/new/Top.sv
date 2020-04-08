@@ -27,4 +27,7 @@ module Top(
     output [6:0] seg,
     output [3:0] led
     );
+    
+    FibCalculator calc(.calculate(btn), .clk(clk), .addr(led));
+    univ_sseg display(.clk(clk), .cnt1({3'b0, calc.disp_num}), .ssegs(seg), .valid(calc.ready), .disp_en(an));
 endmodule
