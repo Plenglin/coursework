@@ -23,16 +23,16 @@
 module FibWriter #(parameter DATA_WIDTH=16, ADDR_WIDTH=4) (
     input en,
     input clk,
-    input [ADDR_WIDTH-1:0] count,
+    input [ADDR_WIDTH-1:0] last_addr,
     output [DATA_WIDTH-1:0] data,
     output [ADDR_WIDTH-1:0] addr,
-    output write
+    output write,
+    output ready
     );
     
-    logic reached_end;
-    assign reached_end = addr >= count;
+    assign ready = ~write;
     
-    FibWriterCtrl #(.ADDR_WIDTH(ADDR_WIDTH)) ctrl(.clk(clk), .en(en), .addr(addr), .last_addr(count-1), .write(write));
+    FibWriterCtrl #(.ADDR_WIDTH(ADDR_WIDTH)) ctrl(.clk(clk), .en(en), .addr(addr), .last_addr(last_addr), .write(write));
     FibAccumulator #(.WIDTH(DATA_WIDTH)) acc(.clk(clk), .en(write), .clr(~write), .sum(data));
     
 endmodule
