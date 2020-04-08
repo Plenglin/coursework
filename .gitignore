@@ -71,8 +71,8 @@
 
 # End of https://www.gitignore.io/api/vivado
 
-FinalProject.cache/
-FinalProject.hw/
-FinalProject.runs/
-FinalProject.sim/
-FinalProject.xpr
+Lab01_Fibonacci.cache/
+Lab01_Fibonacci.hw/
+Lab01_Fibonacci.runs/
+Lab01_Fibonacci.sim/
+Lab01_Fibonacci.xpr
