@@ -26,31 +26,13 @@ module FibWriter #(parameter DATA_WIDTH=16, ADDR_WIDTH=4) (
     input [ADDR_WIDTH-1:0] count,
     output [DATA_WIDTH-1:0] data,
     output [ADDR_WIDTH-1:0] addr,
-    output en_write,
-    output busy
+    output write
     );
     
-    /**
-     *  We need count + 1 states to keep track of this.
-     *  States {1...count} represent writing states. State 0 is the
-     *  disabled state.
-     */
-    reg [ADDR_WIDTH:0] state = 0;
+    logic reached_end;
+    assign reached_end = addr >= count;
     
-    FibAccumulator acc(.clk(clk), .en(busy), .clr(state == 1));
+    FibWriterCtrl #(.ADDR_WIDTH(ADDR_WIDTH)) ctrl(.clk(clk), .en(en), .addr(addr), .last_addr(count-1), .write(write));
+    FibAccumulator #(.WIDTH(DATA_WIDTH)) acc(.clk(clk), .en(write), .clr(~write), .sum(data));
     
-    assign addr = state[ADDR_WIDTH-1:0] - 1;
-    assign data = acc.sum;
-    assign busy = state != 0;
-    assign en_write = busy;
-    assign acc.en = busy;
-    
-    always_ff @(posedge clk) begin
-        if (state == 0 & en)
-            state <= 1;
-        else if (state == count)
-            state <= 0;
-        else
-            state <= state + 1;
-    end
 endmodule
