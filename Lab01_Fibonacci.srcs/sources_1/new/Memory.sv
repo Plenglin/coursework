@@ -24,7 +24,7 @@ module Memory #(parameter DATA_WIDTH=16, ADDR_WIDTH=4, SIZE=16)(
     input [DATA_WIDTH-1:0] data,
     input [ADDR_WIDTH-1:0] addr_write,
     input [ADDR_WIDTH-1:0] addr_read,
-    input write,
+    input en_write,
     input clk,
     output [DATA_WIDTH:0] read
     );
@@ -41,7 +41,7 @@ module Memory #(parameter DATA_WIDTH=16, ADDR_WIDTH=4, SIZE=16)(
     assign read = storage[addr_read];
     
     always_ff @(posedge clk) begin
-        if (write) begin  // Write mode
+        if (en_write) begin  // Write mode
             storage[addr_write] = data;
         end
     end
