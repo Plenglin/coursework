@@ -25,7 +25,7 @@ module FibCalculator(
     input clk,
     output ready,
     output [3:0] addr,
-    output [10:0] disp_num
+    output [9:0] disp_num
     );
     
     Memory #(.DATA_WIDTH(10), .ADDR_WIDTH(4)) mem(.clk(clk), .addr_read(addr), .read(disp_num));

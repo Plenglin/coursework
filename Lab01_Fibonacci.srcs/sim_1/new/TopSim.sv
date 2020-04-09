@@ -26,6 +26,7 @@ module TopSim(
     
     logic btn;
     logic clk;
+    logic clk_fast;
     logic [3:0] an;
     logic [6:0] seg;
     logic [3:0] led;
@@ -34,22 +35,29 @@ module TopSim(
     
     always begin
         clk = 1;
-        #1;
+        #500;
         clk = 0;
+        #500;
+    end
+    
+    always begin
+        clk_fast = 1;
+        #1;
+        clk_fast = 0;
         #1;
     end
     
     initial begin
         btn = 0;
-        #20;
+        #20000;
         
         btn = 1;
-        #4;
+        #4000;
         btn = 0;
-        #60;
+        #60000;
         
         btn = 1;
-        #4;
+        #4000;
         btn = 0; 
     end     
        

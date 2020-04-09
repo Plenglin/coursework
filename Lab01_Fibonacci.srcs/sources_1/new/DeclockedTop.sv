@@ -28,7 +28,7 @@ module DeclockedTop(
     output [3:0] led
     );
     
-    ClockDivider #(.WIDTH(64)) div(.clkin(clk), .n(64'd100000000));  // Bring the clock down from 100MHz to 1Hz 
-    Top top(.clk(div.clkout), .*);
+    ClockDivider #(.WIDTH(64)) div(.clkin(clk), .n(64'd50000000));  // Bring the clock down from 100MHz to 1Hz 
+    Top top(.clk(div.clkout), .clk_fast(clk), .*);
     
 endmodule
