@@ -5,7 +5,7 @@
 // 
 // Create Date: 04/07/2020 10:01:01 PM
 // Design Name: 
-// Module Name: RAMReader
+// Module Name: Accumulator
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -20,18 +20,19 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module RAMReader #(parameter ADDR_WIDTH=4)(
-    input en,
+module Accumulator #(parameter WIDTH=4)(
+    input ld,
     input clr,
     input clk,
-    output reg [ADDR_WIDTH-1:0] addr = 0
+    input [WIDTH-1:0] data,
+    output reg [WIDTH-1:0] sum = 0
     );
     
     always_ff @(posedge clk) begin
         if (clr) 
-            addr <= 0;
-        else if (en) 
-            addr <= addr + 1;
+            sum <= 0;
+        else if (ld) 
+            sum <= sum + data;
     end
     
 endmodule

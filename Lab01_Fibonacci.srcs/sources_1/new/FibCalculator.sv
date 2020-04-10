@@ -30,5 +30,5 @@ module FibCalculator(
     
     Memory #(.DATA_WIDTH(10), .ADDR_WIDTH(4)) mem(.clk(clk), .addr_read(addr), .read(disp_num));
     FibWriter #(.DATA_WIDTH(10), .ADDR_WIDTH(4)) writer(.clk(clk), .en(calculate), .ready(ready), .last_addr(4'd15), .write(mem.en_write), .addr(mem.addr_write), .data(mem.data));
-    RAMReader reader(.clk(clk), .en(ready), .clr(~ready), .addr(addr));
+    Accumulator acc(.clk(clk), .ld(ready), .clr(~ready), .data(4'b1), .sum(addr));
 endmodule
