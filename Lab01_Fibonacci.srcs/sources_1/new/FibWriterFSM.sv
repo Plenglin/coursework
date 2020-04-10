@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 04/07/2020 08:45:36 PM
+// Create Date: 04/09/2020 07:53:04 PM
 // Design Name: 
-// Module Name: FibWriterCtrl
+// Module Name: FibWriterFSM
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -20,22 +20,28 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module FibWriterCtrl #(parameter ADDR_WIDTH=4)(
+module FibWriterFSM(
     input en,
+    input fin,
     input clk,
-    input [ADDR_WIDTH-1:0] last_addr,
-    output reg [ADDR_WIDTH-1:0] addr = 0,
-    output write
+    output write,
+    output reset
     );
     
-    logic reset;
-    FibWriterFSM fsm(.en(en), .clk(clk), .fin(addr >= last_addr), .write(write), .reset(reset)); 
+    reg state = 0;
+    assign write = state;
+    assign reset = ~state;
     
     always_ff @(posedge clk) begin
-        if (reset) 
-            addr <= 0;
-        else if (write)
-            addr <= addr + 1;
+        if (state) begin
+            if (fin) begin
+                state <= 0;
+            end
+        end else begin
+            if (en) begin
+                state <= 1;
+            end
+        end 
     end
     
 endmodule

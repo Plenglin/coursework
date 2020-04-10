@@ -9,8 +9,8 @@
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
-// Description: 
-// 
+// Description: The top level is separated from its clock divider to make it easier 
+// to run simulations with. 
 // Dependencies: 
 // 
 // Revision:
@@ -28,7 +28,7 @@ module DeclockedTop(
     output [3:0] led
     );
     
-    ClockDivider #(.WIDTH(64)) div(.clkin(clk), .n(64'd50000000));  // Bring the clock down from 100MHz to 1Hz 
+    ClockDivider #(.WIDTH(32)) div(.clkin(clk), .n(32'd25000000));  // Bring the clock down from 100MHz to 1Hz 
     Top top(.clk(div.clkout), .clk_fast(clk), .*);
     
 endmodule

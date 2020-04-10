@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 04/07/2020 09:57:08 PM
+// Create Date: 04/09/2020 08:20:38 PM
 // Design Name: 
-// Module Name: FibCalculatorSim
+// Module Name: FibWriterFSMSim
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -20,37 +20,54 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module FibCalculatorSim(
+module FibWriterFSMSim(
 
     );
     
-    logic calculate;
+    logic en;
+    logic fin;
     logic clk;
-    logic ready;
-    logic [3:0] addr;
-    logic [9:0] disp_num;
-
-    FibCalculator calc(.*);
+    logic write;
+    logic reset;
+    
+    FibWriterFSM fsm(.*);
     
     always begin
         clk = 1;
         #1;
         clk = 0;
-        #0;
+        #1;
     end
     
     initial begin
-        calculate = 0;
-        #100;
+        en = 0;
+        fin = 0;
+        #20;
         
-        calculate = 1;
-        #2;
-        calculate = 0;
-        #100;
+        en = 1;
+        #6;
+        en = 0;
+        #20;
         
-        calculate = 1;
+        fin = 1;
         #2;
-        calculate = 0;
-        #100;
+        fin = 0;
+        #50;
+        
+        en = 1;
+        #4;
+        en = 0;
+        #2
+        en = 1;
+        #4;
+        en = 0;
+        #20;
+        
+        fin = 1;
+        #2;
+        fin = 0;
+        #10;
+
     end
+
 endmodule
