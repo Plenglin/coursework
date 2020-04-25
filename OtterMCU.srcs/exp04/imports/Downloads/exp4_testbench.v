@@ -50,8 +50,7 @@ top_level my_test(
       pcSource = 0; 
       
       #40
-      rst=0; 
-
+      rst=0;
 
     end
         

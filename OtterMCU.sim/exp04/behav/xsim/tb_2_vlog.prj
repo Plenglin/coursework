@@ -1,0 +1,16 @@
+# compile verilog/system verilog design source files
+sv xil_defaultlib  \
+"../../../../OtterMCU.srcs/sources_1/new/BranchAddrGen.sv" \
+"../../../../OtterMCU.srcs/sources_1/new/ImmedGen.sv" \
+"../../../../OtterMCU.srcs/sources_1/new/ProgramCounter.sv" \
+"../../../../OtterMCU.srcs/sources_1/imports/otter_memory_v1_05.sv" \
+"../../../../OtterMCU.srcs/exp04/new/top_level.sv" \
+
+verilog xil_defaultlib  \
+"../../../../OtterMCU.srcs/exp04/imports/Downloads/exp4_testbench.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort
