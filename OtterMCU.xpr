@@ -31,7 +31,7 @@
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
     <Option Name="DSABoardId" Val="basys3"/>
-    <Option Name="WTXSimLaunchSim" Val="45"/>
+    <Option Name="WTXSimLaunchSim" Val="51"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -118,6 +118,7 @@
       </Config>
     </FileSet>
     <FileSet Name="exp04" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/exp04">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/exp04/new/top_level.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -158,6 +159,7 @@
       </Config>
     </FileSet>
     <FileSet Name="exp03" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/exp03">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/exp03/imports/Downloads/Exp3_testbench.v">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PPRDIR/../Lab03/ALU/ALU.srcs/sim_1/imports/Downloads/Exp3_testbench.v"/>
@@ -179,6 +181,7 @@
       </Config>
     </FileSet>
     <FileSet Name="exp02" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/exp02">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/exp02/imports/new/top_level.sv">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PSRCDIR/exp02/new/top_level.sv"/>
