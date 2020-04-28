@@ -46,7 +46,7 @@ module top_level(
         .MEM_RDEN1 (1),
         .MEM_RDEN2 (0),
         .MEM_WE2 (0),
-        .MEM_ADDR1 (pc_data[15:2] - 1),
+        .MEM_ADDR1 (pc_data[15:2] + 1),
         .MEM_ADDR2 (0),
         .MEM_DIN2 (0),
         .MEM_SIZE (2),
