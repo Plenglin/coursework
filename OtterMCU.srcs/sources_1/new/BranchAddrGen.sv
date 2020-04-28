@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: Cal Poly
+// Engineer: Astrid Yu
 // 
 // Create Date: 04/24/2020 04:20:00 PM
-// Design Name: 
+// Design Name: Branch Address Generator
 // Module Name: branch_addr_gen
-// Project Name: 
+// Project Name: Otter MCU
 // Target Devices: 
 // Tool Versions: 
 // Description: 
