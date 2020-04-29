@@ -27,7 +27,8 @@ module RegFile(
     input [4:0] adr2,
     input [4:0] wa,
     output logic [31:0] rs1, 
-    output logic [31:0] rs2     );
+    output logic [31:0] rs2
+    );
     
     logic [31:0] reg_file [0:31];
     

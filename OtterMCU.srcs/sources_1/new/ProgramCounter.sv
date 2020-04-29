@@ -28,16 +28,20 @@ module ProgramCounter(
     input pc_write,
     input [1:0] pc_source,
     input clk,
-    output [13:0] addr
+    output [31:0] addr,
+    output [31:0] addr_inc
     );
     
     reg [13:0] data;
-    assign addr = data;
-    logic [13:0] next;
+    assign data_inc = data + 1;
+
+    assign addr = {16'b0, data, 2'b0};
+    assign addr_inc = {16'b0, data_inc, 2'b0};
     
+    logic [13:0] next;
     always_comb begin
         case (pc_source) 
-            2'd0: next = data + 1;
+            2'd0: next = data_inc;
             2'd1: next = jalr[15:2];
             2'd2: next = branch[15:2];
             default: next = jal[15:2];

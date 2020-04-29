@@ -59,7 +59,7 @@ module OTTER_Wrapper(
 
    //- Instantiate RISC-V OTTER MCU 
    OTTER_MCU  my_otter(
-      .RST         (s_reset),
+      .rst         (s_reset),
       .intr        (1'b0),
       .clk         (s_clk),
       .iobus_in    (IOBUS_in),
