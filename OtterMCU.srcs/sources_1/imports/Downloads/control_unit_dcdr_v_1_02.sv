@@ -91,7 +91,7 @@ module CU_DCDR(
 	        LUI: begin
 		        alu_fun = 4'b1001;   // lui
 			    alu_srcA = 1;        // u-imm 
-		        rf_wr_sel = 2'b11;   // mem_addr
+		        rf_wr_sel = 2'b11;   // alu_result
 			    pcSource = 2'b00;    // next
             end
 			
@@ -99,7 +99,7 @@ module CU_DCDR(
                 alu_fun = 4'b0000;   // add
 			    alu_srcA = 1;        // u-imm
 			    alu_srcB = 4'd3;     // pc
-			    rf_wr_sel = 2'b11;   // mem_addr
+			    rf_wr_sel = 2'b11;   // alu_result
                 pcSource = 2'b00;    // next
 			end
 			
@@ -111,10 +111,10 @@ module CU_DCDR(
 			LOAD: begin
 				if(FUNC3 == 3'b010) begin  // instr: LW 
 					alu_fun = 4'b0000;     // add
-					alu_srcA = 1'b0;       // rs1
-					alu_srcB = 2'b00;      // rs2
-					rf_wr_sel = 2'b11;     // mem dout
-                    pcSource = 2'b00;    // next
+					alu_srcA = 0;          // rs1
+					alu_srcB = 2'd1;       // i imm
+					rf_wr_sel = 2'd2;     // mem dout
+                    pcSource = 2'b00;      // next
 				end
 			end
 			
@@ -122,18 +122,18 @@ module CU_DCDR(
 				if(FUNC3 == 3'b010) begin  // instr: SW
 					alu_fun = 4'b0000;     // add
 					alu_srcA = 1'b0;       // rs1
-					alu_srcB = 2'b00;      // rs2
+					alu_srcB = 2'd2;       // s imm
 				end
 			end
 			
 			OP_IMM: begin
 				case(FUNC3)
 					3'b000: begin  // instr: ADDI
-					    pcSource = 2'b00;
-						alu_fun = 4'b0000;  // add
-						alu_srcA = 1'b0;    // rs1
-						alu_srcB = 2'b01;   // i-imm
-						rf_wr_sel = 2'b00;  // pc_inc
+					    pcSource = 2'b00;  // next
+						alu_fun = 4'b0000; // add
+						alu_srcA = 1'b0;   // rs1
+						alu_srcB = 2'b01;  // i imm
+						rf_wr_sel = 2'd3;  // alu result
 					end
 					
 					default: begin

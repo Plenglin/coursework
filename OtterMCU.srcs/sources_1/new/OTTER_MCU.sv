@@ -47,7 +47,6 @@ module OTTER_MCU(
         branch, 
         jal, 
         
-        mem_addr, 
         mem_dout,
         
         b_type_imm, 
@@ -84,7 +83,7 @@ module OTTER_MCU(
         4'd0: reg_wd = pc_inc;
         4'd1: reg_wd = 32'hdeadbeef;  // TODO change to CSR_reg
         4'd2: reg_wd = mem_dout;
-        4'd3: reg_wd = mem_addr;
+        4'd3: reg_wd = alu_result;
     endcase
     
     always_comb case(alu_src_b)
@@ -154,7 +153,7 @@ module OTTER_MCU(
         .MEM_RDEN2 (mem_rden2),
         .MEM_WE2 (mem_we2),
         .MEM_ADDR1 (pc[15:2]),
-        .MEM_ADDR2 (mem_addr),
+        .MEM_ADDR2 (alu_result),
         .MEM_DIN2 (rs2),
         .MEM_SIZE (ir[13:12]),
         .MEM_SIGN (ir[14]),
