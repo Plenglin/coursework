@@ -39,6 +39,7 @@ module OTTER_MCU(
         rs1,
         rs2,
 
+        alu_src_a_data,
         alu_src_b_data,
         alu_result, 
         
@@ -81,6 +82,7 @@ module OTTER_MCU(
     // Multiplexers    
     always_comb case(rf_wr_sel)
         4'd0: reg_wd = pc_inc;
+        4'd1: reg_wd = 32'hdeadbeef;  // TODO change to CSR_reg
         4'd2: reg_wd = mem_dout;
         4'd3: reg_wd = mem_addr;
     endcase
@@ -91,6 +93,8 @@ module OTTER_MCU(
         4'd2: alu_src_b_data = s_type_imm;
         4'd3: alu_src_b_data = pc;
     endcase
+    
+    assign alu_src_a_data = alu_src_a ? u_type_imm : rs1;
     
     // Submodules
     CU_FSM fsm(
@@ -107,6 +111,11 @@ module OTTER_MCU(
         .memRDEN2(mem_rden2),
         .reset(reset)
     );
+    
+    // Pretend this is a branch boi
+    assign br_eq = 0;
+    assign br_lt = 0;
+    assign br_ltu = 0;
     
     CU_DCDR cu_dcdr(
         .opcode(ir[6:0]),
@@ -144,9 +153,9 @@ module OTTER_MCU(
         .MEM_RDEN1 (mem_rden1),
         .MEM_RDEN2 (mem_rden2),
         .MEM_WE2 (mem_we2),
-        .MEM_ADDR1 (pc),
+        .MEM_ADDR1 (pc[15:2]),
         .MEM_ADDR2 (mem_addr),
-        .MEM_DIN2 (0),
+        .MEM_DIN2 (rs2),
         .MEM_SIZE (ir[13:12]),
         .MEM_SIGN (ir[14]),
         .IO_IN (iobus_in),
@@ -192,7 +201,7 @@ module OTTER_MCU(
     
     ALU alu(
         .alu_fun(alu_fun),
-        .srcA(alu_src_a ? u_type_imm : rs1),
+        .srcA(alu_src_a_data),
         .srcB(alu_src_b_data),
         
         .result(alu_result)

@@ -30,7 +30,7 @@ module otter_tb();
    wire iobus_wr; 
 
 OTTER_MCU  my_otter(
-     .RST         (RST),
+     .rst         (RST),
      .intr        (intr),
      .clk         (clk),
      .iobus_in    (iobus_in),

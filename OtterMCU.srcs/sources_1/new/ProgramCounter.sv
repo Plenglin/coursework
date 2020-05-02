@@ -33,6 +33,7 @@ module ProgramCounter(
     );
     
     reg [13:0] data;
+    logic [13:0] data_inc;
     assign data_inc = data + 1;
 
     assign addr = {16'b0, data, 2'b0};

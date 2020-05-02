@@ -78,60 +78,65 @@ module CU_DCDR(
     
     assign FUNC3 = func3_t'(func3); //- Cast input enum 
        
-    always_comb
-    begin 
+    always_comb begin 
         //- schedule all values to avoid latch
-		pcSource = 2'b00;  alu_srcB = 2'b00;    rf_wr_sel = 2'b00; 
-		alu_srcA = 1'b0;   alu_fun  = 4'b0000;
+		pcSource = 2'b00;  
+		rf_wr_sel = 2'b00; 
 		
-		case(OPCODE)
-			LUI:
-			begin
-				alu_fun = 4'b1001; 
-				alu_srcA = 1'b1; 
-				rf_wr_sel = 2'b11; 
-				pcSource = 2'b00; 
+		alu_srcA = 1'b0;   
+        alu_srcB = 2'b00;    
+        alu_fun  = 4'b0000;
+		
+	    case(OPCODE)
+	        LUI: begin
+		        alu_fun = 4'b1001;   // lui
+			    alu_srcA = 1;        // u-imm 
+		        rf_wr_sel = 2'b11;   // mem_addr
+			    pcSource = 2'b00;    // next
+            end
+			
+			AUIPC: begin
+                alu_fun = 4'b0000;   // add
+			    alu_srcA = 1;        // u-imm
+			    alu_srcB = 4'd3;     // pc
+			    rf_wr_sel = 2'b11;   // mem_addr
+                pcSource = 2'b00;    // next
 			end
 			
-			JAL:
-			begin
-				pcSource = 2'b11; 
-				rf_wr_sel = 2'b00; 
+			JAL: begin
+				rf_wr_sel = 2'b00;   // next pc
+				pcSource = 2'b11;    // jal
 			end
 			
-			LOAD: 
-			begin
-				if(FUNC3 == 3'b010)   // instr: LW 
-				begin 
-					alu_fun = 4'b0000; 
-					alu_srcA = 1'b0; 
-					alu_srcB = 2'b00; 
-					rf_wr_sel = 2'b00; 
+			LOAD: begin
+				if(FUNC3 == 3'b010) begin  // instr: LW 
+					alu_fun = 4'b0000;     // add
+					alu_srcA = 1'b0;       // rs1
+					alu_srcB = 2'b00;      // rs2
+					rf_wr_sel = 2'b11;     // mem dout
+                    pcSource = 2'b00;    // next
 				end
 			end
 			
-			STORE:
-			begin
-				if(FUNC3 == 3'b010) begin   // instr: SW
-					alu_fun = 4'b0000; 
-					alu_srcA = 1'b0; 
-					alu_srcB = 2'b00; 
+			STORE: begin
+				if(FUNC3 == 3'b010) begin  // instr: SW
+					alu_fun = 4'b0000;     // add
+					alu_srcA = 1'b0;       // rs1
+					alu_srcB = 2'b00;      // rs2
 				end
 			end
 			
-			OP_IMM:
-			begin
+			OP_IMM: begin
 				case(FUNC3)
-					3'b000: // instr: ADDI
-					begin
-						alu_fun = 4'b0000;
-						alu_srcA = 1'b0; 
-						alu_srcB = 2'b00;
-						rf_wr_sel = 2'b00; 
+					3'b000: begin  // instr: ADDI
+					    pcSource = 2'b00;
+						alu_fun = 4'b0000;  // add
+						alu_srcA = 1'b0;    // rs1
+						alu_srcB = 2'b01;   // i-imm
+						rf_wr_sel = 2'b00;  // pc_inc
 					end
 					
-					default: 
-					begin
+					default: begin
 						pcSource = 2'b00; 
 						alu_fun = 4'b0000;
 						alu_srcA = 1'b0; 
@@ -141,8 +146,7 @@ module CU_DCDR(
 				endcase
 			end
 
-			default:
-			begin
+			default: begin
 				 pcSource = 2'b00; 
 				 alu_srcB = 2'b00; 
 				 rf_wr_sel = 2'b00; 
