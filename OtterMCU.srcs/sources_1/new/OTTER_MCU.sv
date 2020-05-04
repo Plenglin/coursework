@@ -86,15 +86,17 @@ module OTTER_MCU(
         4'd3: reg_wd = alu_result;
     endcase
     
+    assign alu_src_a_data = alu_src_a 
+        ? u_type_imm 
+        : rs1;
+
     always_comb case(alu_src_b)
         4'd0: alu_src_b_data = rs2;
         4'd1: alu_src_b_data = i_type_imm;
         4'd2: alu_src_b_data = s_type_imm;
         4'd3: alu_src_b_data = pc;
     endcase
-    
-    assign alu_src_a_data = alu_src_a ? u_type_imm : rs1;
-    
+        
     // Submodules
     CU_FSM fsm(
         .clk(clk),
@@ -111,10 +113,13 @@ module OTTER_MCU(
         .reset(reset)
     );
     
-    // Pretend this is a branch boi
-    assign br_eq = 0;
-    assign br_lt = 0;
-    assign br_ltu = 0;
+    BranchCondGen bcg(
+        .rs1(rs1),
+        .rs2(rs2),
+        .br_eq(br_eq),
+        .br_lt(br_lt),
+        .br_ltu(br_ltu)
+    );
     
     CU_DCDR cu_dcdr(
         .opcode(ir[6:0]),
@@ -176,6 +181,7 @@ module OTTER_MCU(
         .rs1(rs1),
         .rs2(rs2)
     );
+    
     ImmedGen imd(
         .ir(ir[31:7]),
         

@@ -37,16 +37,16 @@
 
 module CU_DCDR(
     input br_eq, 
-	input br_lt, 
-	input br_ltu,
+    input br_lt, 
+    input br_ltu,
     input [6:0] opcode,   //-  ir[6:0]
-	input [6:0] func7,    //-  ir[31:25]
+    input [6:0] func7,    //-  ir[31:25]
     input [2:0] func3,    //-  ir[14:12] 
     output logic [3:0] alu_fun,
     output logic [1:0] pcSource,
     output logic alu_srcA,
     output logic [1:0] alu_srcB, 
-	output logic [1:0] rf_wr_sel   );
+    output logic [1:0] rf_wr_sel   );
     
     //- datatypes for RISC-V opcode types
     typedef enum logic [6:0] {
@@ -80,80 +80,80 @@ module CU_DCDR(
        
     always_comb begin 
         //- schedule all values to avoid latch
-		pcSource = 2'b00;  
-		rf_wr_sel = 2'b00; 
-		
-		alu_srcA = 1'b0;   
+        pcSource = 2'b00;  
+        rf_wr_sel = 2'b00; 
+        
+        alu_srcA = 1'b0;   
         alu_srcB = 2'b00;    
         alu_fun  = 4'b0000;
-		
-	    case(OPCODE)
-	        LUI: begin
-		        alu_fun = 4'b1001;   // lui
-			    alu_srcA = 1;        // u-imm 
-		        rf_wr_sel = 2'b11;   // alu_result
-			    pcSource = 2'b00;    // next
-            end
-			
-			AUIPC: begin
-                alu_fun = 4'b0000;   // add
-			    alu_srcA = 1;        // u-imm
-			    alu_srcB = 4'd3;     // pc
-			    rf_wr_sel = 2'b11;   // alu_result
+        
+        case(OPCODE)
+            LUI: begin
+                alu_fun = 4'b1001;   // lui
+                alu_srcA = 1;        // u-imm 
+                rf_wr_sel = 2'b11;   // alu_result
                 pcSource = 2'b00;    // next
-			end
-			
-			JAL: begin
-				rf_wr_sel = 2'b00;   // next pc
-				pcSource = 2'b11;    // jal
-			end
-			
-			LOAD: begin
-				if(FUNC3 == 3'b010) begin  // instr: LW 
-					alu_fun = 4'b0000;     // add
-					alu_srcA = 0;          // rs1
-					alu_srcB = 2'd1;       // i imm
-					rf_wr_sel = 2'd2;     // mem dout
+            end
+            
+            AUIPC: begin
+                alu_fun = 4'b0000;   // add
+                alu_srcA = 1;        // u-imm
+                alu_srcB = 4'd3;     // pc
+                rf_wr_sel = 2'b11;   // alu_result
+                pcSource = 2'b00;    // next
+            end
+            
+            JAL: begin
+                rf_wr_sel = 2'b00;   // next pc
+                pcSource = 2'b11;    // jal
+            end
+            
+            LOAD: begin
+                if(FUNC3 == 3'b010) begin  // instr: LW 
+                    alu_fun = 4'b0000;     // add
+                    alu_srcA = 0;          // rs1
+                    alu_srcB = 2'd1;       // i imm
+                    rf_wr_sel = 2'd2;     // mem dout
                     pcSource = 2'b00;      // next
-				end
-			end
-			
-			STORE: begin
-				if(FUNC3 == 3'b010) begin  // instr: SW
-					alu_fun = 4'b0000;     // add
-					alu_srcA = 1'b0;       // rs1
-					alu_srcB = 2'd2;       // s imm
-				end
-			end
-			
-			OP_IMM: begin
-				case(FUNC3)
-					3'b000: begin  // instr: ADDI
-					    pcSource = 2'b00;  // next
-						alu_fun = 4'b0000; // add
-						alu_srcA = 1'b0;   // rs1
-						alu_srcB = 2'b01;  // i imm
-						rf_wr_sel = 2'd3;  // alu result
-					end
-					
-					default: begin
-						pcSource = 2'b00; 
-						alu_fun = 4'b0000;
-						alu_srcA = 1'b0; 
-						alu_srcB = 2'b00; 
-						rf_wr_sel = 2'b00; 
-					end
-				endcase
-			end
+                end
+            end
+            
+            STORE: begin
+                if(FUNC3 == 3'b010) begin  // instr: SW
+                    alu_fun = 4'b0000;     // add
+                    alu_srcA = 1'b0;       // rs1
+                    alu_srcB = 2'd2;       // s imm
+                end
+            end
+            
+            OP_IMM: begin
+                case(FUNC3)
+                    3'b000: begin  // instr: ADDI
+                        pcSource = 2'b00;  // next
+                        alu_fun = 4'b0000; // add
+                        alu_srcA = 1'b0;   // rs1
+                        alu_srcB = 2'b01;  // i imm
+                        rf_wr_sel = 2'd3;  // alu result
+                    end
+                    
+                    default: begin
+                        pcSource = 2'b00; 
+                        alu_fun = 4'b0000;
+                        alu_srcA = 1'b0; 
+                        alu_srcB = 2'b00; 
+                        rf_wr_sel = 2'b00; 
+                    end
+                endcase
+            end
 
-			default: begin
-				 pcSource = 2'b00; 
-				 alu_srcB = 2'b00; 
-				 rf_wr_sel = 2'b00; 
-				 alu_srcA = 1'b0; 
-				 alu_fun = 4'b0000;
-			end
-			endcase
+            default: begin
+                 pcSource = 2'b00; 
+                 alu_srcB = 2'b00; 
+                 rf_wr_sel = 2'b00; 
+                 alu_srcA = 1'b0; 
+                 alu_fun = 4'b0000;
+            end
+        endcase
     end
 
 endmodule
