@@ -45,7 +45,7 @@ module ProgramCounter(
             2'd0: next = data_inc;
             2'd1: next = jalr[15:2];
             2'd2: next = branch[15:2];
-            default: next = jal[15:2];
+            2'd3: next = jal[15:2];
         endcase
     end
     
