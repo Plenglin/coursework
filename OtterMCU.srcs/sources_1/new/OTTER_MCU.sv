@@ -20,7 +20,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module OTTER_MCU(
+module OTTER_MCU #(
+    parameter MEM_FILE
+    ) (
     input rst,
     input clk,
     input [31:0] iobus_in,
@@ -151,7 +153,7 @@ module OTTER_MCU(
         .addr_inc(pc_inc)
     );
 
-    Memory mem(
+    Memory #(.MEM_FILE(MEM_FILE)) mem(
         .MEM_CLK (clk),
         
         .MEM_RDEN1 (mem_rden1),

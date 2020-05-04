@@ -27,7 +27,8 @@ module OTTER_Wrapper(
    input [15:0] switches,
    output logic [15:0] leds,
    output logic [7:0] segs,
-   output logic [3:0] an    );
+   output logic [3:0] an
+   );
        
    //- INPUT PORT IDS ---------------------------------------------------------
    localparam SWITCHES_PORT_ADDR = 32'h11008000;  // 0x1100_8000
@@ -58,7 +59,7 @@ module OTTER_Wrapper(
    assign s_reset = buttons[3];
 
    //- Instantiate RISC-V OTTER MCU 
-   OTTER_MCU  my_otter(
+   OTTER_MCU  #(.MEM_FILE("otter_memory.mem")) my_otter(
       .rst         (s_reset),
       .intr        (1'b0),
       .clk         (s_clk),
