@@ -21,7 +21,7 @@
 
 
 module OTTER_MCU #(
-    parameter MEM_FILE
+    parameter MEM_FILE="otter_memory.mem"
     ) (
     input rst,
     input clk,

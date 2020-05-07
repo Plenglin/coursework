@@ -81,10 +81,11 @@ module CU_DCDR(
     
     // Branch condition selector
     logic branch_cond;
-    always_comb case(FUNC3) inside
-        3'b00?: branch_cond = br_eq;     // BEQ, BNE
-        3'b10?: branch_cond = br_lt;     // BLT, BGE
-        3'b11?: branch_cond = br_ltu;    // BLTU, BGEU
+    always_comb case(func3[2:1])
+        2'b00: branch_cond = br_eq;     // BEQ, BNE
+        2'b10: branch_cond = br_lt;     // BLT, BGE
+        2'b11: branch_cond = br_ltu;    // BLTU, BGEU
+        default: branch_cond = 0;       // ruh roh
     endcase
     
     // ALU translator
@@ -140,7 +141,7 @@ module CU_DCDR(
             end
             
             BRANCH: 
-                pcSource = (branch_cond ^ FUNC3[0])   // Invert if invert bit 
+                pcSource = (branch_cond ^ func3[0])   // Invert if invert bit 
                     ? 2'd2      // Condition success, branch
                     : 2'd0;     // Condition fail, next
             
