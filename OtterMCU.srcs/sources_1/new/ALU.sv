@@ -26,20 +26,23 @@ module ALU(
     input [3:0] alu_fun,
     output logic [31:0] result
     );
+    
+    logic [4:0] shiftB;
+    assign shiftB = srcB[4:0];
         
     always_comb begin
         case (alu_fun)
-            4'b0000: result = srcA + srcB;                      // add
-            4'b1000: result = srcA - srcB;                      // sub
-            4'b0110: result = srcA | srcB;                      // or
-            4'b0111: result = srcA & srcB;                      // and
-            4'b0100: result = srcA ^ srcB;                      // xor 
-            4'b0101: result = srcA >> srcB;                     // srl
-            4'b0001: result = srcA << srcB;                     // sll
-            4'b1101: result = srcA >>> srcB;                    // sra
-            4'b0010: result = $signed(srcA) < $signed(srcB);    // slt
-            4'b0011: result = srcA < srcB;                      // sltu
-            4'b1001: result = srcA;                             // lui
+            4'b0000: result = srcA + srcB;                          // add
+            4'b1000: result = srcA - srcB;                          // sub
+            4'b0110: result = srcA | srcB;                          // or
+            4'b0111: result = srcA & srcB;                          // and
+            4'b0100: result = srcA ^ srcB;                          // xor 
+            4'b0101: result = srcA >> shiftB;                       // srl
+            4'b0001: result = srcA << shiftB;                       // sll
+            4'b1101: result = $signed(srcA) >>> shiftB;             // sra
+            4'b0010: result = $signed(srcA) < $signed(srcB);        // slt
+            4'b0011: result = srcA < srcB;                          // sltu
+            4'b1001: result = srcA;                                 // lui
             default: result = 32'hDEADBEEF;
         endcase
     end

@@ -90,6 +90,16 @@ module CU_DCDR(
     
     logic branch_cond;
     assign branch_cond = raw_branch_cond ^ func3[0];
+    
+    logic alu_flag;
+    assign alu_flag = func7[5];
+    
+    logic [3:0] op_alu_fun;
+    always_comb case(func3) inside
+        3'b?01: op_alu_fun = {alu_flag, func3};
+        3'b000: op_alu_fun = {alu_flag & (OPCODE == OP_RG3), func3};
+        default: op_alu_fun = {1'b0, func3};
+    endcase
        
     always_comb begin 
         //- schedule all values to avoid latch
@@ -147,7 +157,7 @@ module CU_DCDR(
                 alu_srcA = 1'b0;   // rs1
                 alu_srcB = 2'd1;   // i imm
                 rf_wr_sel = 2'd3;  // alu result
-                alu_fun = {1'b0, func3};  // translated func
+                alu_fun = op_alu_fun;  // translated func
             end
             
             OP_RG3: begin
@@ -155,7 +165,7 @@ module CU_DCDR(
                 alu_srcA = 0;   // rs1
                 alu_srcB = 2'd0;   // rs2
                 rf_wr_sel = 2'd3;  // alu result
-                alu_fun = {func7[5], func3};  // translated func             
+                alu_fun = op_alu_fun;  // translated func             
             end
 
             default: begin
