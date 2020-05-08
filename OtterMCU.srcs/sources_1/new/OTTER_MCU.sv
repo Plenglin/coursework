@@ -82,7 +82,7 @@ module OTTER_MCU #(
     
     // Multiplexers    
     always_comb case(rf_wr_sel)
-        4'd0: reg_wd = pc_inc;
+        4'd0: reg_wd = pc + 4;
         4'd1: reg_wd = 32'hdeadbeef;  // TODO change to CSR_reg
         4'd2: reg_wd = mem_dout;
         4'd3: reg_wd = alu_result;

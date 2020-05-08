@@ -29,7 +29,7 @@ module otter_tb();
    wire [31:0] iobus_out; 
    wire iobus_wr; 
 
-OTTER_MCU  my_otter(
+OTTER_MCU #(.MEM_FILE("exp05.mem")) my_otter(
      .rst         (RST),
      .intr        (intr),
      .clk         (clk),

@@ -138,12 +138,24 @@ module CU_FSM(
                         NS = st_FET;
                     end
 					
+					OP_RG3: begin 
+                        regWrite = 1;	
+                        memRDEN2 = 1;
+                        NS = st_FET;
+                    end
+					
 	                JAL: begin
 					    regWrite = 1; 
 					    NS = st_FET;
                      end
+                    
+                    JALR: begin
+					    regWrite = 1; 
+					    NS = st_FET;
+                    end
 					 
                     default: begin 
+                        regWrite = 0;
                         NS = st_FET;
 					end
 					

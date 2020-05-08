@@ -29,7 +29,7 @@ OTTER_MCU #(.MEM_FILE("exp6_testall.mem"))  my_otter(
    begin           
       RST=1;
       intr=0;
-      iobus_in = 32'h0000FEED;  
+      iobus_in = 32'h0;  
     
       #40
 

@@ -80,13 +80,16 @@ module CU_DCDR(
     assign FUNC3 = func3_t'(func3); //- Cast input enum 
     
     // Branch condition selector
-    logic branch_cond;
+    logic raw_branch_cond;
     always_comb case(func3[2:1])
-        2'b00: branch_cond = br_eq;     // BEQ, BNE
-        2'b10: branch_cond = br_lt;     // BLT, BGE
-        2'b11: branch_cond = br_ltu;    // BLTU, BGEU
-        default: branch_cond = 0;       // ruh roh
+        2'b00: raw_branch_cond = br_eq;     // BEQ, BNE
+        2'b10: raw_branch_cond = br_lt;     // BLT, BGE
+        2'b11: raw_branch_cond = br_ltu;    // BLTU, BGEU
+        default: raw_branch_cond = 0;       // ruh roh
     endcase
+    
+    logic branch_cond;
+    assign branch_cond = raw_branch_cond ^ func3[0];
     
     // ALU translator
     logic [3:0] alu_op_alu_fun;
@@ -112,18 +115,16 @@ module CU_DCDR(
                 alu_fun = 4'b0000;   // add
                 alu_srcA = 1;        // u-imm
                 alu_srcB = 4'd3;     // pc
-                rf_wr_sel = 2'b11;   // alu_result
+                rf_wr_sel = 2'd3;   // alu_result
             end
             
             JAL: begin
-                rf_wr_sel = 2'b00;   // next pc
+                rf_wr_sel = 2'd0;   // next pc
                 pcSource = 2'd3;     // jal
             end
             
             JALR: begin
-                alu_fun = 4'b0000;     // add
-                alu_srcA = 0;          // rs1
-                alu_srcB = 2'd1;       // i imm
+                rf_wr_sel = 2'd0;   // next pc
                 pcSource = 2'd1;       // jalr
             end
             
@@ -141,7 +142,7 @@ module CU_DCDR(
             end
             
             BRANCH: 
-                pcSource = (branch_cond ^ func3[0])   // Invert if invert bit 
+                pcSource = branch_cond   // Invert if invert bit 
                     ? 2'd2      // Condition success, branch
                     : 2'd0;     // Condition fail, next
             
@@ -150,15 +151,15 @@ module CU_DCDR(
                 alu_srcA = 1'b0;   // rs1
                 alu_srcB = 2'd1;   // i imm
                 rf_wr_sel = 2'd3;  // alu result
-                alu_fun = alu_op_alu_fun;  // translated address
+                alu_fun = alu_op_alu_fun;  // translated func
             end
             
             OP_RG3: begin
                 pcSource = 2'b00;  // next
-                alu_srcA = 1'b0;   // rs1
+                alu_srcA = 0;   // rs1
                 alu_srcB = 2'd0;   // rs2
                 rf_wr_sel = 2'd3;  // alu result
-                alu_fun = alu_op_alu_fun;  // translated address             
+                alu_fun = alu_op_alu_fun;  // translated func             
             end
 
             default: begin
