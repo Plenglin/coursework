@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: Cal Poly
+// Engineer: Astrid Yu
 // 
 // Create Date: 04/29/2020 02:27:42 PM
-// Design Name: 
+// Design Name: Main Otter MCU Module
 // Module Name: OTTER_MCU
-// Project Name: 
+// Project Name: Otter MCU
 // Target Devices: 
 // Tool Versions: 
 // Description: 
@@ -23,7 +23,7 @@
 module OTTER_MCU #(
     parameter MEM_FILE="otter_memory.mem"
     ) (
-    input rst,
+    input RST,
     input clk,
     input [31:0] iobus_in,
     input intr,
@@ -103,7 +103,7 @@ module OTTER_MCU #(
     CU_FSM fsm(
         .clk(clk),
         
-        .RST(rst), 
+        .RST(RST), 
         .intr(intr),
         .opcode(ir[6:0]),
         

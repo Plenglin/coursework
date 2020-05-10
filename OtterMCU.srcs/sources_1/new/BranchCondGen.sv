@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: Cal Poly
+// Engineer: Astrid Yu
 // 
 // Create Date: 05/04/2020 02:43:37 PM
-// Design Name: 
+// Design Name: Branch Condition Generator
 // Module Name: BranchCondGen
-// Project Name: 
+// Project Name: Otter MCU
 // Target Devices: 
 // Tool Versions: 
 // Description: 
