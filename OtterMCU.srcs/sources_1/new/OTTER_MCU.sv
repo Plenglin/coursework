@@ -36,6 +36,7 @@ module OTTER_MCU #(
     logic [31:0] 
         pc, 
         pc_inc,
+        pc_next,
         ir, 
         reg_wd,
         rs1,
@@ -55,12 +56,18 @@ module OTTER_MCU #(
         i_type_imm, 
         j_type_imm,
         s_type_imm,
-        u_type_imm;
+        u_type_imm,
+        
+        mepc,
+        mtvec,
+        csr_reg;
     
     // Selectors
-    logic [1:0] pc_source, rf_wr_sel, alu_src_b;
-    logic [3:0] alu_fun;
+    logic [1:0] rf_wr_sel, alu_src_b;
+    logic [2:0] pc_source;
+
     logic alu_src_a;
+    logic [3:0] alu_fun;
     
     // Flags
     logic 
@@ -75,7 +82,11 @@ module OTTER_MCU #(
         
         br_eq,
         br_lt,
-        br_ltu;
+        br_ltu,
+        
+        int_taken,
+        csr_we,
+        csr_mie;
     
     assign iobus_addr = alu_result;
     assign iobus_out = rs2;
@@ -83,11 +94,11 @@ module OTTER_MCU #(
     // Multiplexers    
     always_comb case(rf_wr_sel)
         4'd0: reg_wd = pc + 4;
-        4'd1: reg_wd = 32'hdeadbeef;  // TODO change to CSR_reg
+        4'd1: reg_wd = csr_reg;
         4'd2: reg_wd = mem_dout;
         4'd3: reg_wd = alu_result;
     endcase
-    
+        
     assign alu_src_a_data = alu_src_a 
         ? u_type_imm 
         : rs1;
@@ -98,6 +109,32 @@ module OTTER_MCU #(
         4'd2: alu_src_b_data = s_type_imm;
         4'd3: alu_src_b_data = pc;
     endcase
+    
+    always_comb case(pc_source) 
+        3'd0: pc_next = pc_inc;
+        3'd1: pc_next = jalr;
+        3'd2: pc_next = branch;
+        3'd3: pc_next = jal;
+        3'd4: pc_next = mtvec;
+        3'd5: pc_next = mepc;
+    endcase
+    
+    CSR csr(
+        .CLK(clk),
+        .RST(reset),
+        
+        .ADDR(ir[31:20]),
+
+        .INT_TAKEN(int_taken),
+        .WR_EN(csr_we),
+        .PC(pc),
+        .WD(rs1),
+        
+        .CSR_MIE(csr_mie),
+        .CSR_MEPC(mepc),
+        .CSR_MTVEC(mtvec),
+        .RD(csr_reg)
+    );
         
     // Submodules
     CU_FSM fsm(
@@ -142,12 +179,9 @@ module OTTER_MCU #(
     ProgramCounter prog_counter(
         .clk(clk),
 
-        .rst(reset),
-        .pc_source(pc_source),
         .pc_write(pc_write),
-        .jal(jal),
-        .jalr(jalr),
-        .branch(branch),
+        .rst(reset),
+        .next(pc_next),
         
         .addr(pc),
         .addr_inc(pc_inc)

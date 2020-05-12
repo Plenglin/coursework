@@ -10,7 +10,7 @@ module otter_tb();
    wire iobus_wr; 
 
 OTTER_MCU #(.MEM_FILE("exp6_testall.mem"))  my_otter(
-     .rst         (RST),
+     .RST         (RST),
      .intr        (intr),
      .clk         (clk),
      .iobus_in    (iobus_in),

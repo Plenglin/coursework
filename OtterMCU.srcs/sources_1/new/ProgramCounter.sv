@@ -22,11 +22,8 @@
 
 module ProgramCounter(
     input rst,
-    input [31:0] jalr,
-    input [31:0] jal,
-    input [31:0] branch,
+    input [31:0] next,
     input pc_write,
-    input [1:0] pc_source,
     input clk,
     output [31:0] addr,
     output [31:0] addr_inc
@@ -39,20 +36,10 @@ module ProgramCounter(
     assign addr = {16'b0, data, 2'b0};
     assign addr_inc = {16'b0, data_inc, 2'b0};
     
-    logic [13:0] next;
-    always_comb begin
-        case (pc_source) 
-            2'd0: next = data_inc;
-            2'd1: next = jalr[15:2];
-            2'd2: next = branch[15:2];
-            2'd3: next = jal[15:2];
-        endcase
-    end
-    
     always_ff @(posedge clk) begin
         if (rst)
             data <= 0;
         else if (pc_write) 
-            data <= next;
+            data <= next[15:2];
     end
 endmodule

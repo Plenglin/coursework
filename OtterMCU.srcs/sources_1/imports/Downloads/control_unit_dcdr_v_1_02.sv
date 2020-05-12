@@ -43,7 +43,7 @@ module CU_DCDR(
     input [6:0] func7,    //-  ir[31:25]
     input [2:0] func3,    //-  ir[14:12] 
     output logic [3:0] alu_fun,
-    output logic [1:0] pcSource,
+    output logic [2:0] pcSource,
     output logic alu_srcA,
     output logic [1:0] alu_srcB, 
     output logic [1:0] rf_wr_sel
@@ -103,7 +103,7 @@ module CU_DCDR(
        
     always_comb begin 
         //- schedule all values to avoid latch
-        pcSource = 2'b00;  
+        pcSource = 3'b00;  
         rf_wr_sel = 2'b00; 
         
         alu_srcA = 1'b0;   
@@ -126,12 +126,12 @@ module CU_DCDR(
             
             JAL: begin
                 rf_wr_sel = 2'd0;   // next pc
-                pcSource = 2'd3;     // jal
+                pcSource = 3'd3;     // jal
             end
             
             JALR: begin
                 rf_wr_sel = 2'd0;   // next pc
-                pcSource = 2'd1;       // jalr
+                pcSource = 3'd1;       // jalr
             end
             
             LOAD: begin
@@ -149,11 +149,11 @@ module CU_DCDR(
             
             BRANCH: 
                 pcSource = branch_cond   // Invert if invert bit 
-                    ? 2'd2      // Condition success, branch
-                    : 2'd0;     // Condition fail, next
+                    ? 3'd2      // Condition success, branch
+                    : 3'd0;     // Condition fail, next
             
             OP_IMM: begin
-                pcSource = 2'b00;  // next
+                pcSource = 3'd0;  // next
                 alu_srcA = 1'b0;   // rs1
                 alu_srcB = 2'd1;   // i imm
                 rf_wr_sel = 2'd3;  // alu result
@@ -161,7 +161,7 @@ module CU_DCDR(
             end
             
             OP_RG3: begin
-                pcSource = 2'b00;  // next
+                pcSource =3'd0;  // next
                 alu_srcA = 0;   // rs1
                 alu_srcB = 2'd0;   // rs2
                 rf_wr_sel = 2'd3;  // alu result
@@ -169,7 +169,7 @@ module CU_DCDR(
             end
 
             default: begin
-                 pcSource = 2'b00; 
+                 pcSource = 3'd0; 
                  alu_srcB = 2'b00; 
                  rf_wr_sel = 2'b00; 
                  alu_srcA = 1'b0; 
