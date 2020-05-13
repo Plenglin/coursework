@@ -117,6 +117,7 @@ module OTTER_MCU #(
         3'd3: pc_next = jal;
         3'd4: pc_next = mtvec;
         3'd5: pc_next = mepc;
+        default: pc_next = 31'hdeadbeef;
     endcase
     
     CSR csr(
@@ -141,14 +142,19 @@ module OTTER_MCU #(
         .clk(clk),
         
         .RST(RST), 
-        .intr(intr),
+        .intr(intr & csr_mie),
         .opcode(ir[6:0]),
-        
+        .func3(ir[14:12]),
+
         .pcWrite(pc_write),
         .regWrite(reg_write),
         .memWE2(mem_we2),
         .memRDEN1(mem_rden1),
         .memRDEN2(mem_rden2),
+        
+        .int_taken(int_taken),
+        .csr_we(csr_we),
+        
         .reset(reset)
     );
     
@@ -165,6 +171,7 @@ module OTTER_MCU #(
         .func7(ir[31:25]),
         .func3(ir[14:12]),
         
+        .int_taken(int_taken),
         .br_eq(br_eq),
         .br_lt(br_lt),
         .br_ltu(br_ltu),

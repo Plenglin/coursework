@@ -41,20 +41,24 @@ module CU_FSM(
     input intr,
     input clk,
     input RST,
+    input [2:0] func3,
     input [6:0] opcode,     // ir[6:0]
     output logic pcWrite,
     output logic regWrite,
     output logic memWE2,
     output logic memRDEN1,
     output logic memRDEN2,
-    output logic reset
+    output logic reset,
+    output logic csr_we,
+    output reg int_taken
   );
     
-    typedef enum logic [1:0] {
+    typedef enum logic [2:0] {
        st_INIT,
 	   st_FET,
        st_EX,
-       st_WB
+       st_WB,
+       st_INTR
     }  state_type; 
     state_type  NS,PS; 
       
@@ -68,12 +72,15 @@ module CU_FSM(
         LOAD   = 7'b0000011,
         STORE  = 7'b0100011,
         OP_IMM = 7'b0010011,
-        OP_RG3 = 7'b0110011
+        OP_RG3 = 7'b0110011,
+        OP_INT = 7'b1110011
     } opcode_t;
 	opcode_t OPCODE;    //- symbolic names for instruction opcodes
      
 	assign OPCODE = opcode_t'(opcode); //- Cast input as enum 
-	 
+	
+	state_type cmd_finish;
+	assign cmd_finish = intr ? st_INTR : st_FET;
 
 	//- state registers (PS)
 	always @(posedge clk) begin
@@ -115,48 +122,55 @@ module CU_FSM(
 					STORE: begin
                         regWrite = 0;
                         memWE2 = 1;
-                        NS = st_FET;
+                        NS = cmd_finish;
                     end
                     
 					BRANCH: begin
-                        NS = st_FET;
+                        NS = cmd_finish;
                     end
 					
 					LUI: begin
                         regWrite = 1;
-                        NS = st_FET;
+                        NS = cmd_finish;
                     end
                     
                     AUIPC: begin
                         regWrite = 1;
-                        NS = st_FET;
+                        NS = cmd_finish;
                     end
 					  
 					OP_IMM: begin 
                         regWrite = 1;	
                         memRDEN2 = 1;
-                        NS = st_FET;
+                        NS = cmd_finish;
                     end
 					
 					OP_RG3: begin 
                         regWrite = 1;	
                         memRDEN2 = 1;
-                        NS = st_FET;
+                        NS = cmd_finish;
                     end
 					
 	                JAL: begin
 					    regWrite = 1; 
-					    NS = st_FET;
+					    NS = cmd_finish;
                      end
                     
                     JALR: begin
 					    regWrite = 1; 
-					    NS = st_FET;
+					    NS = cmd_finish;
+                    end
+                    
+                    OP_INT: if (func3[0]) begin  // csrrw
+                        csr_we = 1;
+                        regWrite = 1;
+                    end else begin  // mret
+                        int_taken = 0;
                     end
 					 
                     default: begin 
                         regWrite = 0;
-                        NS = st_FET;
+                        NS = cmd_finish;
 					end
 					
                 endcase
@@ -166,10 +180,15 @@ module CU_FSM(
                 pcWrite = 0;
                 regWrite = 1; 
                 memRDEN2 = 1;
+                NS = cmd_finish;
+            end
+            
+            st_INTR: begin
+                int_taken = 1;
                 NS = st_FET;
             end
  
-            default: NS = st_FET;
+            default: NS = cmd_finish;
            
         endcase //- case statement for FSM states
     end

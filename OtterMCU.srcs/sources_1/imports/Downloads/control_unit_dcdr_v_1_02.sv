@@ -39,6 +39,8 @@ module CU_DCDR(
     input br_eq, 
     input br_lt, 
     input br_ltu,
+    input int_taken,
+    
     input [6:0] opcode,   //-  ir[6:0]
     input [6:0] func7,    //-  ir[31:25]
     input [2:0] func3,    //-  ir[14:12] 
@@ -59,7 +61,8 @@ module CU_DCDR(
         LOAD   = 7'b0000011,
         STORE  = 7'b0100011,
         OP_IMM = 7'b0010011,
-        OP_RG3 = 7'b0110011
+        OP_RG3 = 7'b0110011,
+        OP_INT = 7'b1110011
     } opcode_t;
     opcode_t OPCODE; //- define variable of new opcode type
     
@@ -103,8 +106,8 @@ module CU_DCDR(
        
     always_comb begin 
         //- schedule all values to avoid latch
-        pcSource = 3'b00;  
-        rf_wr_sel = 2'b00; 
+        pcSource = 3'd0; // next
+        rf_wr_sel = 2'd0;  // pc_inc 
         
         alu_srcA = 1'b0;   
         alu_srcB = 2'b00;    
@@ -161,11 +164,18 @@ module CU_DCDR(
             end
             
             OP_RG3: begin
-                pcSource =3'd0;  // next
+                pcSource = 3'd0;  // next
                 alu_srcA = 0;   // rs1
                 alu_srcB = 2'd0;   // rs2
                 rf_wr_sel = 2'd3;  // alu result
                 alu_fun = op_alu_fun;  // translated func             
+            end
+            
+            OP_INT: if (func3[0]) begin  // csrrw
+                rf_wr_sel = 2'd1;  // csr_reg
+                pcSource = 3'd0;  // next
+            end else begin  // mret
+                pcSource = 3'd5;  // mepc
             end
 
             default: begin
