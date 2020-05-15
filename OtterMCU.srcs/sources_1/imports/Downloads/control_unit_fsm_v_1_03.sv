@@ -50,7 +50,7 @@ module CU_FSM(
     output logic memRDEN2,
     output logic reset,
     output logic csr_we,
-    output reg int_taken
+    output logic int_taken
   );
     
     typedef enum logic [2:0] {
@@ -98,6 +98,7 @@ module CU_FSM(
 		memWE2 = 1'b0;
         memRDEN1 = 1'b0;    
         memRDEN2 = 1'b0;
+        int_taken = 0;
                        
         case (PS)
             st_INIT: begin
@@ -164,8 +165,9 @@ module CU_FSM(
                     OP_INT: if (func3[0]) begin  // csrrw
                         csr_we = 1;
                         regWrite = 1;
+                        NS = cmd_finish;
                     end else begin  // mret
-                        int_taken = 0;
+                        NS = st_FET;
                     end
 					 
                     default: begin 
@@ -184,6 +186,7 @@ module CU_FSM(
             end
             
             st_INTR: begin
+                pcWrite = 1;
                 int_taken = 1;
                 NS = st_FET;
             end

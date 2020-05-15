@@ -113,7 +113,9 @@ module CU_DCDR(
         alu_srcB = 2'b00;    
         alu_fun  = 4'b0000;
         
-        case(OPCODE)
+        if (int_taken) begin
+            pcSource = 3'd4;  // mtvec 
+        end else case(OPCODE)
             LUI: begin
                 alu_fun = 4'b1001;   // lui
                 alu_srcA = 1;        // u-imm 

@@ -53,7 +53,9 @@ module otter_tb();
     end                        
          
     initial begin
-        #50
+        #4
+        RST = 0;
+        #100
         
         intr = 1;
         #6;

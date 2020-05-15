@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="otter_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="otter_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="68101fs"></ZoomEndTime>
+      <Cursor1Time time="18600fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="166"></NameColumnWidth>
+      <ValueColumnWidth column_width="120"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="12" />
+   <wvobject type="logic" fp_name="/otter_tb/clk">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/otter_tb/intr">
+      <obj_property name="ElementShortName">intr</obj_property>
+      <obj_property name="ObjectShortName">intr</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/otter_tb/RST">
+      <obj_property name="ElementShortName">RST</obj_property>
+      <obj_property name="ObjectShortName">RST</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/mtvec">
+      <obj_property name="ElementShortName">mtvec[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mtvec[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/mepc">
+      <obj_property name="ElementShortName">mepc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mepc[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/otter_tb/my_otter/csr_mie">
+      <obj_property name="ElementShortName">csr_mie</obj_property>
+      <obj_property name="ObjectShortName">csr_mie</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/otter_tb/my_otter/int_taken">
+      <obj_property name="ElementShortName">int_taken</obj_property>
+      <obj_property name="ObjectShortName">int_taken</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/fsm/PS">
+      <obj_property name="ElementShortName">PS[2:0]</obj_property>
+      <obj_property name="ObjectShortName">PS[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/pc">
+      <obj_property name="ElementShortName">pc[31:0]</obj_property>
+      <obj_property name="ObjectShortName">pc[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/fsm/opcode">
+      <obj_property name="ElementShortName">opcode[6:0]</obj_property>
+      <obj_property name="ObjectShortName">opcode[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/fsm/OPCODE">
+      <obj_property name="ElementShortName">OPCODE[6:0]</obj_property>
+      <obj_property name="ObjectShortName">OPCODE[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/otter_tb/my_otter/fsm/func3">
+      <obj_property name="ElementShortName">func3[2:0]</obj_property>
+      <obj_property name="ObjectShortName">func3[2:0]</obj_property>
+   </wvobject>
+</wave_config>
