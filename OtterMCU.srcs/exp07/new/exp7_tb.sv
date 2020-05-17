@@ -60,6 +60,16 @@ module otter_tb();
         intr = 1;
         #6;
         intr = 0;
+        #100
+        
+        intr = 1;
+        #6
+        intr = 0;
+        #4
+        
+        intr = 1;
+        #8;
+        intr = 0; 
         
     end
 endmodule
