@@ -11,13 +11,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="23705fs"></ZoomStartTime>
-      <ZoomEndTime time="70956fs"></ZoomEndTime>
-      <Cursor1Time time="34505fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="1386001fs"></ZoomEndTime>
+      <Cursor1Time time="67600fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="166"></NameColumnWidth>
-      <ValueColumnWidth column_width="116"></ValueColumnWidth>
+      <ValueColumnWidth column_width="108"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="11" />
    <wvobject type="logic" fp_name="/otter_tb/clk">
@@ -35,6 +35,7 @@
    <wvobject type="group" fp_name="group84">
       <obj_property name="label">IO Bus</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject type="array" fp_name="/otter_tb/iobus_in">
          <obj_property name="ElementShortName">iobus_in[31:0]</obj_property>
          <obj_property name="ObjectShortName">iobus_in[31:0]</obj_property>

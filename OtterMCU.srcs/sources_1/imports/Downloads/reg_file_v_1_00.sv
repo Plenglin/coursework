@@ -33,10 +33,8 @@ module RegFile(
     logic [31:0] reg_file [0:31];
     
     //- init registers to zero
-    initial
-    begin
-        int i;
-        for (i=0; i<32; i++)
+    initial begin
+        for (int i=0; i<32; i++)
             reg_file[i] = 0;
     end
     

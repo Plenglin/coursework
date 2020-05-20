@@ -5,7 +5,7 @@
 module clk_div (  input clk,
                   output reg sclk=0);
 
-    integer MAX_COUNT = 100000; //Change to 1000000 to view testall blink;
+    integer MAX_COUNT = 100; //Change to 1000000 to view testall blink;
     integer div_cnt =0;
     always @ (posedge clk)              
     begin

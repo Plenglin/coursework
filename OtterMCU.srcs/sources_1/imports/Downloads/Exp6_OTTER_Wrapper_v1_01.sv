@@ -43,7 +43,7 @@ module OTTER_Wrapper(
     logic s_interrupt;  
     logic s_debounced;
     logic s_reset; 
-    logic s_clk = 0;
+    logic s_clk;
     
     logic [31:0] IOBUS_out;
     logic [31:0] IOBUS_in;
@@ -51,9 +51,9 @@ module OTTER_Wrapper(
     logic IOBUS_wr;
     
     //- register for dev board output devices ---------------------------------
-    logic [7:0]  r_segs;   //  register for segments (cathodes)
-    logic [15:0] r_leds;   //  register for LEDs
-    logic [3:0]  r_an;    //  register for display enables (anodes)
+    reg [7:0]  r_segs = 7'b1010101;   //  register for segments (cathodes)
+    reg [15:0] r_leds;   //  register for LEDs
+    reg [3:0]  r_an = 4'b0100;    //  register for display enables (anodes)
    
     assign s_reset = BTNL;
     
@@ -80,9 +80,7 @@ module OTTER_Wrapper(
       .iobus_addr  (IOBUS_addr), 
       .iobus_wr    (IOBUS_wr)   );
     
-    //- Divide clk by 2 
-    always_ff @ (posedge clk)
-        s_clk <= ~s_clk;
+    clk_div div(.clk(clk), .sclk(s_clk));
     
     //- Drive dev board output devices with registers 
     always_ff @ (posedge s_clk) begin

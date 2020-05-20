@@ -32,7 +32,7 @@
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
     <Option Name="DSABoardId" Val="basys3"/>
-    <Option Name="WTXSimLaunchSim" Val="257"/>
+    <Option Name="WTXSimLaunchSim" Val="299"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -443,6 +443,7 @@
       </Config>
     </FileSet>
     <FileSet Name="exp08" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/exp08">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/exp08/new/exp08_test.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
