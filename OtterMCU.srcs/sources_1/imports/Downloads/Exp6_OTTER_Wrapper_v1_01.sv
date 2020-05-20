@@ -51,7 +51,7 @@ module OTTER_Wrapper(
     logic IOBUS_wr;
     
     //- register for dev board output devices ---------------------------------
-    reg [7:0]  r_segs = 7'b1010101;   //  register for segments (cathodes)
+    reg [7:0]  r_segs = 7'b0;   //  register for segments (cathodes)
     reg [15:0] r_leds;   //  register for LEDs
     reg [3:0]  r_an = 4'b0100;    //  register for display enables (anodes)
    
@@ -73,7 +73,7 @@ module OTTER_Wrapper(
     //- Instantiate RISC-V OTTER MCU 
     OTTER_MCU  my_otter(
       .RST         (s_reset),
-      .intr        (1'b0),
+      .intr        (s_interrupt),
       .clk         (s_clk),
       .iobus_in    (IOBUS_in),
       .iobus_out   (IOBUS_out), 

@@ -44,7 +44,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
                                                                                                                              
-module Memory (
+module Memory #(parameter MEM_FILE="otter_memory.mem") (
     input MEM_CLK,
     input MEM_RDEN1,        // read enable Instruction
     input MEM_RDEN2,        // read enable data
@@ -69,7 +69,7 @@ module Memory (
     (* ram_decomp = "power" *) logic [31:0] memory [0:16383];
     
     initial begin
-        $readmemh("otter_memory.mem", memory, 0, 16383);
+        $readmemh(MEM_FILE, memory, 0, 16383);
     end
     
     assign wordAddr2 = MEM_ADDR2[15:2];
