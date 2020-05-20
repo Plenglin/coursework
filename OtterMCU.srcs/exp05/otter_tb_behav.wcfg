@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="9000fs"></ZoomStartTime>
-      <ZoomEndTime time="45451fs"></ZoomEndTime>
-      <Cursor1Time time="18000fs"></Cursor1Time>
+      <ZoomStartTime time="889700fs"></ZoomStartTime>
+      <ZoomEndTime time="962601fs"></ZoomEndTime>
+      <Cursor1Time time="924100fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="166"></NameColumnWidth>
       <ValueColumnWidth column_width="104"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="11" />
+   <WVObjectSize size="12" />
    <wvobject type="logic" fp_name="/otter_tb/clk">
       <obj_property name="ElementShortName">clk</obj_property>
       <obj_property name="ObjectShortName">clk</obj_property>
@@ -203,6 +203,7 @@
    <wvobject type="group" fp_name="group226">
       <obj_property name="label">Immediate</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject type="array" fp_name="/otter_tb/my_otter/imd/b_type_imm">
          <obj_property name="ElementShortName">b_type_imm[31:0]</obj_property>
          <obj_property name="ObjectShortName">b_type_imm[31:0]</obj_property>
@@ -300,6 +301,35 @@
       <wvobject type="array" fp_name="/otter_tb/my_otter/csr/CSR_MTVEC">
          <obj_property name="ElementShortName">CSR_MTVEC[31:0]</obj_property>
          <obj_property name="ObjectShortName">CSR_MTVEC[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group211">
+      <obj_property name="label">ALU</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_fun">
+         <obj_property name="ElementShortName">alu_fun[3:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_fun[3:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/alu_src_a">
+         <obj_property name="ElementShortName">alu_src_a</obj_property>
+         <obj_property name="ObjectShortName">alu_src_a</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_src_a_data">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">alu_src_a_data[31:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_src_a_data[31:0]</obj_property>
+         <obj_property name="label">data1</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_src_b_data">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">alu_src_b_data[31:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_src_b_data[31:0]</obj_property>
+         <obj_property name="label">data2</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_result">
+         <obj_property name="ElementShortName">alu_result[31:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_result[31:0]</obj_property>
       </wvobject>
    </wvobject>
 </wave_config>

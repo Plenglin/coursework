@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module otter_tb();
 
     logic RST; 
@@ -39,7 +41,7 @@ module otter_tb();
         intr = 1;
         #6;
         intr = 0;
-        #1000
+        #2000
         
         intr = 1;
         #6
