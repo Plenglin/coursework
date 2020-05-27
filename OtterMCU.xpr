@@ -161,15 +161,6 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/imports/Downloads/Exp6_OTTER_Wrapper_v1_01.sv">
-        <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../../../../Downloads/Exp6_OTTER_Wrapper_v1_01.sv"/>
-          <Attr Name="ImportTime" Val="1588974774"/>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
       <File Path="$PSRCDIR/sources_1/imports/Downloads/CathodeDriver.sv">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PPRDIR/../../../../Downloads/CathodeDriver.sv"/>
@@ -219,6 +210,24 @@
         <FileInfo>
           <Attr Name="ImportPath" Val="$PPRDIR/../../../../Downloads/one_shot_posneg_v1_01.sv"/>
           <Attr Name="ImportTime" Val="1589760258"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/Timer_Counter_Support/Otter_wrapper_TC_driver_v1_00.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../Downloads/Timer_Counter_Support/Otter_wrapper_TC_driver_v1_00.sv"/>
+          <Attr Name="ImportTime" Val="1590540978"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/Timer_Counter_Support/timer_counter_v1_01.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../../Downloads/Timer_Counter_Support/timer_counter_v1_01.sv"/>
+          <Attr Name="ImportTime" Val="1590540978"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>

@@ -57,8 +57,7 @@ module CSR(
         MEPC      = 12'h341
     } csr_t;
 
-    always_ff @ (posedge CLK)
-    begin
+    always_ff @(posedge CLK) begin
         //- clear registers on reset
 		if (RST) begin
             CSR_MTVEC <= 0;
@@ -67,16 +66,14 @@ module CSR(
         end
        
 	    //- write to registers 
-	    if (WR_EN)
-            case(ADDR)
-                MTVEC: CSR_MTVEC <= WD;    //- vector addr
-                MEPC:  CSR_MEPC  <= WD;    //- return addr
-                MIE:   CSR_MIE   <= WD[0]; //- interrupt enable
-            endcase
+	    if (WR_EN) case(ADDR)
+            MTVEC: CSR_MTVEC <= WD;    //- vector addr
+            MEPC:  CSR_MEPC  <= WD;    //- return addr
+            MIE:   CSR_MIE   <= WD[0]; //- interrupt enable
+        endcase
             
         //- load CSR_MEPC when acting on interrupt 
-		if(INT_TAKEN)
-        begin
+		if (INT_TAKEN) begin
            CSR_MEPC <= PC;
 		   CSR_MIE <= 1'b0; 
         end         
