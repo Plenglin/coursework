@@ -11,46 +11,61 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="889700fs"></ZoomStartTime>
-      <ZoomEndTime time="962601fs"></ZoomEndTime>
-      <Cursor1Time time="924100fs"></Cursor1Time>
+      <ZoomStartTime time="1000fs"></ZoomStartTime>
+      <ZoomEndTime time="14181001fs"></ZoomEndTime>
+      <Cursor1Time time="3881000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="166"></NameColumnWidth>
-      <ValueColumnWidth column_width="104"></ValueColumnWidth>
+      <ValueColumnWidth column_width="92"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="12" />
-   <wvobject type="logic" fp_name="/otter_tb/clk">
-      <obj_property name="ElementShortName">clk</obj_property>
-      <obj_property name="ObjectShortName">clk</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/otter_tb/RST">
-      <obj_property name="ElementShortName">RST</obj_property>
-      <obj_property name="ObjectShortName">RST</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/otter_tb/intr">
-      <obj_property name="ElementShortName">intr</obj_property>
-      <obj_property name="ObjectShortName">intr</obj_property>
+   <WVObjectSize size="10" />
+   <wvobject type="group" fp_name="group171">
+      <obj_property name="label">Externals</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/buttons">
+         <obj_property name="ElementShortName">buttons[4:0]</obj_property>
+         <obj_property name="ObjectShortName">buttons[4:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/switches">
+         <obj_property name="ElementShortName">switches[15:0]</obj_property>
+         <obj_property name="ObjectShortName">switches[15:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/leds">
+         <obj_property name="ElementShortName">leds[15:0]</obj_property>
+         <obj_property name="ObjectShortName">leds[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/segs">
+         <obj_property name="ElementShortName">segs[7:0]</obj_property>
+         <obj_property name="ObjectShortName">segs[7:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/an">
+         <obj_property name="ElementShortName">an[3:0]</obj_property>
+         <obj_property name="ObjectShortName">an[3:0]</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject type="group" fp_name="group84">
       <obj_property name="label">IO Bus</obj_property>
       <obj_property name="DisplayName">label</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject type="array" fp_name="/otter_tb/iobus_in">
-         <obj_property name="ElementShortName">iobus_in[31:0]</obj_property>
-         <obj_property name="ObjectShortName">iobus_in[31:0]</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/otter_tb/iobus_addr">
+      <wvobject type="array" fp_name="/otter_tb/my_otter/iobus_addr">
          <obj_property name="ElementShortName">iobus_addr[31:0]</obj_property>
          <obj_property name="ObjectShortName">iobus_addr[31:0]</obj_property>
       </wvobject>
-      <wvobject type="array" fp_name="/otter_tb/iobus_out">
-         <obj_property name="ElementShortName">iobus_out[31:0]</obj_property>
-         <obj_property name="ObjectShortName">iobus_out[31:0]</obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/iobus_in">
+         <obj_property name="ElementShortName">iobus_in[31:0]</obj_property>
+         <obj_property name="ObjectShortName">iobus_in[31:0]</obj_property>
       </wvobject>
-      <wvobject type="logic" fp_name="/otter_tb/iobus_wr">
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/iobus_wr">
          <obj_property name="ElementShortName">iobus_wr</obj_property>
          <obj_property name="ObjectShortName">iobus_wr</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/iobus_out">
+         <obj_property name="ElementShortName">iobus_out[31:0]</obj_property>
+         <obj_property name="ObjectShortName">iobus_out[31:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject type="group" fp_name="group85">
@@ -82,12 +97,6 @@
       <wvobject type="logic" fp_name="/otter_tb/my_otter/mem_rden2">
          <obj_property name="ElementShortName">mem_rden2</obj_property>
          <obj_property name="ObjectShortName">mem_rden2</obj_property>
-      </wvobject>
-      <wvobject type="array" fp_name="/otter_tb/my_otter/mem/MEM_ADDR1">
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">MEM_ADDR1[13:0]</obj_property>
-         <obj_property name="ObjectShortName">MEM_ADDR1[13:0]</obj_property>
-         <obj_property name="label">PC</obj_property>
       </wvobject>
       <wvobject type="array" fp_name="/otter_tb/my_otter/ir">
          <obj_property name="ElementShortName">ir[31:0]</obj_property>
@@ -306,7 +315,6 @@
    <wvobject type="group" fp_name="group211">
       <obj_property name="label">ALU</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject type="array" fp_name="/otter_tb/my_otter/alu_fun">
          <obj_property name="ElementShortName">alu_fun[3:0]</obj_property>
          <obj_property name="ObjectShortName">alu_fun[3:0]</obj_property>
