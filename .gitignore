@@ -85,6 +85,7 @@
 !*.elf
 !*.bmm
 !*.xmp
+!*.asm
 
 xsim
 *.cache/*
