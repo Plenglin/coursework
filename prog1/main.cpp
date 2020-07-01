@@ -14,6 +14,7 @@ struct tagBITMAPFILEHEADER
     WORD bfReserved2; //reserved; must be 0
     DWORD bfOffBits; //species the offset in bytes from the bitmapfileheader to the bitmap bits
 };
+
 struct tagBITMAPINFOHEADER
 {
     DWORD biSize; //specifies the number of bytes required by the struct
@@ -29,17 +30,36 @@ struct tagBITMAPINFOHEADER
     DWORD biClrImportant; //number of colors that are important
 };
 
-class Bitmap {
-private:
-    tagBITMAPFILEHEADER file_header;
-    tagBITMAPINFOHEADER info_header;
+class Image {
 public:
-    Bitmap(std::string path) {
-        std::ifstream file(path);
-        file.read(file_header.bfType, sizeof(file_header.bfType));
+    const int width;
+    const int height;
+    const char *pixel_data;
+
+    Image(int width, int height) : width(width), height(height), pixel_data(new char[width * height * 3]) {
+
+    }
+
+    ~Image() {
+        delete pixel_data;
     }
 };
 
-int main() {
 
+Image *read_bitmap(std::string path) {
+    tagBITMAPFILEHEADER file_header = {0};
+    tagBITMAPINFOHEADER info_header = {0};
+    std::ifstream file(path, std::ifstream::binary);  // gets auto-closed when destroyed
+    file.read((char*) &file_header, 14);
+    file.read((char*) &info_header.biSize, 4);
+    file.read(((char*) &info_header.biSize) + 4, info_header.biSize - 4);
+
+    Image *image = new Image(info_header.biWidth, info_header.biHeight);
+    file.read(image->pixel_data, info_header.biSizeImage);
+    return image;
+}
+
+int main() {
+    Image *img = read_bitmap("prog1/flowers.bmp");
+    std::cout << 3;
 }
