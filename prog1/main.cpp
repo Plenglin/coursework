@@ -45,6 +45,7 @@ FloatColor color_to_float(Color color) {
     out.r = float(color.r & 0xff);
     out.g = float(color.g & 0xff);
     out.b = float(color.b & 0xff);
+    return out;
 }
 
 Color floatcolor_to_color(FloatColor color) {
@@ -67,13 +68,20 @@ float interp(float t, float a, float b) {
 }
 
 FloatColor interp(float t, FloatColor a, FloatColor b) {
-    return {interp(t, a.r, b.r), interp(t, a.g, b.g), interp(t, a.b, b.b)};
+    FloatColor out;
+    out.r = interp(t, a.r, b.r);
+    out.g = interp(t, a.g, b.g);
+    out.b = interp(t, a.b, b.b);
+    return out;
 }
 
 void print_color(Color color) {
     std::cout << "rgb(" << (color.r & 0xff) << "," << (color.g & 0xff) << "," << (color.b & 0xff) << ")";
 }
 
+/**
+ * Class for easily accessing pixels.
+ */
 class Image {
 public:
     const int width;
@@ -90,7 +98,7 @@ public:
     { }
 
     Color *get_pixel(int x, int y) {
-        return (Color*)(pixel_data + (height - y + 1) * row_size + 3 * x);
+        return (Color*)(pixel_data + y * row_size + 3 * x);
     }
 
     FloatColor get_pixel_float(int x, int y) {
@@ -117,26 +125,48 @@ public:
     }
 };
 
-Image *read_bitmap(std::string path) {
-    tagBITMAPFILEHEADER file_header = {0};
-    tagBITMAPINFOHEADER info_header = {0};
-    std::ifstream file(path, std::ifstream::binary);  // gets auto-closed when destroyed
-    file.read((char*) &file_header, 14);
-    file.read((char*) &info_header.biSize, 4);
-    file.read(((char*) &info_header.biSize) + 4, info_header.biSize - 4);
+struct BitmapData {
+    tagBITMAPFILEHEADER file_header;
+    tagBITMAPINFOHEADER info_header;
+    Image *image;
+};
 
-    Image *image = new Image(info_header.biWidth, info_header.biHeight, info_header.biSizeImage);
-    file.read(image->pixel_data, info_header.biSizeImage);
-    return image;
+BitmapData read_bitmap(std::string path) {
+    BitmapData out;
+    out.info_header = {0};  // zeros
+    
+    std::ifstream file(path, std::ifstream::binary);  // gets auto-closed when destroyed
+
+    // Read the file header
+    file.read((char*) &out.file_header, 14);
+
+    // Read the info header size
+    file.read((char*) &out.info_header.biSize, 4);
+
+    // Read the rest of the info header
+    file.read(((char*) &out.info_header.biSize) + 4, out.info_header.biSize - 4);
+
+    // Read the pixels
+    out.image = new Image(out.info_header.biWidth, out.info_header.biHeight, out.info_header.biSizeImage);
+    file.read(out.image->pixel_data, out.info_header.biSizeImage);
+    return out;
+}
+
+void write_bitmap(BitmapData *data, std::string path) {
+    std::ofstream file(path, std::ofstream::binary);  // gets auto-closed when destroyed
+
+    file.write((char*) &data->file_header, 14);
+    file.write((char*) &data->info_header, data->info_header.biSize);
+    file.write(data->image->pixel_data, data->info_header.biSizeImage);
 }
 
 /**
  * Blend 2 images together and write the output to the first image.
  */
 void blend_images(Image *img_a, Image *img_b, float factor) {
-    float x_scale = img_b->width / img_a->width;
-    float y_scale = img_b->height / img_a->height;
-    
+    float x_scale = (float) img_b->width / img_a->width;
+    float y_scale = (float) img_b->height / img_a->height;
+
     for (int y = 0; y < img_a->height; y++) {
         for (int x = 0; x < img_a->width; x++) {
             float bx = x * x_scale;
@@ -152,6 +182,23 @@ void blend_images(Image *img_a, Image *img_b, float factor) {
 }
 
 int main() {
-    Image *img_a = read_bitmap("prog1/flowers.bmp");
-    Image *img_b = read_bitmap("prog1/jar.bmp");
+    BitmapData loaded_a = read_bitmap("prog1/tunnel.bmp");
+    BitmapData loaded_b = read_bitmap("prog1/jar.bmp");
+
+    BitmapData *img_larger = &loaded_a;
+    BitmapData *img_smaller = &loaded_b;
+
+    if (loaded_a.info_header.biSizeImage < loaded_b.info_header.biSizeImage) {
+        auto tmp = img_larger;
+        img_larger = img_smaller;
+        img_smaller = tmp;
+    }
+
+    std::cout << "Dimensions of a: " << img_larger->image->width << "x" << img_larger->image->height << std::endl;
+    std::cout << "Dimensions of b: " << img_smaller->image->width << "x" << img_smaller->image->height << std::endl;
+
+    blend_images(img_larger->image, img_smaller->image, 0.7);
+    write_bitmap(img_larger, "prog1/out.bmp");
+
+    return 0;
 }
