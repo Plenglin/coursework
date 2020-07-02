@@ -75,12 +75,8 @@ FloatColor interp(float t, FloatColor a, FloatColor b) {
     return out;
 }
 
-void print_color(Color color) {
-    std::cout << "rgb(" << (color.r & 0xff) << "," << (color.g & 0xff) << "," << (color.b & 0xff) << ")";
-}
-
 /**
- * Class for easily accessing pixels.
+ * Class for easily accessing pixels from a bitmap pixel array.
  */
 class Image {
 public:
@@ -125,10 +121,17 @@ public:
     }
 };
 
+/**
+ * Holds all the useful data from a bitmap together.
+ */
 struct BitmapData {
     tagBITMAPFILEHEADER file_header;
     tagBITMAPINFOHEADER info_header;
     Image *image;
+
+    ~BitmapData() {
+        delete image;
+    }
 };
 
 BitmapData read_bitmap(std::string path) {
@@ -182,18 +185,20 @@ void blend_images(Image *img_a, Image *img_b, float factor) {
 }
 
 void blend_images_from_path(std::string path_a, std::string path_b, std::string path_out, float factor) {
+    // Load images into memory
     BitmapData loaded_a = read_bitmap(path_a);
     BitmapData loaded_b = read_bitmap(path_b);
 
+    // Pick the larger and smaller images
     BitmapData *img_larger = &loaded_a;
     BitmapData *img_smaller = &loaded_b;
-
     if (loaded_a.info_header.biSizeImage < loaded_b.info_header.biSizeImage) {
         auto tmp = img_larger;
         img_larger = img_smaller;
         img_smaller = tmp;
     }
 
+    // Blend together and write
     blend_images(img_larger->image, img_smaller->image, factor);
     write_bitmap(img_larger, path_out);
 }
@@ -217,8 +222,8 @@ int main(int argc, char *argv[]) {
     std::string path_b = argv[2];
     float factor;
     try {
-        factor = std::stod(argv[3]);
-    } catch(std::exception& ia) {
+        factor = std::stof(argv[3]);
+    } catch(std::invalid_argument& ia) {
         std::cout << "Error: Invalid factor. Factor must be a decimal." << std::endl << std::endl;
         print_help_text(exec);
         return 2;
