@@ -84,7 +84,7 @@ public:
     const int height;
     const int row_size;
     FloatColor *pixels;
-    char * const pixel_data;
+    char * const pixel_data = NULL;
 
     Image(int width, int height, int pixels_size) : 
         width(width), 
@@ -117,7 +117,9 @@ public:
     }
 
     ~Image() {
-        delete pixel_data;
+        if (pixel_data != NULL) {
+            delete pixel_data;            
+        }
     }
 };
 
@@ -127,10 +129,22 @@ public:
 struct BitmapData {
     tagBITMAPFILEHEADER file_header;
     tagBITMAPINFOHEADER info_header;
-    Image *image;
+    Image *image = NULL;
 
     ~BitmapData() {
-        delete image;
+        if (image != NULL) {
+            delete image;
+        }
+    }
+};
+
+struct FileOpenException : public std::exception
+{
+    std::string path;
+
+	const char * what () const throw ()
+    {
+    	return "Error opening file";
     }
 };
 
@@ -138,7 +152,13 @@ BitmapData read_bitmap(std::string path) {
     BitmapData out;
     out.info_header = {0};  // zeros
     
-    std::ifstream file(path, std::ifstream::binary);  // gets auto-closed when destroyed
+    std::ifstream file(path);  // gets auto-closed when destroyed
+
+    if (!file.is_open()) {
+        FileOpenException e;
+        e.path = path;
+        throw e;
+    }
 
     // Read the file header
     file.read((char*) &out.file_header, 14);
@@ -215,6 +235,7 @@ void print_help_text(std::string exec) {
 int main(int argc, char *argv[]) {
     std::string exec = argv[0];
     if (argc != 5) {
+        std::cout << "Error: Invalid arguments." << std::endl << std::endl;
         print_help_text(exec);
         return 1;
     }
@@ -223,13 +244,19 @@ int main(int argc, char *argv[]) {
     float factor;
     try {
         factor = std::stof(argv[3]);
-    } catch(std::invalid_argument& ia) {
+    } catch (std::invalid_argument& e) {
         std::cout << "Error: Invalid factor. Factor must be a decimal." << std::endl << std::endl;
         print_help_text(exec);
         return 2;
     }
     std::string path_out = argv[4];
 
-    blend_images_from_path(path_a, path_b, path_out, factor);
+    try {
+        blend_images_from_path(path_a, path_b, path_out, factor);
+    } catch (FileOpenException &e) {
+        std::cout << "Error: Could not open file " << e.path << std::endl << std::endl;
+        print_help_text(exec);
+        return 3;
+    }
     return 0;
 }
