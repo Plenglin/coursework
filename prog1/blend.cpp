@@ -181,9 +181,9 @@ void blend_images(Image *img_a, Image *img_b, float factor) {
     }
 }
 
-int main() {
-    BitmapData loaded_a = read_bitmap("prog1/tunnel.bmp");
-    BitmapData loaded_b = read_bitmap("prog1/jar.bmp");
+void blend_images_from_path(std::string path_a, std::string path_b, std::string path_out, float factor) {
+    BitmapData loaded_a = read_bitmap(path_a);
+    BitmapData loaded_b = read_bitmap(path_b);
 
     BitmapData *img_larger = &loaded_a;
     BitmapData *img_smaller = &loaded_b;
@@ -194,11 +194,37 @@ int main() {
         img_smaller = tmp;
     }
 
-    std::cout << "Dimensions of a: " << img_larger->image->width << "x" << img_larger->image->height << std::endl;
-    std::cout << "Dimensions of b: " << img_smaller->image->width << "x" << img_smaller->image->height << std::endl;
+    blend_images(img_larger->image, img_smaller->image, factor);
+    write_bitmap(img_larger, path_out);
+}
 
-    blend_images(img_larger->image, img_smaller->image, 0.7);
-    write_bitmap(img_larger, "prog1/out.bmp");
+void print_help_text(std::string exec) {
+    std::cout << "Usage: " << exec << " <first> <second> <factor> <output>" << std::endl << std::endl
+              << "  first, second       the input images" << std::endl
+              << "  factor              a number describing how much of each to blend together, " << std::endl
+              << "                      preferably within [0, 1]. Use factors outside of [0, 1] " << std::endl
+              << "                      at your own risk." << std::endl
+              << "  output              where to write the output" << std::endl;
+}
 
+int main(int argc, char *argv[]) {
+    std::string exec = argv[0];
+    if (argc != 5) {
+        print_help_text(exec);
+        return 1;
+    }
+    std::string path_a = argv[1];
+    std::string path_b = argv[2];
+    float factor;
+    try {
+        factor = std::stod(argv[3]);
+    } catch(std::exception& ia) {
+        std::cout << "Error: Invalid factor. Factor must be a decimal." << std::endl << std::endl;
+        print_help_text(exec);
+        return 2;
+    }
+    std::string path_out = argv[4];
+
+    blend_images_from_path(path_a, path_b, path_out, factor);
     return 0;
 }
