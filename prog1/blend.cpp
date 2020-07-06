@@ -93,15 +93,24 @@ public:
         pixel_data(new char[pixels_size]) 
     { }
 
+    /**
+     * Returns a pointer to the pixel position.
+     */
     Color *get_pixel(int x, int y) {
         return (Color*)(pixel_data + y * row_size + 3 * x);
     }
 
+    /**
+     * Convenience function for reading a pixel and converting to a float.
+     */
     FloatColor get_pixel_float(int x, int y) {
         Color color = *get_pixel(x, y);
         return color_to_float(color);
     }
 
+    /**
+     * Interpolate the pixels at the given spot
+     */
     FloatColor interp_pixel(float x, float y) {
         int x0 = int(x);
         int y0 = int(y);
@@ -210,12 +219,14 @@ void blend_images_from_path(std::string path_a, std::string path_b, std::string 
     BitmapData loaded_b = read_bitmap(path_b);
 
     // Pick the larger and smaller images
-    BitmapData *img_larger = &loaded_a;
-    BitmapData *img_smaller = &loaded_b;
-    if (loaded_a.info_header.biSizeImage < loaded_b.info_header.biSizeImage) {
-        auto tmp = img_larger;
-        img_larger = img_smaller;
-        img_smaller = tmp;
+    BitmapData *img_larger;
+    BitmapData *img_smaller;
+    if (loaded_a.info_header.biWidth > loaded_b.info_header.biWidth) { 
+        img_larger = &loaded_a;
+        img_smaller = &loaded_b;
+    } else {
+        img_larger = &loaded_b;
+        img_smaller = &loaded_a;
     }
 
     // Blend together and write
