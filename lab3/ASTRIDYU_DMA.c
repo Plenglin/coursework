@@ -55,7 +55,7 @@ void initialize() {
 unsigned char* mymalloc(int size) {
     for (chunkhead *chunk = (chunkhead*) myheap; chunk != NULL; chunk = chunk->next) {
         // Is the chunk open, and will this size fit in this chunk?
-        if (chunk->info && size <= chunk->size) {
+        if (!chunk->info && size <= chunk->size) {
             // # of pages to allocate. ceil((chunkhead size + allocation size) / heap size)
             int n_alloc_pages = (sizeof(chunkhead) + size + HEAPSIZE - 1) / HEAPSIZE;
 
@@ -74,8 +74,8 @@ unsigned char* mymalloc(int size) {
                 }
             } else {
                 // We are at the program break. Get the new program break location.
-                chunkhead *new_brk = (chunkhead*) ((unsigned char*)chunk + n_alloc_pages * PAGESIZE);
-                //create_program_break(new_brk, chunk);
+                unsigned char* new_brk = ((unsigned char*)chunk + n_alloc_pages * PAGESIZE);
+                create_program_break(new_brk, chunk);
             }
             return (unsigned char*)chunk + sizeof(chunkhead);
         }
