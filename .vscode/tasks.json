@@ -26,6 +26,24 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: gcc build active file",
+            "command": "/usr/bin/gcc",
+            "args": [
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
         }
     ]
 }

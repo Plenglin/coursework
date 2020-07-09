@@ -28,10 +28,11 @@ struct tagBITMAPINFOHEADER {
     DWORD biClrImportant; //number of colors that are important
 };
 
+// This is the order of how colors are stored.
 struct Color {
-    char b;
-    char g; 
-    char r;
+    unsigned char b;
+    unsigned char g; 
+    unsigned char r;
 };
 
 struct FloatColor {
@@ -76,14 +77,13 @@ FloatColor interp(float t, FloatColor a, FloatColor b) {
 }
 
 /**
- * Class for easily accessing pixels from a bitmap pixel array.
+ * Class for accessing pixels from a bitmap pixel array.
  */
 class Image {
 public:
     const int width;
     const int height;
     const int row_size;
-    FloatColor *pixels;
     char * const pixel_data = NULL;
 
     Image(int width, int height, int pixels_size) : 
@@ -94,7 +94,7 @@ public:
     { }
 
     /**
-     * Returns a pointer to the pixel position.
+     * Returns a pointer to the pixel at the requested position.
      */
     Color *get_pixel(int x, int y) {
         return (Color*)(pixel_data + y * row_size + 3 * x);
@@ -175,7 +175,7 @@ BitmapData read_bitmap(std::string path) {
     // Read the info header size
     file.read((char*) &out.info_header.biSize, 4);
 
-    // Read the rest of the info header
+    // Read the rest of the info header, sized based on the header size
     file.read(((char*) &out.info_header.biSize) + 4, out.info_header.biSize - 4);
 
     // Read the pixels
