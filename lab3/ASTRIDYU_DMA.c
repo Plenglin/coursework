@@ -17,13 +17,13 @@ void create_chunk(chunkhead *chunk, int pages_count, chunkhead *prev, chunkhead 
     chunk->size = pages_count * PAGESIZE - sizeof(chunkhead);
     chunk->info = 0;
 
-    chunk->prev = NULL;
+    chunk->prev = prev;
     if (prev != NULL) {
         prev->next = chunk;
     }
 
     chunk->next = next;
-    if (next != NULL) {
+    if (next != NULL && (unsigned char*)next > myheap + HEAPSIZE) {
         next->prev = chunk;
     }
 }
@@ -59,7 +59,7 @@ unsigned char* mymalloc(int size) {
             // # of pages to allocate. ceil((chunkhead size + allocation size) / heap size)
             int n_alloc_pages = (sizeof(chunkhead) + size + HEAPSIZE - 1) / HEAPSIZE;
 
-            chunk->size = n_alloc_pages * HEAPSIZE - sizeof(chunkhead);
+            chunk->size = n_alloc_pages * PAGESIZE - sizeof(chunkhead);
             chunk->info = 1;
 
             // Is this before the program break?
@@ -84,13 +84,45 @@ unsigned char* mymalloc(int size) {
 }
 
 void myfree(unsigned char *addr) {
+    chunkhead *chunk = (chunkhead*)(addr - sizeof(chunkhead));
+    
+    // Bounds of the new free space, including chunkhead. Start inclusive, end exclusive.
+    unsigned char *start, *end;
 
+    if (chunk->prev != NULL) {
+        start = (unsigned char*)chunk->prev;
+
+        // Exclude the chunk if it's full
+        if (chunk->prev->info == 1) {
+            start += sizeof(chunkhead) + chunk->prev->size;
+        }
+    } else {
+        start = (unsigned char*)chunk;
+    }
+
+    if (chunk->next != NULL) {
+        end = (unsigned char*)chunk->next;
+
+        // Include the chunk if it's empty
+        if (chunk->next->info == 0) {
+            end += sizeof(chunkhead) + chunk->next->size;
+        }
+    } else {
+        end = addr + chunk->size;
+    }
+
+    chunkhead *prev = (chunkhead*) start;
+    chunkhead *next = (chunkhead*) end;
+
+    int n_pages = (end - start) / PAGESIZE;
+    create_chunk((chunkhead*) start, n_pages, prev, next);
 }
 
 void analyse() {
     int n = 0;
     for (chunkhead *chunk = (chunkhead*) myheap; chunk != NULL; chunk = chunk->next) {
         printf("chunk %d:\n", n);
+        printf("- loc: %p\n", chunk);
         printf("- size: %d\n", chunk->size);
         printf("- info: %d\n", chunk->info);
         printf("- prev: %p\n", chunk->prev);
@@ -105,9 +137,10 @@ int main() {
 
     unsigned char *a, *b, *c;
     a = mymalloc(1000);
-    b = mymalloc(1000);
+    b = mymalloc(2000);
     c = mymalloc(1000);
     myfree(b);
+    analyse();
     myfree(a);
     analyse();
 
