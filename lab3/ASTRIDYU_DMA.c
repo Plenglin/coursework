@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <assert.h>  // for testing purposes only. not used in actual code
 
 #define PAGESIZE 1024
 #define HEAPSIZE PAGESIZE * 16 //1048576
@@ -14,6 +14,9 @@ typedef struct chunkhead {
 unsigned char myheap[HEAPSIZE];
 int program_break_offset = 0;
 
+/**
+ * Create the last node at the given location.
+ */
 void create_program_break(unsigned char *loc, chunkhead *prev) {
     unsigned long count = myheap + HEAPSIZE - loc;
     unsigned long n_pages_left = count / PAGESIZE;
@@ -34,6 +37,9 @@ void create_program_break(unsigned char *loc, chunkhead *prev) {
     }
 }
 
+/**
+ * Create a node and automatically link it with prev and next.
+ */
 void create_chunk(chunkhead *chunk, int pages_count, chunkhead *prev, chunkhead *next) {
     chunk->size = pages_count * PAGESIZE - sizeof(chunkhead);
     chunk->info = 0;
@@ -49,6 +55,9 @@ void create_chunk(chunkhead *chunk, int pages_count, chunkhead *prev, chunkhead 
     }
 }
 
+/**
+ * Sets the memory into a state such that it is completely free.
+ */
 void initialize() {
     create_program_break(myheap, NULL);
 }
@@ -64,7 +73,11 @@ unsigned char* mymalloc(int size) {
             chunk->info = 1;
 
             // Is this before the program break?
-            if (chunk->next != NULL) {
+            if (chunk->next == NULL) {
+                // We are at the program break. Get the new program break location.
+                unsigned char* new_brk = ((unsigned char*)chunk + n_alloc_pages * PAGESIZE);
+                create_program_break(new_brk, chunk);
+            } else {
                 unsigned long n_between_pages = ((unsigned long)(chunk->next) - (unsigned long)chunk) / PAGESIZE - n_alloc_pages;
 
                 // Can another chunk fit between this and the next chunk, post-allocation?
@@ -73,10 +86,6 @@ unsigned char* mymalloc(int size) {
                     chunkhead *between = (chunkhead*) ((unsigned char*)chunk + n_between_pages * PAGESIZE);
                     create_chunk(between, n_between_pages, chunk, chunk->next);
                 }
-            } else {
-                // We are at the program break. Get the new program break location.
-                unsigned char* new_brk = ((unsigned char*)chunk + n_alloc_pages * PAGESIZE);
-                create_program_break(new_brk, chunk);
             }
             return (unsigned char*)chunk + sizeof(chunkhead);
         }
@@ -138,6 +147,8 @@ void analyse() {
     putchar('\n');
 }
 
+///////////// DEBUGGING FUNCTIONS FOR TESTS ///////////////
+
 int get_n_chunks() {
     int n = 0;
     chunkhead *chunk = (chunkhead*) myheap;
@@ -161,7 +172,7 @@ chunkhead* get_chunk_of(unsigned char *p) {
     return (chunkhead*) (p - sizeof(chunkhead));
 }
 
-int main() {
+void run_tests() {
     initialize();
     assert(get_managed_chunk(0)->info == 0);
     assert(get_managed_chunk(0)->size == HEAPSIZE - sizeof(chunkhead));
@@ -275,6 +286,19 @@ int main() {
     assert(get_managed_chunk(9)->size == PAGESIZE - sizeof(chunkhead));
     assert(get_managed_chunk(10)->info == 1);
     assert(get_managed_chunk(10)->size == PAGESIZE - sizeof(chunkhead));
+}
+
+int main() {
+    run_tests();
+
+    initialize();
+    unsigned char *a, *b, *c;
+    a = mymalloc(1000);
+    b = mymalloc(1000);
+    c = mymalloc(1000);
+    myfree(b);
+    myfree(a);
+    analyse();
 
     return 0;
 }
