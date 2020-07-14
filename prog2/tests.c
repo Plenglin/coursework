@@ -51,6 +51,7 @@ int main() {
         a[i] = mymalloc(1000);
     }
     
+    assert(get_n_chunks() == 5);
     assert(get_managed_chunk(0)->info);
     assert(get_managed_chunk(1)->info);
     assert(get_managed_chunk(2)->info);
@@ -61,9 +62,9 @@ int main() {
     for (int i = 0; i < 5; i++) {
         myfree(a[i]);
     }
-    analyse();
 
     assert_no_dangling_pointers();
+    assert(first_chunk == sbrk(0));
     assert(get_n_chunks() == 0);
 
     reset_memory();
@@ -79,6 +80,7 @@ int main() {
     assert(get_n_chunks() == 4);
     
     myfree(a[3]);
+    analyse();
     assert_no_dangling_pointers();
     assert(get_n_chunks() == 4);
     

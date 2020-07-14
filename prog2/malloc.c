@@ -89,8 +89,8 @@ void delete_free_chunk(chunkhead *chunk) {
     chunk->next_free->prev_free = chunk->prev_free;
 }
 
-bool is_heap_empty() {
-    return first_chunk == sbrk(0);
+byte is_heap_empty() {
+    return first_chunk == sbrk(0) || first_chunk == NULL;
 }
 
 byte* mymalloc(int size) {
@@ -153,7 +153,7 @@ void myfree(byte *addr) {
     // Start inclusive
     chunkhead *start_chunk;
     byte should_add_to_list = 0;
-    if (chunk->prev == NULL) {  // We're at the heap start
+    if (chunk->prev == NULL) {  // We're freeing the first chunk
         start_chunk = chunk;
     } else {
         start_chunk = chunk->prev;
@@ -164,34 +164,41 @@ void myfree(byte *addr) {
         }
     }
 
-    char *end;
+    chunkhead *end;
     byte should_change_brk = 0;
-    if (chunk->next == NULL) {
+    if (chunk->next == NULL) {  // Are we freeing the last chunk?
         should_change_brk = 1;
     } else {
         // End exclusive
-        end = (char*)chunk->next;
+        end = chunk->next;
 
-        // Include the next chunk if it's empty
+        // Include the next chunk if next is empty
         if (chunk->next->info == 0) {
-            end += chunk->next->size;
+            end = (chunkhead*) ((char*)end + end->size);
+        }
+
+        // Will we be freeing up to the break?
+        if (end == sbrk(0)) {
+            should_change_brk = 1;
         }
     }
 
-    size_t free_space_size = end - (char*)start_chunk;
-
     if (should_change_brk) {
+        // Designate the chunk before this as the last chunk
+        if (start_chunk->prev != NULL) {
+            start_chunk->prev->next = NULL;
+        }
         brk(start_chunk);
         return;
     }
 
-    chunkhead *next = (chunkhead*) end;
-    set_chunk(start_chunk, free_space_size, start_chunk->prev, next, 0);
+    size_t free_space_size = (char*)end - (char*)start_chunk;
+    set_chunk(start_chunk, free_space_size, start_chunk->prev, end, 0);
 }
 
 void analyse() {
     if (is_heap_empty()) {
-        printf("(empty heap)\n");
+        //printf("(empty heap)\n");
         return;
     }
     int n = 0;
