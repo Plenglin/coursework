@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>  // for testing purposes only. not used in actual code
 
 #define PAGESIZE 1024
 #define HEAPSIZE PAGESIZE * 16 //1048576
@@ -11,7 +10,7 @@ typedef struct chunkhead {
     chunkhead *next, *prev;
 } chunkhead;
 
-unsigned char myheap[HEAPSIZE];
+unsigned char myheap = NULL;
 int program_break_offset = 0;
 
 /**
@@ -59,6 +58,7 @@ void create_chunk(chunkhead *chunk, int pages_count, chunkhead *prev, chunkhead 
  * Sets the memory into a state such that it is completely free.
  */
 void initialize() {
+    myheap = sbrk();
     create_program_break(myheap, NULL);
 }
 

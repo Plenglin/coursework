@@ -1,3 +1,6 @@
+// Unit tests!
+
+#include <assert.h>
 #include "./malloc.c"
 
 int main() {
