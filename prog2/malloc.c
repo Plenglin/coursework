@@ -23,9 +23,9 @@ chunkhead free_list = {NULL, NULL, &free_list, &free_list, 0, 0};  // sentinel n
 /**
  * Create a node and automatically link it with prev and next.
  */
-void set_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next) {
+void set_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next, byte info) {
     chunk->size = size;
-    chunk->info = 0;
+    chunk->info = info;
 
     chunk->prev = prev;
     if (prev != NULL) {
@@ -59,16 +59,19 @@ void delete_free_chunk(chunkhead *chunk) {
     chunk->next_free->prev_free = chunk->prev_free;
 }
 
+bool is_heap_empty() {
+    return first_chunk == program_break;
+}
+
 byte* mymalloc(int size) {
     // How much space the chunk would take up in memory
     int actual_size = ((sizeof(chunkhead) + size + PAGESIZE - 1) / PAGESIZE) * PAGESIZE;
 
-    // The heap size is 0
-    if (first_chunk == program_break) {
+    if (is_heap_empty()) {
         first_chunk = (chunkhead*)sbrk(actual_size);
         last_chunk = first_chunk;
         program_break = sbrk(0);
-        set_chunk(first_chunk, actual_size, NULL, NULL);
+        set_chunk(first_chunk, actual_size, NULL, NULL, 1);
         return (byte*)first_chunk + sizeof(chunkhead);
     }
 
@@ -90,7 +93,7 @@ byte* mymalloc(int size) {
     // No open chunks! Push the program break forward
     if (best_fit == NULL) {
         chunkhead *new_chunk = (chunkhead*)sbrk(actual_size);
-        set_chunk(new_chunk, actual_size, last_chunk, NULL);
+        set_chunk(new_chunk, actual_size, last_chunk, NULL, 1);
         last_chunk = new_chunk;
         program_break = (char*)new_chunk + actual_size;
         return (byte*)new_chunk + sizeof(chunkhead);
@@ -110,7 +113,7 @@ byte* mymalloc(int size) {
     if (between_size > 0) {
         // Create that in-between chunk.
         chunkhead *between = (chunkhead*) ((char*)best_fit + actual_size);
-        set_chunk(between, between_size, best_fit, best_fit->next);
+        set_chunk(between, between_size, best_fit, best_fit->next, 0);
         add_free_chunk(between);
     }
     return (byte*)best_fit + sizeof(chunkhead);
@@ -119,31 +122,10 @@ byte* mymalloc(int size) {
 void myfree(byte *addr) {
     chunkhead *chunk = (chunkhead*)(addr - sizeof(chunkhead));
 
-    // Is this the very last chunk?
-    if (chunk->next == NULL) {
-        // delet this
-        last_chunk = chunk->prev;
-        if (chunk->prev != NULL) {
-            chunk->prev->next = NULL;
-        }
-        sbrk(-chunk->size);
-        return;
-    }
-    
-    // Determine the bounds of the new free space.
-
-    // End exclusive
-    char *end = (char*)chunk->next;
-
-    // Include the next chunk if it's empty
-    if (chunk->next->info == 0) {
-        end += chunk->next->size;
-    }
-
     // Start inclusive
     chunkhead *start_chunk;
     byte should_add_to_list = 0;
-    if (chunk->prev == NULL) {
+    if (chunk->prev == NULL) {  // We're at the heap start
         start_chunk = chunk;
     } else {
         start_chunk = chunk->prev;
@@ -151,15 +133,40 @@ void myfree(byte *addr) {
         // Exclude the previous chunk if it's full
         if (chunk->prev->info == 1) {
             start_chunk = (chunkhead*)((char*)start_chunk + chunk->prev->size);
-            add_free_chunk(start_chunk);
         }
     }
 
+    char *end;
+    byte should_change_brk = 0;
+    if (chunk->next == NULL) {
+        should_change_brk = 1;
+    } else {
+        // End exclusive
+        end = (char*)chunk->next;
+
+        // Include the next chunk if it's empty
+        if (chunk->next->info == 0) {
+            end += chunk->next->size;
+        }
+    }
+
+    size_t free_space_size = end - (char*)start_chunk;
+
+    if (should_change_brk) {
+        brk(start_chunk);
+        program_break = start_chunk;
+        return;
+    }
+
     chunkhead *next = (chunkhead*) end;
-    set_chunk(start_chunk, end - (char*)start_chunk, start_chunk->prev, next);
+    set_chunk(start_chunk, free_space_size, start_chunk->prev, next, 0);
 }
 
 void analyse() {
+    if (is_heap_empty()) {
+        printf("(empty heap)\n");
+        return;
+    }
     int n = 0;
     for (chunkhead *chunk = first_chunk; chunk != NULL; chunk = chunk->next) {
         printf("chunk %d:\n", n);
@@ -187,29 +194,4 @@ void analyse_free() {
         n++;
     }
     putchar('\n');
-}
-
-///////////// DEBUGGING FUNCTIONS FOR TESTS ///////////////
-
-int get_n_chunks() {
-    int n = 0;
-    chunkhead *chunk = first_chunk;
-    while (chunk != NULL) {
-        chunk = chunk->next;
-        n++;
-    }
-    return n;
-}
-
-chunkhead* get_managed_chunk(int i) {
-    if (i < 0) i += get_n_chunks();
-    chunkhead *chunk = first_chunk;
-    while (i > 0) {
-        chunk = chunk->next;
-        i--;
-    }
-    return chunk;
-}
-chunkhead* get_chunk_of(unsigned char *p) {
-    return (chunkhead*) (p - sizeof(chunkhead));
 }
