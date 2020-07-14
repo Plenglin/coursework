@@ -7,18 +7,49 @@
 typedef unsigned int byte;
 
 typedef struct chunkhead {
-    chunkhead *next, *prev, *next_free, *prev_free;
+    /**
+     * The chunk placed physically after this, or NULL if this is the last chunk.
+     */
+    chunkhead *next;
+    
+    /**
+     * The chunk placed physically before this, or NULL if this is the first chunk.
+     */
+    chunkhead *prev;
+
+    /**
+     * The next free node in the free node linked list. Never NULL.
+     */
+    chunkhead *next_free;
+
+    /**
+     * The previous free node in the free node linked list. Never NULL.
+     */
+    chunkhead *prev_free;
+
     /**
      * The size of this chunk, INCLUDING the chunkhead.
      */
     size_t size;
+
+    /**
+     * 1 if occupied, 0 if free.
+     */
     byte info;
 } chunkhead;
 
 chunkhead *first_chunk = NULL;
 chunkhead *last_chunk = NULL;
 void *program_break = NULL;
-chunkhead free_list = {NULL, NULL, &free_list, &free_list, 0, 0};  // sentinel node
+
+/**
+ * A doubly-linked list containing all the free chunks currently in the memory management system.
+ * If there were more random accesses and random-sized malloc()'s then I would use a BST keyed by
+ * the node's size instead. However, this list would likely be more optimal for the performance  
+ * test that is provided, because it has a large number of evenly-sized malloc's and sequential 
+ * free's, and the memory doesn't really get fragmented too much.
+ */
+chunkhead free_list = {NULL, NULL, &free_list, &free_list, 0, 0}; 
 
 /**
  * Create a node and automatically link it with prev and next.
@@ -180,6 +211,9 @@ void analyse() {
     putchar('\n');
 }
 
+/**
+ * Prints out only the elements of the free list.
+ */
 void analyse_free() {
     int n = 0;
     for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {

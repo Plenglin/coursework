@@ -69,8 +69,7 @@ typedef struct Image {
     char *pixel_data;
 } Image;
 
-Image* create_image(int width, int height, int pixels_size) {
-    Image *image = (Image*) mmap(NULL, sizeof(Image), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+void initialize_image(Image *image, int width, int height, int pixels_size) {
     char *pixel_data = (char*) mmap(NULL, pixels_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     
     image->width = width; 
@@ -78,8 +77,6 @@ Image* create_image(int width, int height, int pixels_size) {
     image->row_size = ((24 * width + 31) / 32) * 4;  // 4 * ceil((24 * width) / 32)
     image->pixels_size = pixels_size;
     image->pixel_data = pixel_data;
-
-    return image;
 }
 
 /**
@@ -107,13 +104,11 @@ void dispose_image(Image *image) {
 typedef struct BitmapImageData {
     tagBITMAPFILEHEADER file_header;
     tagBITMAPINFOHEADER info_header;
-    Image *image;
+    Image image;
 } BitmapImageData;
 
 void dispose_bmp(BitmapImageData *image) {
-    if (image->image != NULL) {
-        dispose_image(image->image);
-    }
+    dispose_image(&image->image);
 }
 
 int read_bitmap(BitmapImageData *image, char *path) {   
@@ -124,19 +119,22 @@ int read_bitmap(BitmapImageData *image, char *path) {
     }
 
     // Read the file header
-    fread(&image->file_header, 14, 1, file);
+    fread(&image->file_header, 1, 14, file);
 
     // Read the info header size
     fread(&image->info_header.biSize, 4, 1, file);
 
     // Read the rest of the info header, sized based on the header size
-    fread((char*)&image->info_header.biSize + 4, image->info_header.biSize - 4, 1, file);
+    fread((char*)&image->info_header.biSize + 4, 1, image->info_header.biSize - 4, file);
 
     // Read the pixels
-    image->image = create_image(image->info_header.biWidth, image->info_header.biHeight, image->info_header.biSizeImage);
-    fread(&image->image->pixel_data, image->info_header.biSizeImage, 1, file);
+    initialize_image(&image->image, image->info_header.biWidth, image->info_header.biHeight, image->info_header.biSizeImage);
+    fread(image->image.pixel_data, 1, image->info_header.biSizeImage, file);
+    //fwrite(image->image.pixel_data,1,image->image.pixels_size,stdout);
 
-    fclose(file);
+    if (fclose(file)) {
+        return 1;
+    }
     return 0;
 }
 
@@ -147,11 +145,13 @@ int write_bitmap(BitmapImageData *data, char* path) {
         return 1;
     }
 
-    fwrite((char*) &data->file_header, 14, 1, file);
-    fwrite((char*) &data->info_header, data->info_header.biSize, 1, file);
-    fwrite((char*) &data->image->pixel_data, data->info_header.biSizeImage, 1, file);
+    fwrite(&data->file_header, 1, 14, file);
+    fwrite(&data->info_header, 1, data->info_header.biSize, file);
+    fwrite(data->image.pixel_data, 1, data->info_header.biSizeImage, file);
     
-    fclose(file);
+    if (fclose(file)) {
+        return 1;
+    }
     return 0;
 }
 
@@ -168,10 +168,11 @@ void print_help_text(char *exec) {
 }
 
 int main(int argc, char *argv[]) {
-    BitmapImageData *image = (BitmapImageData*) malloc(sizeof(BitmapImageData));
+    BitmapImageData image;
     char path_a[] = "lab4/flowers.bmp";
     char path_b[] = "lab4/out.bmp";
-    read_bitmap(image, path_a);
-    write_bitmap(image, path_b);
+    read_bitmap(&image, path_a);
+    write_bitmap(&image, path_b);
+    dispose_bmp(&image);
     return 0;
 }

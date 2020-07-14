@@ -11,7 +11,7 @@ void reset_memory() {
 }
 
 int get_n_chunks() {
-    if (is_heap_empty) return 0;
+    if (is_heap_empty()) return 0;
     int n = 0;
     chunkhead *chunk = first_chunk;
     while (chunk != NULL) {
@@ -67,6 +67,20 @@ int main() {
     assert(get_n_chunks() == 0);
 
     reset_memory();
+    assert_no_dangling_pointers();
+    assert(get_n_chunks() == 0);
 
+    a[0] = mymalloc(1000);
+    a[1] = mymalloc(1000);
+    a[2] = mymalloc(1000);
+    a[3] = mymalloc(1000);
+
+    assert_no_dangling_pointers();
+    assert(get_n_chunks() == 4);
+    
+    myfree(a[3]);
+    assert_no_dangling_pointers();
+    assert(get_n_chunks() == 4);
+    
     return 0;
 }
