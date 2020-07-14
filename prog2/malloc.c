@@ -8,13 +8,17 @@ typedef unsigned int byte;
 
 typedef struct chunkhead {
     chunkhead *next, *prev, *next_free, *prev_free;
-    byte size;
+    /**
+     * The size of this chunk, INCLUDING the chunkhead.
+     */
+    size_t size;
     byte info;
 } chunkhead;
 
 void *heap_start = NULL;
 void *program_break = NULL;
-chunkhead free_list = {0, 0, NULL, NULL, NULL, NULL};  // sentinel node
+chunkhead free_list = {NULL, NULL, NULL, NULL, 0, 0};  // sentinel node
+chunkhead *last_chunk = NULL;
 
 /**
  * Create the last node at the given location.
@@ -42,8 +46,8 @@ void create_program_break(byte *loc, chunkhead *prev) {
 /**
  * Create a node and automatically link it with prev and next.
  */
-void create_chunk(chunkhead *chunk, int pages_count, chunkhead *prev, chunkhead *next) {
-    chunk->size = pages_count * PAGESIZE - sizeof(chunkhead);
+void create_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next) {
+    chunk->size = size;
     chunk->info = 0;
 
     chunk->prev = prev;
@@ -91,35 +95,47 @@ void initialize() {
     free_list.prev_free = NULL;
 }
 
-unsigned char* mymalloc(int size) {
-    for (chunkhead *chunk = (chunkhead*) heap_start; chunk != NULL; chunk = chunk->next) {
+void* mymalloc(int size) {
+    // How much space the chunk would take up in memory
+    int actual_size = ((sizeof(chunkhead) + size + PAGESIZE - 1) / PAGESIZE) * PAGESIZE;
+
+    chunkhead *best_fit = NULL;
+    for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {
         // Is the chunk open, and will this size fit in this chunk?
-        if (!chunk->info && size <= chunk->size) {
-            // # of pages to allocate. ceil((chunkhead size + allocation size) / page size)
-            int n_alloc_pages = (sizeof(chunkhead) + size + PAGESIZE - 1) / PAGESIZE;
-
-            chunk->size = n_alloc_pages * PAGESIZE - sizeof(chunkhead);
-            chunk->info = 1;
-
-            // Is this before the program break?
-            if (chunk->next == NULL) {
-                // We are at the program break. Get the new program break location.
-                unsigned char* new_brk = ((unsigned char*)chunk + n_alloc_pages * PAGESIZE);
-                create_program_break(new_brk, chunk);
-            } else {
-                unsigned long n_between_pages = ((unsigned long)(chunk->next) - (unsigned long)chunk) / PAGESIZE - n_alloc_pages;
-
-                // Can another chunk fit between this and the next chunk, post-allocation?
-                if (n_between_pages > 0) {
-                    // Create that in-between chunk.
-                    chunkhead *between = (chunkhead*) ((unsigned char*)chunk + n_between_pages * PAGESIZE);
-                    create_chunk(between, n_between_pages, chunk, chunk->next);
-                }
+        if (!chunk->info) {
+            int chunk_size = chunk->size;
+            if (chunk_size == actual_size) {
+                best_fit = chunk;
+                break;
+            } else if (actual_size < chunk_size && chunk_size < best_fit->size) {
+                best_fit = chunk;
             }
-            return (unsigned char*)chunk + sizeof(chunkhead);
         }
     }
-    return NULL;
+    
+    // No open chunks! Push the program break forward
+    if (best_fit == NULL) {
+        program_break = sbrk(actual_size);
+        create_chunk((chunkhead*) program_break, actual_size, last_chunk, NULL);
+        return (char*)program_break + sizeof(chunkhead);
+    }
+
+    size_t current_size = best_fit->size;
+    best_fit->info = 1;
+    
+    // Remove this chunk from the free chunk list
+    delete_free_chunk(best_fit); 
+
+    // Number of unused bytes in the original chunk
+    size_t between_size = current_size - actual_size;
+
+    // Can another chunk fit between this and the next chunk, post-allocation?
+    if (between_size > 0) {
+        // Create that in-between chunk.
+        chunkhead *between = (chunkhead*) ((char*)best_fit + actual_size);
+        create_chunk(between, between_size, best_fit, best_fit->next);
+    }
+    return (void*)((char*)best_fit + sizeof(chunkhead));
 }
 
 void myfree(unsigned char *addr) {
