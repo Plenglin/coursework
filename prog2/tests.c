@@ -39,7 +39,7 @@ void assert_no_dangling_pointers() {
     if (is_heap_empty) return;
     chunkhead *chunk = first_chunk;
     while (chunk != NULL) {
-        assert(chunk->next < program_break);
+        assert(chunk->next < sbrk(0));
         assert(chunk->prev >= first_chunk);
         chunk = chunk->next;
     }

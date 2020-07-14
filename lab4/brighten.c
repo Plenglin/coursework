@@ -1,7 +1,10 @@
+#include <time.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 typedef unsigned short WORD;
 typedef unsigned int DWORD;
@@ -207,30 +210,52 @@ void print_help_text(char *exec) {
         "Usage: %s <input> <brightness> <parallel> <output>\n\n"
         "  input               the input images\n"
         "  brightness          a number describing how much brightness to add, should \n"
-        "                      be within [0, 1]\n",
-        "  parallel            1 if you want to go super fast, 0 otherwise\n",
-        "  output              where to write the output\n", 
+        "                      be within [0, 1]\n"
+        "  parallel            1 if you want to go super fast, 0 otherwise\n"
+        "  output              where to write the output\n",
         exec
     );
 }
 
 int main(int argc, char *argv[]) {
-    // if (argc != 5) {
-    //     printf("Error: not enough arguments.\n");
-    //     print_help_text(argv[0]);
-    // }
+    if (argc != 5) {
+        printf("Error: wrong number of arguments.\n");
+        print_help_text(argv[0]);
+    }
 
-    //char *path_a = argv[1];
-    //char *path_b = argv[4];
-    char path_a[] = "lab4/flowers.bmp";
-    char path_b[] = "lab4/out.bmp";
+    char *path_a = argv[1];
+    char *path_b = argv[4];
     float brightness = atof(argv[2]);
-    char *parallel = argv[3];
+    char parallel = atoi(argv[3]);
 
     BitmapImageData image;
-    read_bitmap(&image, path_a);
-    add_brightness(&image.image, 0.5, LOWER | UPPER);
-    write_bitmap(&image, path_b);
+    
+    if (read_bitmap(&image, path_a)) {
+        printf("Error: reading input failed.\n");
+        return -1;
+    }
+
+    clock_t start = clock();
+    if (parallel) {
+        printf("Running parallel\n");
+        if (fork() == 0) {
+            add_brightness(&image.image, brightness, LOWER);
+            exit(0);
+        } else {
+            add_brightness(&image.image, brightness, UPPER);
+            wait(0);
+        }
+    } else {
+        printf("Running single-threaded\n");
+        add_brightness(&image.image, 0.5, LOWER | UPPER);
+    }
+    clock_t end = clock();
+
+    printf("Finished in %lfms\n", 1000 * (double)(end - start) / CLOCKS_PER_SEC);
+
+    if (write_bitmap(&image, path_b)) {
+        printf("Error: writing output failed.\n");
+    }
     dispose_bmp(&image);
     return 0;
 }

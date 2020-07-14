@@ -40,7 +40,6 @@ typedef struct chunkhead {
 
 chunkhead *first_chunk = NULL;
 chunkhead *last_chunk = NULL;
-void *program_break = NULL;
 
 /**
  * A doubly-linked list containing all the free chunks currently in the memory management system.
@@ -91,7 +90,7 @@ void delete_free_chunk(chunkhead *chunk) {
 }
 
 bool is_heap_empty() {
-    return first_chunk == program_break;
+    return first_chunk == sbrk(0);
 }
 
 byte* mymalloc(int size) {
@@ -101,7 +100,6 @@ byte* mymalloc(int size) {
     if (is_heap_empty()) {
         first_chunk = (chunkhead*)sbrk(actual_size);
         last_chunk = first_chunk;
-        program_break = sbrk(0);
         set_chunk(first_chunk, actual_size, NULL, NULL, 1);
         return (byte*)first_chunk + sizeof(chunkhead);
     }
@@ -126,7 +124,6 @@ byte* mymalloc(int size) {
         chunkhead *new_chunk = (chunkhead*)sbrk(actual_size);
         set_chunk(new_chunk, actual_size, last_chunk, NULL, 1);
         last_chunk = new_chunk;
-        program_break = (char*)new_chunk + actual_size;
         return (byte*)new_chunk + sizeof(chunkhead);
     }
 
@@ -185,7 +182,6 @@ void myfree(byte *addr) {
 
     if (should_change_brk) {
         brk(start_chunk);
-        program_break = start_chunk;
         return;
     }
 
