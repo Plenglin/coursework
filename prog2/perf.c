@@ -7,12 +7,10 @@
 
 
 int main() {
-    initialize();
-
     byte *a[100];
     clock_t ca, cb;
     for (int i = 0; i < 100; i++)
-        a[i]= mymalloc(1000);
+        a[i] = mymalloc(1000);
     for (int i = 0; i < 90; i++)
         myfree(a[i]);
     myfree(a[95]);
