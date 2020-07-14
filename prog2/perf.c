@@ -7,7 +7,9 @@
 
 
 int main() {
-    unsigned char *a[100];
+    initialize();
+
+    byte *a[100];
     clock_t ca, cb;
     for (int i = 0; i < 100; i++)
         a[i]= mymalloc(1000);

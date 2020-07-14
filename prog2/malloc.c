@@ -1,23 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#define PAGESIZE 1024
-#define HEAPSIZE PAGESIZE * 16 //1048576
+#define PAGESIZE 4096
+
+typedef unsigned int byte;
 
 typedef struct chunkhead {
-    unsigned int size;
-    unsigned int info;
-    chunkhead *next, *prev;
+    chunkhead *next, *prev, *next_free, *prev_free;
+    byte size;
+    byte info;
 } chunkhead;
 
-unsigned char myheap = NULL;
-int program_break_offset = 0;
+void *heap_start = NULL;
+void *program_break = NULL;
+chunkhead free_list = {0, 0, NULL, NULL, NULL, NULL};  // sentinel node
 
 /**
  * Create the last node at the given location.
  */
-void create_program_break(unsigned char *loc, chunkhead *prev) {
-    unsigned long count = myheap + HEAPSIZE - loc;
+void create_program_break(byte *loc, chunkhead *prev) {
+    unsigned long count = heap_start + HEAPSIZE - loc;
     unsigned long n_pages_left = count / PAGESIZE;
 
     // Creating a program break here would exceed heap limits!
@@ -49,21 +52,47 @@ void create_chunk(chunkhead *chunk, int pages_count, chunkhead *prev, chunkhead 
     }
 
     chunk->next = next;
-    if (next != NULL && (unsigned char*)next < myheap + HEAPSIZE) {
+    if (next != NULL && (unsigned char*)next < program_break) {
         next->prev = chunk;
     }
+}
+
+/**
+ * Adds a free chunk to the list of free chunks.
+ */
+void add_free_chunk(chunkhead *chunk) {
+    chunkhead *next = free_list.next;
+    chunkhead *prev = &free_list;
+
+    chunk->prev_free = prev;
+    chunk->next_free = next;
+    prev->next = chunk;
+    next->prev = chunk;    
+}
+
+/**
+ * Removes a free chunk from the list of free chunks.
+ */
+void delete_free_chunk(chunkhead *chunk) {
+    chunk->prev_free->next_free = chunk->next_free;
+    chunk->next_free->prev_free = chunk->prev_free;
 }
 
 /**
  * Sets the memory into a state such that it is completely free.
  */
 void initialize() {
-    myheap = sbrk();
-    create_program_break(myheap, NULL);
+    if (heap_start == NULL) {
+        heap_start = sbrk(0);
+    }
+    program_break = heap_start;
+    brk(program_break);
+    free_list.next_free = NULL;
+    free_list.prev_free = NULL;
 }
 
 unsigned char* mymalloc(int size) {
-    for (chunkhead *chunk = (chunkhead*) myheap; chunk != NULL; chunk = chunk->next) {
+    for (chunkhead *chunk = (chunkhead*) heap_start; chunk != NULL; chunk = chunk->next) {
         // Is the chunk open, and will this size fit in this chunk?
         if (!chunk->info && size <= chunk->size) {
             // # of pages to allocate. ceil((chunkhead size + allocation size) / page size)
@@ -123,7 +152,7 @@ void myfree(unsigned char *addr) {
     } 
 
     // Is this going to be the new program break?
-    if (end >= myheap + HEAPSIZE) {
+    if (end >= heap_start + HEAPSIZE) {
         create_program_break(start, start_chunk->prev);
     } else {
         chunkhead *next = (chunkhead*) end;
@@ -135,7 +164,7 @@ void myfree(unsigned char *addr) {
 
 void analyse() {
     int n = 0;
-    for (chunkhead *chunk = (chunkhead*) myheap; chunk != NULL; chunk = chunk->next) {
+    for (chunkhead *chunk = (chunkhead*) heap_start; chunk != NULL; chunk = chunk->next) {
         printf("chunk %d:\n", n);
         printf("  size: %d\n", chunk->size);
         printf("  info: %d\n", chunk->info);
@@ -151,7 +180,7 @@ void analyse() {
 
 int get_n_chunks() {
     int n = 0;
-    chunkhead *chunk = (chunkhead*) myheap;
+    chunkhead *chunk = (chunkhead*) heap_start;
     while (chunk != NULL) {
         chunk = chunk->next;
         n++;
@@ -161,7 +190,7 @@ int get_n_chunks() {
 
 chunkhead* get_managed_chunk(int i) {
     if (i < 0) i += get_n_chunks();
-    chunkhead *chunk = (chunkhead*) myheap;
+    chunkhead *chunk = (chunkhead*) heap_start;
     while (i > 0) {
         chunk = chunk->next;
         i--;

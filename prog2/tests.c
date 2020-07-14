@@ -84,7 +84,7 @@ int main() {
     assert(get_managed_chunk(8)->size == PAGESIZE * 4 - sizeof(chunkhead));
     assert(get_managed_chunk(9)->info == 1);
     assert(get_managed_chunk(9)->size == PAGESIZE - sizeof(chunkhead));
-    assert((unsigned char*)get_managed_chunk(9) == myheap + PAGESIZE * 12);
+    assert((unsigned char*)get_managed_chunk(9) == heap_start + PAGESIZE * 12);
 
     a = mymalloc(3 * PAGESIZE);
     chunkhead *ch1 = get_managed_chunk(8);
