@@ -109,10 +109,32 @@ unsigned char add_brightness(unsigned char c, int amount) {
     return out;
 }
 
-void add_brightness(Image *image, float factor) {
-    int amount = (int) (255 * factor);
+#define LOWER 1
+#define UPPER 2
 
-    for (int y = 0; y < image->height; y++) {
+int add_brightness(Image *image, float factor, int region_flag) {
+    int amount = (int) (255 * factor);
+    int lower_half = image->height / 2;
+    
+    int y_offset, y_end;
+    switch (region_flag) {
+        case LOWER:
+            y_offset = 0;
+            y_end = lower_half;
+            break;
+        case UPPER:
+            y_offset = lower_half;
+            y_end = image->height;
+            break;
+        case LOWER | UPPER:
+            y_offset = 0;
+            y_end = image->height;
+            break;
+        default:
+            return 1;
+    }
+
+    for (int y = y_offset; y < y_end; y++) {
         for (int x = 0; x < image->width; x++) {
             Color *color = get_pixel(image, x, y);
             color->r = add_brightness(color->r, amount);
@@ -120,6 +142,7 @@ void add_brightness(Image *image, float factor) {
             color->b = add_brightness(color->b, amount);
         }
     }
+    return 0;
 }
 
 /**
@@ -192,11 +215,21 @@ void print_help_text(char *exec) {
 }
 
 int main(int argc, char *argv[]) {
-    BitmapImageData image;
+    // if (argc != 5) {
+    //     printf("Error: not enough arguments.\n");
+    //     print_help_text(argv[0]);
+    // }
+
+    //char *path_a = argv[1];
+    //char *path_b = argv[4];
     char path_a[] = "lab4/flowers.bmp";
     char path_b[] = "lab4/out.bmp";
+    float brightness = atof(argv[2]);
+    char *parallel = argv[3];
+
+    BitmapImageData image;
     read_bitmap(&image, path_a);
-    add_brightness(&image.image, 0.5);
+    add_brightness(&image.image, 0.5, LOWER | UPPER);
     write_bitmap(&image, path_b);
     dispose_bmp(&image);
     return 0;
