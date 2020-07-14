@@ -98,6 +98,30 @@ void dispose_image(Image *image) {
     munmap(image->pixel_data, image->pixels_size);
 }
 
+unsigned char add_brightness(unsigned char c, int amount) {
+    int out = c + amount;
+    if (out < 0) {
+        return 0;
+    }
+    if (out > 255) {
+        return 255;
+    }
+    return out;
+}
+
+void add_brightness(Image *image, float factor) {
+    int amount = (int) (255 * factor);
+
+    for (int y = 0; y < image->height; y++) {
+        for (int x = 0; x < image->width; x++) {
+            Color *color = get_pixel(image, x, y);
+            color->r = add_brightness(color->r, amount);
+            color->g = add_brightness(color->g, amount);
+            color->b = add_brightness(color->b, amount);
+        }
+    }
+}
+
 /**
  * Holds all the useful data from a bitmap together.
  */
@@ -172,6 +196,7 @@ int main(int argc, char *argv[]) {
     char path_a[] = "lab4/flowers.bmp";
     char path_b[] = "lab4/out.bmp";
     read_bitmap(&image, path_a);
+    add_brightness(&image.image, 0.5);
     write_bitmap(&image, path_b);
     dispose_bmp(&image);
     return 0;
