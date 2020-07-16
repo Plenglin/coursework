@@ -72,13 +72,13 @@ void set_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next, byt
  * Adds a free chunk to the list of free chunks.
  */
 void add_free_chunk(chunkhead *chunk) {
-    chunkhead *next = free_list.next;    
+    chunkhead *next = free_list.next_free;    
     chunkhead *prev = &free_list;
 
     chunk->prev_free = prev;
     chunk->next_free = next;
-    prev->next = chunk;
-    next->prev = chunk;    
+    prev->next_free = chunk;
+    next->prev_free = chunk;    
 }
 
 /**
@@ -100,6 +100,8 @@ byte* mymalloc(int size) {
     if (is_heap_empty()) {
         first_chunk = (chunkhead*)sbrk(actual_size);
         last_chunk = first_chunk;
+        free_list.next_free = &free_list;
+        free_list.prev_free = &free_list;
         set_chunk(first_chunk, actual_size, NULL, NULL, 1);
         return (byte*)first_chunk + sizeof(chunkhead);
     }
@@ -153,15 +155,14 @@ void myfree(byte *addr) {
     // Start inclusive
     chunkhead *start_chunk;
     byte should_add_to_list = 0;
-    if (chunk->prev == NULL) {  // We're freeing the first chunk
+    if (chunk->prev == NULL) {  // We're freeing the very first chunk
         start_chunk = chunk;
-    } else {
+        should_add_to_list = 1;
+    } else if (chunk->prev->info == 1) {  // The prev one is occupied
+        start_chunk = chunk;
+        should_add_to_list = 1;
+    } else {   // The prev one is NOT occupied
         start_chunk = chunk->prev;
-
-        // Exclude the previous chunk if it's full
-        if (chunk->prev->info == 1) {
-            start_chunk = (chunkhead*)((char*)start_chunk + chunk->prev->size);
-        }
     }
 
     chunkhead *end;
@@ -183,17 +184,23 @@ void myfree(byte *addr) {
         }
     }
 
+    chunkhead *prev = start_chunk->prev;
     if (should_change_brk) {
-        // Designate the chunk before this as the last chunk
-        if (start_chunk->prev != NULL) {
-            start_chunk->prev->next = NULL;
-        }
         brk(start_chunk);
+
+        // Designate the chunk before this as the last chunk
+        if (prev != NULL) {    
+            prev->next = NULL;
+            last_chunk = prev;
+        } 
         return;
     }
 
     size_t free_space_size = (char*)end - (char*)start_chunk;
-    set_chunk(start_chunk, free_space_size, start_chunk->prev, end, 0);
+    set_chunk(start_chunk, free_space_size, prev, end, 0);
+    if (should_add_to_list) {
+        add_free_chunk(start_chunk);
+    }
 }
 
 void analyse() {
