@@ -155,26 +155,24 @@ void myfree(byte *addr) {
     // Start inclusive
     chunkhead *start_chunk;
     byte should_add_to_list = 0;
-    if (chunk->prev == NULL) {  // We're freeing the very first chunk
+    chunkhead *prev = chunk->prev;
+    if (prev == NULL) {  // We're freeing the very first chunk
         start_chunk = chunk;
         should_add_to_list = 1;
-    } else if (chunk->prev->info == 1) {  // The prev one is occupied
+    } else if (prev->info == 1) {  // The prev one is occupied
         start_chunk = chunk;
         should_add_to_list = 1;
     } else {   // The prev one is NOT occupied
-        start_chunk = chunk->prev;
+        start_chunk = prev;
     }
 
-    chunkhead *end;
+    chunkhead *end = chunk->next;
     byte should_change_brk = 0;
-    if (chunk->next == NULL) {  // Are we freeing the last chunk?
+    if (end == NULL) {  // Are we freeing the last chunk?
         should_change_brk = 1;
     } else {
-        // End exclusive
-        end = chunk->next;
-
         // Include the next chunk if next is empty
-        if (chunk->next->info == 0) {
+        if (end->info == 0) {
             end = (chunkhead*) ((char*)end + end->size);
         }
 
@@ -184,7 +182,7 @@ void myfree(byte *addr) {
         }
     }
 
-    chunkhead *prev = start_chunk->prev;
+    prev = start_chunk->prev;
     if (should_change_brk) {
         brk(start_chunk);
 
