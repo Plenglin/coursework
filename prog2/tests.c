@@ -132,7 +132,32 @@ void test_merge_2() {
     assert(a[1] - sizeof(chunkhead) == sbrk(0));
 }
 
+void test_merge_prev() {
+    byte *a[5];
+    for (int i = 0; i < 5; i++) {
+        a[i] = mymalloc(1000);
+    }
 
+    myfree(a[1]);
+    assert(get_n_chunks() == 5);
+    chunkhead *dbg = get_chunk_of(a[4]);
+    assert((char*)dbg + dbg->size == sbrk(0));
+
+    myfree(a[2]);
+    assert(get_n_chunks() == 4);
+    dbg = get_chunk_of(a[4]);
+    assert((char*)dbg + dbg->size == sbrk(0));
+    dbg = get_chunk_of(a[0]);
+    assert(dbg->size == PAGESIZE);
+    assert(dbg->info == 1);
+    dbg = get_chunk_of(a[1]);
+    assert(dbg->size == PAGESIZE * 2);
+    assert(dbg->info == 0);
+    dbg = get_chunk_of(a[3]);
+    assert(dbg->info == 1);
+    assert(dbg->size == PAGESIZE);
+
+}
 
 void reset_with_asserts() {
     reset_memory();
@@ -151,6 +176,9 @@ int main() {
     reset_with_asserts(); 
     
     test_merge_2();
+    reset_with_asserts();
+
+    test_merge_prev();
     reset_with_asserts();
     
     return 0;

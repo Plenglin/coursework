@@ -3,7 +3,8 @@
 #include <assert.h>  // for testing purposes only. not used in actual code
 
 #define PAGESIZE 1024
-#define HEAPSIZE PAGESIZE * 16 //1048576
+#define HEAPSIZE 1048576
+typedef unsigned int byte;
 
 typedef struct chunkhead {
     unsigned int size;
@@ -286,19 +287,4 @@ void run_tests() {
     assert(get_managed_chunk(9)->size == PAGESIZE - sizeof(chunkhead));
     assert(get_managed_chunk(10)->info == 1);
     assert(get_managed_chunk(10)->size == PAGESIZE - sizeof(chunkhead));
-}
-
-int main() {
-    run_tests();
-
-    initialize();
-    unsigned char *a, *b, *c;
-    a = mymalloc(1000);
-    b = mymalloc(1000);
-    c = mymalloc(1000);
-    myfree(b);
-    myfree(a);
-    analyse();
-
-    return 0;
 }

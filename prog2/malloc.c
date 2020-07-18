@@ -85,8 +85,10 @@ void add_free_chunk(chunkhead *chunk) {
  * Removes a free chunk from the list of free chunks.
  */
 void delete_free_chunk(chunkhead *chunk) {
-    chunk->prev_free->next_free = chunk->next_free;
-    chunk->next_free->prev_free = chunk->prev_free;
+    chunkhead *prev = chunk->prev_free;
+    chunkhead *next = chunk->next_free;
+    prev->next_free = next;
+    next->prev_free = prev;
 }
 
 byte is_heap_empty() {
@@ -110,14 +112,12 @@ byte* mymalloc(int size) {
 
     for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {
         // Is the chunk open, and will this size fit in this chunk?
-        if (!chunk->info) {
-            int chunk_size = chunk->size;
-            if (chunk_size == actual_size) {
-                best_fit = chunk;
-                break;
-            } else if (actual_size < chunk_size && chunk_size < best_fit->size) {
-                best_fit = chunk;
-            }
+        int chunk_size = chunk->size;
+        if (chunk_size == actual_size) {
+            best_fit = chunk;
+            break;
+        } else if (actual_size < chunk_size && best_fit == NULL || chunk_size < best_fit->size) {
+            best_fit = chunk;
         }
     }
     
@@ -211,7 +211,7 @@ void analyse() {
     int n = 0;
     for (chunkhead *chunk = first_chunk; chunk != NULL; chunk = chunk->next) {
         printf("chunk %d:\n", n);
-        printf("  size: %d\n", chunk->size);
+        printf("  size: %ld\n", chunk->size);
         printf("  info: %d\n", chunk->info);
         printf("  prev: %p\n", chunk->prev);
         printf("  loc: %p\n", chunk);
@@ -228,7 +228,7 @@ void analyse_free() {
     int n = 0;
     for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {
         printf("chunk %d:\n", n);
-        printf("  size: %d\n", chunk->size);
+        printf("  size: %ld\n", chunk->size);
         printf("  info: %d\n", chunk->info);
         printf("  loc: %p\n", chunk);
         printf("  prev: %p\n", chunk->prev);
