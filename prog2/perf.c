@@ -5,7 +5,8 @@
 
 #include "./malloc.c"
 
-#define PERF_TIMES 10000
+#define PERF_TIMES 200000
+//#define PERF_TIMES 50000
 
 
 int main() {
@@ -29,5 +30,15 @@ int main() {
     printf("\nduration: %lf\n", (double)(cc) / PERF_TIMES / 100);
     printf("\nduration: %lf\n", (double)(cd - cc) / PERF_TIMES / 90);
     printf("\nduration: %lf\n", (double)(cb - ca - cc) / PERF_TIMES / 10);
+    printf("\nduration: %lf\n", (double)(cb - ca) / PERF_TIMES);
+
+    ca = clock();
+    for (int n = 0; n < PERF_TIMES; n++) {
+        for (int i = 0; i < 101; i++) {
+            sbrk(PAGESIZE);
+        }
+        sbrk(-101 * PAGESIZE);
+    }
+    cb = clock();
     printf("\nduration: %lf\n", (double)(cb - ca) / PERF_TIMES);
 }

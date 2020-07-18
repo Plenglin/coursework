@@ -53,7 +53,7 @@ chunkhead free_list = {NULL, NULL, &free_list, &free_list, 0, 0};
 /**
  * Create a node and automatically link it with prev and next.
  */
-void set_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next, byte info) {
+inline void set_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next, byte info) {
     chunk->size = size;
     chunk->info = info;
 
@@ -71,7 +71,7 @@ void set_chunk(chunkhead *chunk, int size, chunkhead *prev, chunkhead *next, byt
 /**
  * Adds a free chunk to the list of free chunks.
  */
-void add_free_chunk(chunkhead *chunk) {
+inline void add_free_chunk(chunkhead *chunk) {
     chunkhead *next = free_list.next_free;    
     chunkhead *prev = &free_list;
 
@@ -84,14 +84,14 @@ void add_free_chunk(chunkhead *chunk) {
 /**
  * Removes a free chunk from the list of free chunks.
  */
-void delete_free_chunk(chunkhead *chunk) {
+inline void delete_free_chunk(chunkhead *chunk) {
     chunkhead *prev = chunk->prev_free;
     chunkhead *next = chunk->next_free;
     prev->next_free = next;
     next->prev_free = prev;
 }
 
-byte is_heap_empty() {
+inline byte is_heap_empty() {
     return first_chunk == sbrk(0) || first_chunk == NULL;
 }
 
@@ -109,6 +109,7 @@ byte* mymalloc(int size) {
     }
 
     chunkhead *best_fit = NULL;
+    size_t best_size;
 
     for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {
         // Is the chunk open, and will this size fit in this chunk?
@@ -116,8 +117,9 @@ byte* mymalloc(int size) {
         if (chunk_size == actual_size) {
             best_fit = chunk;
             break;
-        } else if (actual_size < chunk_size && best_fit == NULL || chunk_size < best_fit->size) {
+        } else if (actual_size < chunk_size && best_fit == NULL || chunk_size < best_size) {
             best_fit = chunk;
+            best_size = chunk_size;
         }
     }
     
