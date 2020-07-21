@@ -111,7 +111,7 @@ byte* mymalloc(int size) {
     chunkhead *best_fit = NULL;
     size_t best_size;
 
-    for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {
+    for (chunkhead *chunk = free_list.prev_free; chunk != &free_list; chunk = chunk->prev_free) {
         // Is the chunk open, and will this size fit in this chunk?
         int chunk_size = chunk->size;
         if (chunk_size == actual_size) {
