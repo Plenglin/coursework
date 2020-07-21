@@ -205,20 +205,19 @@ void myfree(byte *addr) {
 
 void analyse() {
     if (is_heap_empty()) {
-        //printf("(empty heap)\n");
+        printf("(empty heap)\n");
         return;
     }
-    int n = 0;
-    for (chunkhead *chunk = first_chunk; chunk != NULL; chunk = chunk->next) {
-        printf("chunk %d:\n", n);
-        printf("  size: %ld\n", chunk->size);
-        printf("  info: %d\n", chunk->info);
-        printf("  prev: %p\n", chunk->prev);
-        printf("  loc: %p\n", chunk);
-        printf("  next: %p\n", chunk->next);
-        n++;
+    chunkhead* ch = (chunkhead*)first_chunk;
+    for(int no=0; ch; ch = (chunkhead*)ch->next, no++) {
+        printf("%d | current addr: %p |", no, ch);
+        printf("size: %ld | ", ch->size);
+        printf("info: %ld | ", ch->info);
+        printf("next: %p | ", ch->next);
+        printf("prev: %p", ch->prev);
+        printf("      \n");
     }
-    putchar('\n');
+    printf("program break on address: %x\n",sbrk(0));
 }
 
 /**
