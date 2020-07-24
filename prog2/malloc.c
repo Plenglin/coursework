@@ -30,7 +30,7 @@ typedef struct chunkhead {
     /**
      * The size of this chunk, INCLUDING the chunkhead.
      */
-    size_t size;
+    unsigned int size;
 
     /**
      * 1 if occupied, 0 if free.

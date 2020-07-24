@@ -14,7 +14,9 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-mavx",
+                "-march=native"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
