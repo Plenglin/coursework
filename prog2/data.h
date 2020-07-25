@@ -1,13 +1,25 @@
+/**
+ * This header file contains data-holding structs used for malloc, as well as utilities
+ * for manipulating the structs.
+ * 
+ * My implementation of malloc uses 2 sets of lists: a list that keeps a record of all the 
+ * chunks in order, and a list that only keeps track of the free nodes. Both of these lists
+ * are implemented using an unrolled linked list data structure to improve cache efficiency.
+ * 
+ * Standard linked list time: 160us
+ * Unrolled linked list time: ???
+ */
+
 #ifndef __DATA_H__
 #define __DATA_H__
 #include <immintrin.h>
 
 #define PAGESIZE 4096
+#define HEADSIZE 128
 
 #define CHUNK_USED 1
 #define CHUNK_MANAGER 2
 #define CHUNK_LEADER 4
-#define CHUNK_SENTINEL_LEADER 8
 
 #define SENTINEL_LEADER_LIST_CHUNKS 16
 #define HEAP_LEADER_LIST_CHUNKS 4
@@ -56,7 +68,6 @@ typedef union ChunkList4 {
  * A chunk that contains a list of used chunks.
  */
 typedef struct Manager {
-    unsigned int size;
     Chunk *prev;
     Chunk *next;
     ChunkList4 employees;
@@ -101,6 +112,7 @@ typedef struct FollowerTail {
  */
 typedef struct Chunk {
     int flags;
+    unsigned int size;
     union {
         Manager manager;
         Employee employee;
@@ -112,8 +124,16 @@ typedef struct Chunk {
     };
 } Chunk;
 
-inline Chunk* chunk_of_tail(LeaderTail *leader) {
+inline Chunk* get_chunk_of_tail(LeaderTail *leader) {
     return (Chunk*) ((char*)leader - 128);
+}
+
+inline Chunk* get_manager_of_chunk(Chunk *chunk) {
+    if (chunk->flags &= CHUNK_MANAGER) {
+        return chunk;
+    } else {
+        return chunk->employee.manager;
+    }
 }
 
 inline void copy_chunklist4(ChunkList4 *dst, ChunkList4 *src) {
@@ -199,9 +219,10 @@ inline void set_manager_chunk(Chunk *chunk, Chunk *prev, Chunk *next) {
     next->manager.employees.count = 0;
 }
 
-inline void set_employee_chunk(Chunk *chunk, Chunk *manager) {
+inline void set_employee_chunk(Chunk *chunk, Chunk *manager, int size) {
     chunk->flags &= ~CHUNK_MANAGER;  // Clear manager flag to designate that it's an employee
     chunk->employee.manager = manager;
+    chunk->size = size;
 }
 
 inline void maybe_set_manager_prev(Chunk *chunk, Chunk *prev) {
@@ -227,7 +248,7 @@ void insert(Chunk* this_chunk, int size, Chunk *location) {
         employees->count++;
     }
     insert_ordered_arr4(employees, size, location);
-    set_employee_chunk(location, this_chunk);
+    set_employee_chunk(location, this_chunk, size);
 }
 
 void remove_at(Manager *manager, int index) {
@@ -249,7 +270,7 @@ void remove2_at(Manager *manager, int index) {
 /**
  * Push an element onto the leader node.
  */
-int push_to_leader(LeaderTail *leader, int size, Chunk *location) {
+int push_to_leader(LeaderTail *leader, Chunk *location, int size) {
     ChunkList4 *arr = &leader->followers;
     int count = arr->count;
     if (count == 4) {  // Full!
@@ -261,6 +282,7 @@ int push_to_leader(LeaderTail *leader, int size, Chunk *location) {
             arr->locations.a[i] = location;
             arr->sizes.a[i] = size;
             location->flags &= ~CHUNK_LEADER;  // clear leader flag to designate follower
+            location->size = size;
             location->follower.index = i;
             location->follower.leader = leader;
             return 0;
@@ -278,23 +300,21 @@ inline void copy_leader_links(LeaderTail *dst, LeaderTail *src) {
  * Remove a leader from the free list.
  */
 void pop_leader(LeaderTail *leader) {
-    LeaderTail *next = leader->next;
-    LeaderTail *prev = leader->prev;
     if (leader->followers.count == 0) {  // No children, just remove the leader
+        LeaderTail *next = leader->next;
+        LeaderTail *prev = leader->prev;
         next->prev = prev;
         prev->next = next;
         return;
     }
 
-    LeaderTail replacement;
-
-    copy_chunklist4(&replacement.followers, &leader->followers);
-    Chunk *dst = replacement.followers.locations.a[0];
-    replacement.followers.locations.a[0] = NULL;
-    
-    dst->flags |= CHUNK_LEADER;
-    copy_leader_links(&dst->leader, &replacement);
-    copy_chunklist4(&dst->leader.followers, &replacement.followers);
+    // There are children, the new leader is element 0
+    Chunk *replacement_chunk = leader->followers.locations.a[0];
+    LeaderTail *replacement = &replacement_chunk->leader;
+    replacement_chunk->flags |= CHUNK_LEADER;
+    copy_leader_links(replacement, leader);
+    copy_chunklist4(&replacement->followers, &leader->followers);
+    replacement->followers.locations.a[0] = NULL;    
 }
 
 /**
@@ -306,9 +326,6 @@ void pop_follower(FollowerTail *follower) {
     followers->count--;
     followers->locations.a[follower->index] = NULL;
 }
-
-Chunk *first_leader, *last_leader;
-LeaderTail free_list = {&free_list, &free_list, {0}};
 
 
 #endif
