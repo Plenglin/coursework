@@ -299,7 +299,7 @@ inline void copy_leader_links(LeaderTail *dst, LeaderTail *src) {
 /**
  * Remove a leader from the free list.
  */
-void pop_leader(LeaderTail *leader) {
+inline void pop_leader(LeaderTail *leader) {
     if (leader->followers.count == 0) {  // No children, just remove the leader
         LeaderTail *next = leader->next;
         LeaderTail *prev = leader->prev;
@@ -320,11 +320,19 @@ void pop_leader(LeaderTail *leader) {
 /**
  * Remove a follower from the free list.
  */
-void pop_follower(FollowerTail *follower) {
+inline void pop_follower(FollowerTail *follower) {
     LeaderTail *leader = follower->leader;
     ChunkList4 *followers = &leader->followers;
     followers->count--;
     followers->locations.a[follower->index] = NULL;
+}
+
+inline void pop_chunk_from_free_list(Chunk *chunk) {
+    if (chunk->flags & CHUNK_LEADER) {
+        pop_leader(&chunk->leader);
+    } else {
+        pop_follower(&chunk->follower);
+    }
 }
 
 

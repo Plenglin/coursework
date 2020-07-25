@@ -167,12 +167,20 @@ byte* mymalloc(int size) {
     return (byte*)best_fit + HEADSIZE;
 }
 
+#define MERGE_FORWARD 0x1
+#define MERGE_BACKWARD 0x2
+
+#define MERGE_CHUNK_RM_THIS 0x4
+#define MERGE_CHUNK_RM_NEXT 0x8
+#define MERGE_FREE_RM_NEXT 0x10
+#define MERGE_FREE_ADD_THIS 0x20
+
 /**
  * Given that this_chunk is an employee chunk, finds the bounds of the new free chunk if you were to free 
  * that chunk. If NULL is returned for end_chunk, that means that every chunk outside of start_chunk would 
  * be outside of the program break after freeing.
  */
-inline void find_boundary_chunks_of_employee(Chunk *this_chunk, Chunk **start_chunk, Chunk **end_chunk) {
+inline void find_boundary_chunks_of_employee(Chunk *this_chunk, Chunk **start_chunk, Chunk **end_chunk, int *status) {
     Chunk *this_chunk_manager_chunk = this_chunk->employee.manager;
     Manager *this_chunk_manager = &this_chunk_manager_chunk->manager;
 
@@ -194,11 +202,12 @@ inline void find_boundary_chunks_of_employee(Chunk *this_chunk, Chunk **start_ch
     }
 
     if (prev_chunk == NULL || prev_chunk->flags & CHUNK_USED) {
-        // This is either the first chunk or the last chunk is used.
+        // This is either the first chunk or the last chunk is used, DON'T merge.
         *start_chunk = this_chunk;
     } else {
-        // There is a chunk before this.
+        // There is a free chunk before this, DO merge.
         *start_chunk = prev_chunk;
+        *status |= MERGE_BACKWARD;
     }
 
     Chunk *next_chunk;
@@ -217,15 +226,16 @@ inline void find_boundary_chunks_of_employee(Chunk *this_chunk, Chunk **start_ch
         // This is the very last chunk.
         *end_chunk = NULL;
     } else if (next_chunk->flags & CHUNK_USED) {
-        // The next chunk is used. Note that end is exclusive.
+        // The next chunk is used, DON'T merge. Note that end is exclusive.
         *end_chunk = next_chunk;
     } else {
-        // The next chunk is free. It cannot be the last chunk due to the invariant.
+        // The next chunk is free, DO merge. It cannot be the last chunk due to the invariant.
         *end_chunk = (Chunk*)((char*)next_chunk + next_chunk_size);
+        *status |= MERGE_FORWARD;
     }
 }
 
-inline Chunk* find_start_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_manager) {   
+inline Chunk* find_start_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_manager, int *status) {   
     if (this_chunk_manager->prev == NULL) {  // This is the very first chunk.
         return this_chunk;
     }
@@ -241,12 +251,15 @@ inline Chunk* find_start_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk
     }
 
     if (prev_chunk->flags & CHUNK_USED) {
+        // Previous chunk is used. DON'T merge.
         return this_chunk;
     }
+    // Previous chunk is free. DO merge.
+    *status |= MERGE_BACKWARD;
     return prev_chunk;
 }
 
-inline Chunk* find_end_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_manager) {   
+inline Chunk* find_end_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_manager, int *status) {   
     if (this_chunk_manager->next == NULL) {  // This is the very last chunk.
         return NULL;  // This chunk is beyond the program break.
     }
@@ -265,10 +278,11 @@ inline Chunk* find_end_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_m
     
     // Note that end chunk is exclusive, and that next chunk cannot be physically last chunk due to the invariant.
     if (next_chunk->flags & CHUNK_USED) {
-        // Used: do not include next chunk.
+        // Next chunk is used. DON'T merge.
         return next_chunk;
     }
-    // Free: do include next chunk.
+    // Next chunk is free. DO merge.
+    *status |= MERGE_FORWARD;
     return (Chunk*)(next_chunk + next_chunk_size);
 }
 
@@ -280,37 +294,93 @@ void myfree(byte *addr) {
     
     // Probe chunks around this chunk to find start and end.
     Manager *this_chunk_manager;
+    int merge_status;
     if (this_chunk->flags & CHUNK_MANAGER) { 
         // This is a manager chunk
         this_chunk_manager = &this_chunk->manager;
 
-        start_chunk = find_start_chunk_of_manager(this_chunk, this_chunk_manager);
-        end_chunk = find_end_chunk_of_manager(this_chunk, this_chunk_manager);
+        start_chunk = find_start_chunk_of_manager(this_chunk, this_chunk_manager, &merge_status);
+        end_chunk = find_end_chunk_of_manager(this_chunk, this_chunk_manager, &merge_status);
     } else { 
         // This is an employee chunk 
-        find_boundary_chunks_of_employee(this_chunk, &start_chunk, &end_chunk);
+        find_boundary_chunks_of_employee(this_chunk, &start_chunk, &end_chunk, &merge_status);
     }
     
     if (end_chunk == NULL) {
         // This chunk will be beyond the program break!
-        if (start_chunk != this_chunk) {
-            // We are merging into the previous chunk
-            // TODO remove start chunk from list
+        if (merge_status & MERGE_BACKWARD) {
+            // We are merging into the previous chunk. Remove start chunk from free list.
+            pop_chunk_from_free_list(start_chunk);
+        }
+
+        if (this_chunk->flags & CHUNK_MANAGER) { 
+            //  
         }
         brk(start_chunk);
         return;
     }
 
-    // We are merging with next chunk
-    // TODO Replace next chunk's free list entry with new superchunk entry.
+    if (merge_status & MERGE_FORWARD) {
+        // We are merging with next chunk
+        // TODO Replace next chunk's free list entry with new superchunk entry.
+    }
 
-    if (start_chunk == this_chunk) {  
+    if (merge_status & MERGE_BACKWARD) {
+        // TODO We are merging into the previous chunk
+        // Modify the previous chunk's size entry
+    } else {
         // We are not merging into the previous chunk
         // TODO Add this chunk to the free list.
     }
+}
 
-    // TODO We are merging into the previous chunk,
-    // Modify the previous chunk's size entry
+void print_list4(ChunkList4 *list) {
+    printf("n:%d", list->count);
+    for (int i = 0; i < list->count; i++) {
+        printf(" (%d:%p:%d)", i, list->locations.a[i], list->sizes.a[i]);
+    }
+}
+
+void print_arr4(ChunkList4 *list) {
+    for (int i = 0; i < 4; i++) {
+        printf(" (%d:%p:%d)", i, list->locations.a[i], list->sizes.a[i]);
+    }
+}
+
+void print_chunk(Chunk *chunk, int i, int indent) {
+    if (indent) {
+        printf("  ");
+    }
+    printf("%d | current addr: %p | size: %d | ", i, chunk, chunk->size);
+
+    if (chunk->flags & CHUNK_USED) {
+        printf("used ");
+    } else {
+        printf("free ");
+    }
+
+    if (chunk->flags & CHUNK_MANAGER) {
+        Manager *manager = &chunk->manager;
+        printf("manager(p:%p n:%p ", manager->prev, manager->next);
+        print_list4(&manager->employees);
+        printf(") ");
+    } else {
+        printf("employee(m:%p) ", chunk->employee.manager);
+    }
+
+    if (!(chunk->flags & CHUNK_USED)) {
+        if (chunk->flags & CHUNK_LEADER) {
+            LeaderTail *leader = &chunk->leader;
+            printf("leader(p:%p n:%p ", leader->prev, leader->next);
+            print_arr4(&leader->followers);
+            printf(")");
+        } else {
+            FollowerTail *follower = &chunk->follower;
+            printf("follower(l:%p, i:%d)", follower->leader, follower->index);
+        }
+    }
+
+    printf("\n");
 }
 
 void analyse() {
@@ -318,35 +388,18 @@ void analyse() {
         printf("(empty heap)\n");
         return;
     }
-    chunkhead* ch = (chunkhead*)first_chunk;
-    for(int no=0; ch; ch = (chunkhead*)ch->next, no++) {
-        printf("%d | current addr: %p |", no, ch);
-        printf("size: %ld | ", ch->size);
-        printf("info: %ld | ", ch->info);
-        printf("next: %p | ", ch->next);
-        printf("prev: %p", ch->prev);
-        printf("      \n");
+    
+    int i = 0;
+    for (Chunk *manager_chunk = first_manager; manager_chunk; manager_chunk = manager_chunk->manager.next) {
+        Manager *manager = &manager_chunk->manager;
+        print_chunk(manager_chunk, i, 0);
+        i++;
+        for (int j = 0; j < 4; j++) {
+            print_chunk(manager->employees.locations.a[i], i, 1);
+            i++;
+        }
     }
-    printf("program break on address: %x\n",sbrk(0));
-}
-
-/**
- * Prints out only the elements of the free list.
- */
-void analyse_free() {
-    int n = 0;
-    for (chunkhead *chunk = free_list.next_free; chunk != &free_list; chunk = chunk->next_free) {
-        printf("chunk %d:\n", n);
-        printf("  size: %ld\n", chunk->size);
-        printf("  info: %d\n", chunk->info);
-        printf("  loc: %p\n", chunk);
-        printf("  prev: %p\n", chunk->prev);
-        printf("  next: %p\n", chunk->next);
-        printf("  prev_free: %p\n", chunk->prev_free);
-        printf("  next_free: %p\n", chunk->next_free);
-        n++;
-    }
-    putchar('\n');
+    printf("program break on address: %p\n",sbrk(0));
 }
 
 #endif
