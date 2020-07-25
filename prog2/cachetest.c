@@ -4,60 +4,38 @@
 #include <time.h>
 #include <immintrin.h>
 
-#define COUNT (1 << 24)
 
-typedef struct Node {
-    Node *next;
-    int val;
-} Node;
-
-char a[COUNT];
-char b[COUNT];
-
-void test1() {
-    for (int i = 0; i < COUNT; i++) {
-        b[i] = a[i];
-    }
-}
-
-void test2() {
-    for (int i = 0; i < COUNT/32; i+=32) {
-        *((__m256*)(b + i)) = *((__m256*)(a+i));
-    }
-}
-
-typedef union Nums {
-    long nums[4];
-    __m256i _reg;
-} Nums;
-
-void print_nums(Nums *nums) {
+void print_nums(__m128i vec) {
+    int *nums = (int*) &vec;
     for (int i = 0; i < 4; i++) {
-        printf("%ld ", nums->nums[i]);
+        printf("%x ", nums[i]);
+    }
+    printf("\n");
+}
+
+void print_nums2(__m256i vec) {
+    long *nums = (long*) &vec;
+    for (int i = 0; i < 4; i++) {
+        printf("%lx ", nums[i]);
     }
     printf("\n");
 }
 
 int main() {
-    Nums a;
-    a.nums[0] = 0;
-    a.nums[1] = 1;
-    a.nums[2] = 2;
-    a.nums[3] = 3;
-
-    print_nums(&a);
-    __m256i ra = _mm256_permute4x64_epi64(a._reg, _MM_PERM_DDCB);
-    ra = _mm256_set1_epi64x();
-    reg = _mm256_and_si256()
-    a._reg = _mm256_permute4x64_epi64(a._reg, _MM_PERM_DDCB);
-    a._reg = _mm256_permute4x64_epi64(a._reg, _MM_PERM_DDCB);
-    print_nums(&a);
-
-    clock_t t0 = clock();
-    test1();
-    clock_t t1 = clock();
-    test2();
-    clock_t t2 = clock();
-
-    printf("%ld %ld", t1 - t0, t2 - t1);
+    __m128i a, b, c, d, e;
+    __m256i u, v, x, y, z;
+    
+    a = _mm_set_epi32(3, 2, 1, 0);
+    u = _mm256_set_epi64x(3, 2, 1, 0);
+    print_nums(a);
+    print_nums2(u);
+    printf("\n");
+    a = (__m128i)_mm_permute_ps((__m128)a, _MM_PERM_CBAD);
+    //u = (__m256i)_mm256_permute_pd((__m256d)u, 0b1001);
+    u = _mm256_permute4x64_epi64(u, _MM_PERM_CBAD);
+    long *arr = (long*) &u;
+    //arr[]
+    //((int*)&a)[1] = 5;
+    print_nums(a);
+    print_nums2(u);
 }
