@@ -169,14 +169,23 @@ inline void perm_arr4_remove2(int index, int count, Arr4p *locations, Arr4i *siz
 /**
  * Insert into a single array list, deleting the last item if space exceeded.
  */
-inline void insert_arr4(int index, ChunkList4 *list, int size, Chunk *location) {
-    // Non-last index?
-    if (index < list->count - 1) {
-        // Permute the array to shift everything over
-        perm_arr4_insert(index, list);
+inline void insert_ordered_arr4(ChunkList4 *list, int size, Chunk *location) {
+    int i = list->count;
+    int i_next;
+
+    // Traverse list in descending order
+    for (; i > 0; i = i_next) {
+        i_next = i - 1;
+        Chunk *loc_next = list->locations.a[i_next];
+        if (loc_next < location) {   // Correct spot!
+            break;
+        }
+        list->locations.a[i] = loc_next;
+        list->sizes.a[i] = list->sizes.a[i_next];
     }
-    list->locations.a[index] = location;
-    list->sizes.a[index] = size;
+    // If no correct spot is found, i will be 0 here.
+    list->locations.a[i] = location;
+    list->sizes.a[i] = size;
 }
 
 inline void set_manager_chunk(Chunk *chunk, Chunk *prev, Chunk *next) {
@@ -186,7 +195,7 @@ inline void set_manager_chunk(Chunk *chunk, Chunk *prev, Chunk *next) {
     next->manager.employees.count = 0;
 }
 
-inline void set_employee_chunk(Chunk *chunk, Chunk *manager, int index) {
+inline void set_employee_chunk(Chunk *chunk, Chunk *manager) {
     chunk->flags &= ~CHUNK_MANAGER;  // Clear manager flag to designate that it's an employee
     chunk->employee.manager = manager;
 }
@@ -197,16 +206,13 @@ inline void maybe_set_manager_prev(Chunk *chunk, Chunk *prev) {
     }
 }
 
-void insert_at(Chunk* this_chunk, int index, int size, Chunk *location) {
+void insert(Chunk* this_chunk, int size, Chunk *location) {
     Arr4i sizes;
     Arr4p locations;
     Manager *manager = &this_chunk->manager;
+    ChunkList4 *employees = &manager->employees;
 
-    // Copy the employees list here
-    ChunkList4 employees;
-    copy_chunklist4(&employees, &manager->employees);
-
-    if (employees.count == 4) {
+    if (employees->count == 4) {
         // Max size, promote last node to manager
         int size = sizes.a[3];
         Chunk *next = locations.a[3];  // The new next
@@ -214,13 +220,10 @@ void insert_at(Chunk* this_chunk, int index, int size, Chunk *location) {
         set_manager_chunk(next, this_chunk, manager->next);
         manager->next = next;
     } else {
-        employees.count++;
+        employees->count++;
     }
-    insert_arr4(index, &employees, size, location);
-
-    // Copy the employees list back
-    copy_chunklist4(&manager->employees, &employees);
-    set_employee_chunk(location, this_chunk, index);
+    insert_ordered_arr4(employees, size, location);
+    set_employee_chunk(location, this_chunk);
 }
 
 void remove_at(Manager *manager, int index) {
@@ -243,11 +246,15 @@ void remove2_at(Manager *manager, int index) {
  * Push an element onto the leader node.
  */
 int push_to_leader(LeaderTail *leader, int size, Chunk *location) {
-    int count = chunk->leader.followers.count;
-    for (int i = 0; i < 4; i++) {
-        if (leader->followers.locations.a[i] == NULL) {
-            leader->followers.locations.a[i] = chunk;
-            leader->followers.sizes.a[i] = size;
+    ChunkList4 *arr = &leader->followers;
+    int count = arr->count;
+    if (count == 4) {  // Full!
+        return 1;
+    }
+    for (int i = 0; i < 4; i++) {  // Find open space
+        if (arr->locations.a[i] == NULL) {
+            arr->locations.a[i] = location;
+            arr->sizes.a[i] = size;
             return 0;
         }
     }   
@@ -282,9 +289,13 @@ void pop_leader(LeaderTail *leader) {
     copy_chunklist4(&dst->leader.followers, &replacement.followers);
 }
 
-void pop_follower(Chunk *chunk, int size) {
-    LeaderTail *leader = &chunk->follower.leader->leader;
-    leader[]
+/**
+ * Remove a follower from the free list.
+ */
+void pop_follower(FollowerTail *follower) {
+    LeaderTail *leader = follower->leader;
+    leader->followers.count--;
+    leader->followers.locations[follower->index] = NULL;
 }
 
 
