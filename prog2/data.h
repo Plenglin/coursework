@@ -89,7 +89,7 @@ typedef struct LeaderTail {
  * The tail of a free chunk that is listed in a Leader chunk.
  */
 typedef struct FollowerTail {
-    Chunk *leader;
+    LeaderTail *leader;
     /**
      * Note that we ARE recording the index here. This is because it does not move around in its leader.
      */
@@ -105,12 +105,16 @@ typedef struct Chunk {
         Manager manager;
         Employee employee;
     };
-    // Everything below this line ONLY EXISTS ON FREE CHUNKS.
+    // Everything below this line ONLY EXISTS ON FREE CHUNKS. Everything above perfectly fits in 128 bytes.
     union {
         LeaderTail leader;
         FollowerTail follower;
     };
 } Chunk;
+
+inline Chunk* chunk_of_tail(LeaderTail *leader) {
+    return (Chunk*) ((char*)leader - 128);
+}
 
 inline void copy_chunklist4(ChunkList4 *dst, ChunkList4 *src) {
     long *ad = (long*) dst;
@@ -251,10 +255,14 @@ int push_to_leader(LeaderTail *leader, int size, Chunk *location) {
     if (count == 4) {  // Full!
         return 1;
     }
+    count++;
     for (int i = 0; i < 4; i++) {  // Find open space
         if (arr->locations.a[i] == NULL) {
             arr->locations.a[i] = location;
             arr->sizes.a[i] = size;
+            location->flags &= ~CHUNK_LEADER;  // clear leader flag to designate follower
+            location->follower.index = i;
+            location->follower.leader = leader;
             return 0;
         }
     }   
@@ -272,7 +280,7 @@ inline void copy_leader_links(LeaderTail *dst, LeaderTail *src) {
 void pop_leader(LeaderTail *leader) {
     LeaderTail *next = leader->next;
     LeaderTail *prev = leader->prev;
-    if (leader->followers.count == 0) {  // No children, just remove the group
+    if (leader->followers.count == 0) {  // No children, just remove the leader
         next->prev = prev;
         prev->next = next;
         return;
@@ -294,10 +302,13 @@ void pop_leader(LeaderTail *leader) {
  */
 void pop_follower(FollowerTail *follower) {
     LeaderTail *leader = follower->leader;
-    leader->followers.count--;
-    leader->followers.locations[follower->index] = NULL;
+    ChunkList4 *followers = &leader->followers;
+    followers->count--;
+    followers->locations.a[follower->index] = NULL;
 }
 
+Chunk *first_leader, *last_leader;
+LeaderTail free_list = {&free_list, &free_list, {0}};
 
 
 #endif
