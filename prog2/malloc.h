@@ -22,7 +22,8 @@
 typedef unsigned int byte;
 
 
-Chunk *first_manager, *last_manager;
+Chunk *first_manager = NULL;
+Chunk *last_manager;
 LeaderTail free_list;
 
 
@@ -74,6 +75,7 @@ inline Chunk *find_best_fit(int size) {
             // Is the leader chunk open, and will this size fit in this chunk?
             chunk_size = list->sizes.a[i];
             if (chunk_size == size) {
+                list->occupied.a[i] = 1;  // Set it to occupied
                 return list->locations.a[i];
             } else if (size < chunk_size && best_fit == NULL || chunk_size < best_size) {
                 best_fit = list->locations.a[i];
@@ -110,7 +112,7 @@ inline void delete_free_chunk(Chunk *chunk) {
 }
 
 inline byte is_heap_empty() {
-    return first_manager == sbrk(0);
+    return first_manager == sbrk(0) || first_manager == NULL;
 }
 
 byte* mymalloc(int size) {
@@ -162,6 +164,7 @@ byte* mymalloc(int size) {
         // Create that in-between chunk.
         Chunk *between = (Chunk*) ((char*)best_fit + actual_size);
         between->size = between_size;
+        insert_new_chunk(best_fit, between_size, between, 0);
         add_free_chunk(between, between_size);
     }
     return (byte*)best_fit + HEADSIZE;
@@ -175,69 +178,72 @@ byte* mymalloc(int size) {
 #define MERGE_FREE_RM_NEXT 0x10
 #define MERGE_FREE_ADD_THIS 0x20
 
+#define NEIGHBOR_TYPE_NULL 0x0
+#define NEIGHBOR_TYPE_MANAGER 0x1
+#define NEIGHBOR_TYPE_EMPLOYEE 0x2
+
+struct NeighborChunksResult {
+    Chunk *prev;
+    Chunk *next;
+    int prev_size;
+    int next_size;
+    char prev_type;
+    char next_type;
+};
+
 /**
  * Given that this_chunk is an employee chunk, finds the bounds of the new free chunk if you were to free 
  * that chunk. If NULL is returned for end_chunk, that means that every chunk outside of start_chunk would 
  * be outside of the program break after freeing.
  */
-inline void find_boundary_chunks_of_employee(Chunk *this_chunk, Chunk **start_chunk, Chunk **end_chunk, int *status) {
+inline void find_neighbor_chunks_for_employee(
+    Chunk *this_chunk, 
+    NeighborChunksResult *result
+) {
     Chunk *this_chunk_manager_chunk = this_chunk->employee.manager;
     Manager *this_chunk_manager = &this_chunk_manager_chunk->manager;
 
-    // Find the previous chunk.
+    // Find the previous chunk and potential next chunk location.
     int next_chunk_i;
-    Chunk *prev_chunk;
     ChunkList4 *list = &this_chunk_manager->employees;
-    if (list->locations.a[0] == this_chunk) {  // First element?
-        prev_chunk = this_chunk_manager_chunk;  // May be null
+    if (list->locations.a[0] == this_chunk) {  
+        // This is first employee. Prev is the manager.
+        result->prev = this_chunk_manager_chunk;  // May be null
+        result->prev_type = NEIGHBOR_TYPE_MANAGER;
         next_chunk_i = 1;
-    } else {  // It's somewhere else
+    } else {  
+        // This is non-first employee.
+        result->prev_type = NEIGHBOR_TYPE_EMPLOYEE;
         for (int i = 1; i < list->count; i++) {
             if (list->locations.a[i] == this_chunk) {
-                prev_chunk = list->locations.a[i - 1];  // Definitely not null
+                result->prev = list->locations.a[i - 1];  // Definitely not null
                 next_chunk_i = i + 1;
                 break;
             }
         }
     }
 
-    if (prev_chunk == NULL || prev_chunk->flags & CHUNK_USED) {
-        // This is either the first chunk or the last chunk is used, DON'T merge.
-        *start_chunk = this_chunk;
-    } else {
-        // There is a free chunk before this, DO merge.
-        *start_chunk = prev_chunk;
-        *status |= MERGE_BACKWARD;
-    }
-
-    Chunk *next_chunk;
-    int next_chunk_size;
+    // Find the next chunk.
     if (next_chunk_i >= list->count) {  
-        // Next chunk index is outside of range. This is the last chunk of its manager.
-        next_chunk = this_chunk_manager->next;
-        next_chunk_size = next_chunk->size;
+        // Next chunk index is outside of range. This is the last employee of its manager.
+        result->next = this_chunk_manager->next;
+        result->next_size = result->next->size;
+        result->next_type = result->next ? NEIGHBOR_TYPE_MANAGER : NEIGHBOR_TYPE_NULL;
+        // Status is clear here, so it will be NULL.
     } else { 
         // This is not the last chunk, so the next chunk exists.
-        next_chunk = list->locations.a[next_chunk_i];
-        next_chunk_size = list->sizes.a[next_chunk_i];
-    }
-
-    if (next_chunk == NULL) {
-        // This is the very last chunk.
-        *end_chunk = NULL;
-    } else if (next_chunk->flags & CHUNK_USED) {
-        // The next chunk is used, DON'T merge. Note that end is exclusive.
-        *end_chunk = next_chunk;
-    } else {
-        // The next chunk is free, DO merge. It cannot be the last chunk due to the invariant.
-        *end_chunk = (Chunk*)((char*)next_chunk + next_chunk_size);
-        *status |= MERGE_FORWARD;
+        result->next = list->locations.a[next_chunk_i];
+        result->next_size = list->sizes.a[next_chunk_i];
+        result->next_type = NEIGHBOR_TYPE_EMPLOYEE;
     }
 }
 
-inline Chunk* find_start_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_manager, int *status) {   
-    if (this_chunk_manager->prev == NULL) {  // This is the very first chunk.
-        return this_chunk;
+inline void find_prev_for_chunk_manager(Chunk *this_chunk, Manager *this_chunk_manager, NeighborChunksResult *result) {   
+    if (this_chunk_manager->prev == NULL) {  
+        // This is the very first chunk.
+        result->prev = NULL;
+        result->prev_type = NEIGHBOR_TYPE_NULL;
+        return;
     }
     
     // The previous manager might be the physically previous chunk.
@@ -245,68 +251,72 @@ inline Chunk* find_start_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk
     Manager *prev_chunk_manager = &prev_chunk->manager;
 
     // Change phys. prev to manager's last employee if necessary.
-    if (prev_chunk_manager->employees.count > 0) {
+    ChunkList4 *list = &prev_chunk_manager->employees;
+    if (list->count > 0) {
+        // Prev is last employee
         int i = prev_chunk_manager->employees.count - 1;
-        prev_chunk = prev_chunk_manager->employees.locations.a[i];
+        result->prev = list->locations.a[i];
+        result->prev_size = list->sizes.a[i];  // No need to load its page for this!
+        result->prev_type = NEIGHBOR_TYPE_EMPLOYEE;
+    } else {
+        // Prev is the manager
+        result->prev = prev_chunk;
+        result->prev_size = prev_chunk->size;
+        result->prev_type = NEIGHBOR_TYPE_MANAGER;
     }
-
-    if (prev_chunk->flags & CHUNK_USED) {
-        // Previous chunk is used. DON'T merge.
-        return this_chunk;
-    }
-    // Previous chunk is free. DO merge.
-    *status |= MERGE_BACKWARD;
-    return prev_chunk;
 }
 
-inline Chunk* find_end_chunk_of_manager(Chunk *this_chunk, Manager *this_chunk_manager, int *status) {   
-    if (this_chunk_manager->next == NULL) {  // This is the very last chunk.
-        return NULL;  // This chunk is beyond the program break.
+inline void find_next_for_chunk_manager(Chunk *this_chunk, Manager *this_chunk_manager, NeighborChunksResult *result) {   
+    // Check if next is first employee
+    ChunkList4 *list = &this_chunk_manager->employees;
+    if (list->count > 0) {
+        // List has elements, so next is first employee
+        result->next = list->locations.a[0];
+        result->next_size = list->sizes.a[0];  // No need to load its page!
+        result->next_type = NEIGHBOR_TYPE_EMPLOYEE;
+        return;
     }
+    // No employees. Next is next manager
+    result->next = this_chunk_manager->next;
+    result->next_size = result->next->size;
+    result->next_type = result->next ? NEIGHBOR_TYPE_MANAGER : NEIGHBOR_TYPE_NULL;
+}
 
-    Chunk *next_chunk;
-    int next_chunk_size;
-    if (this_chunk_manager->employees.count > 0) {
-        // There are employees. The first employee is the physically next chunk.
-        next_chunk = this_chunk_manager->employees.locations.a[0];
-        next_chunk_size = this_chunk_manager->employees.sizes.a[0];
-    } else {
-        // No employees. The next manager is the physically next chunk.
-        next_chunk = this_chunk_manager->next;
-        next_chunk_size = next_chunk->size;
-    }
-    
-    // Note that end chunk is exclusive, and that next chunk cannot be physically last chunk due to the invariant.
-    if (next_chunk->flags & CHUNK_USED) {
-        // Next chunk is used. DON'T merge.
-        return next_chunk;
-    }
-    // Next chunk is free. DO merge.
-    *status |= MERGE_FORWARD;
-    return (Chunk*)(next_chunk + next_chunk_size);
+/**
+ * If this chunk is an employee and the next one is an employee, possibly merges previous, this, and current.
+ */
+inline void do_merge_single_manager(Chunk *this_chunk, NeighborChunksResult *result) {
+    Chunk *manager_chunk = this_chunk->employee.manager;
+    //remove_loc_from(manager_chunk->manager, find)
 }
 
 void myfree(byte *addr) {
     Chunk *this_chunk = (Chunk*)(addr - HEADSIZE);
 
-    // Start chunk is inclusive, end chunk is exclusive. 
-    Chunk *start_chunk, *end_chunk;
+    Chunk *start_chunk, *next_chunk;
+    void *end_bound;  // end of new chunk, exclusive
     
     // Probe chunks around this chunk to find start and end.
     Manager *this_chunk_manager;
-    int merge_status;
+    NeighborChunksResult neighbors;
     if (this_chunk->flags & CHUNK_MANAGER) { 
         // This is a manager chunk
         this_chunk_manager = &this_chunk->manager;
 
-        start_chunk = find_start_chunk_of_manager(this_chunk, this_chunk_manager, &merge_status);
-        end_chunk = find_end_chunk_of_manager(this_chunk, this_chunk_manager, &merge_status);
+        if (!this_chunk_manager->next && !this_chunk_manager->prev && !this_chunk_manager->employees.count) {
+            // This is the only manager and it has no employees. Clear the heap.
+            brk(first_manager);
+            return;
+        }
+
+        find_next_for_chunk_manager(this_chunk, this_chunk_manager, &neighbors);
+        find_prev_for_chunk_manager(this_chunk, this_chunk_manager, &neighbors);
     } else { 
         // This is an employee chunk 
-        find_boundary_chunks_of_employee(this_chunk, &start_chunk, &end_chunk, &merge_status);
+        find_neighbor_chunks_for_employee(this_chunk, &neighbors);
     }
     
-    if (end_chunk == NULL) {
+    if (end_bound == NULL) {
         // This chunk will be beyond the program break!
         if (merge_status & MERGE_BACKWARD) {
             // We are merging into the previous chunk. Remove start chunk from free list.
@@ -319,6 +329,16 @@ void myfree(byte *addr) {
         brk(start_chunk);
         return;
     }
+
+    int merge_status = 0;
+   
+    if (!(neighbors.next->flags & CHUNK_USED)) {
+        merge_status |= MERGE_FORWARD;
+    }
+    if (!(neighbors.prev->flags & CHUNK_USED)) {
+        merge_status |= MERGE_BACKWARD;
+    }
+
 
     if (merge_status & MERGE_FORWARD) {
         // We are merging with next chunk

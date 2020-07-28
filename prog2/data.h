@@ -53,11 +53,20 @@ typedef union Arr4p {
 } Arr4p;
 
 /**
+ * 4 byte array, with 1x32 bit register backing
+ */
+typedef union Arr4b {
+    char a[4];
+    int _reg;
+} Arr4b;
+
+/**
  * A array list of 4 chunks, with 2x256 bit register backing
  */
 typedef union ChunkList4 {
     struct {
-        unsigned int count;
+        unsigned short count;
+        Arr4b occupied;
         Arr4i sizes;
         Arr4p locations;
     };
@@ -128,14 +137,6 @@ inline Chunk* get_chunk_of_tail(LeaderTail *leader) {
     return (Chunk*) ((char*)leader - 128);
 }
 
-inline Chunk* get_manager_of_chunk(Chunk *chunk) {
-    if (chunk->flags &= CHUNK_MANAGER) {
-        return chunk;
-    } else {
-        return chunk->employee.manager;
-    }
-}
-
 inline void copy_chunklist4(ChunkList4 *dst, ChunkList4 *src) {
     long *ad = (long*) dst;
     long *as = (long*) src;
@@ -145,55 +146,10 @@ inline void copy_chunklist4(ChunkList4 *dst, ChunkList4 *src) {
     ad[3] = as[3];
 }
 
-inline void copy_chunklist4_upper_to_lower(ChunkList4 *dst, ChunkList4 *src) {
-    // Copy 128 bits
-    long *adl = (long*)&dst->locations;
-    long *asl = (long*)&src->locations;
-    adl[0] = asl[2];
-    adl[1] = asl[3];
-
-    // Copy 64 bits
-    long *ads = (long*)&dst->sizes;
-    long *ass = (long*)&src->sizes;
-    ads[0] = ass[1];
-}
-
-/**
- * Permute locations and size for an insert operation. Count is the NEW arraylist count.
- */
-inline void perm_arr4_insert(int index, ChunkList4 *list) {
-    // This WOULD be a switch statement that does fancy AVX instructions, but guess not. :(
-    int next_i;
-    for (int i = list->count - 1; i > index; i = next_i) {
-        next_i = i - 1;
-        list->locations.a[i] = list->locations.a[next_i];
-        list->sizes.a[i] = list->sizes.a[next_i];
-    }
-}
-
-/**
- * Permute locations and size for a remove operation. Count is the NEW arraylist count.
- */
-inline void perm_arr4_remove(int index, int count, Arr4p *locations, Arr4i *sizes) {
-    int next_i;
-    for (int i = index; i < count; i = next_i) {
-        next_i = i + 1;
-        locations->a[i] = locations->a[next_i];
-        sizes->a[i] = sizes->a[next_i];
-    }
-}
-
-/**
- * Permute locations and size for a remove 2 items operation. Count is the NEW arraylist count.
- */
-inline void perm_arr4_remove2(int index, int count, Arr4p *locations, Arr4i *sizes) {
-    //TODO 
-}
-
 /**
  * Insert into a single array list, deleting the last item if space exceeded.
  */
-inline void insert_ordered_arr4(ChunkList4 *list, int size, Chunk *location) {
+inline void insert_ordered_arr4(ChunkList4 *list, int size, Chunk *location, char occupied) {
     int i = list->count;
     int i_next;
 
@@ -210,6 +166,10 @@ inline void insert_ordered_arr4(ChunkList4 *list, int size, Chunk *location) {
     // If no correct spot is found, i will be 0 here.
     list->locations.a[i] = location;
     list->sizes.a[i] = size;
+
+    int allow_mask = -1 << (8 * i);
+    list->occupied._reg = list->occupied._reg | ((list->occupied._reg & ~allow_mask) >> 8);
+    list->occupied.a[i] = occupied;
 }
 
 inline void set_manager_chunk(Chunk *chunk, Chunk *prev, Chunk *next) {
@@ -231,7 +191,10 @@ inline void maybe_set_manager_prev(Chunk *chunk, Chunk *prev) {
     }
 }
 
-void insert(Chunk* this_chunk, int size, Chunk *location) {
+/**
+ * Given that this chunk is a manager, inserts the provided chunk in the correct location.
+ */
+void insert_new_chunk(Chunk* this_chunk, int size, Chunk *location, char occupied) {
     Arr4i sizes;
     Arr4p locations;
     Manager *manager = &this_chunk->manager;
@@ -247,24 +210,26 @@ void insert(Chunk* this_chunk, int size, Chunk *location) {
     } else {
         employees->count++;
     }
-    insert_ordered_arr4(employees, size, location);
+    insert_ordered_arr4(employees, size, location, occupied);
     set_employee_chunk(location, this_chunk, size);
 }
 
-void remove_at(Manager *manager, int index) {
-    Arr4i sizes;
-    Arr4p locations;
-    int count = --manager->employees.count;
-    sizes._reg = manager->employees.sizes._reg;
-    locations._reg = manager->employees.locations._reg;
-
-    perm_arr4_remove(index, count, &locations, &sizes);
-}
-
-void remove2_at(Manager *manager, int index) {
-    //TODO specialized function
-    remove_at(manager, index + 1);
-    remove_at(manager, index);
+void remove_loc_from(ChunkList4 *list, Chunk* location, int n) {
+    int i;
+    for (int i = 0; list->locations.a[i] != location; i++) {  // Move i to the location
+        // noop
+    }
+    int found = i;
+    for (; i < list->count; i++) {
+        int src = i + n;
+        list->locations.a[i] = list->locations.a[src];
+        list->sizes.a[i] = list->sizes.a[src];
+    }
+    int write_mask = -1 << (8 * found);
+    list->occupied._reg = 
+        list->occupied._reg & write_mask | 
+        (list->occupied._reg << (8 * n)) & ~write_mask;
+    list->count -= n;
 }
 
 /**
@@ -332,6 +297,14 @@ inline void pop_chunk_from_free_list(Chunk *chunk) {
         pop_leader(&chunk->leader);
     } else {
         pop_follower(&chunk->follower);
+    }
+}
+
+inline void add_after_chunk(Chunk *chunk, Chunk *new_chunk, int size, char occupied) {
+    if (chunk->flags & CHUNK_MANAGER) {
+        insert_new_chunk(chunk, size, new_chunk, occupied);
+    } else {
+        insert_new_chunk(chunk->employee.manager, size, new_chunk, occupied);
     }
 }
 
