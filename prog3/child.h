@@ -33,8 +33,20 @@ int do_stat(char *path) {
         return -1;
     }
 
-    // do stat print
-    return 0;
+    printf("stat %s\n", path);
+    printf("    dev:                %ld\n", info.st_dev);     /* ID of device containing file */
+    printf("    ino:                %ld\n", info.st_ino);     /* inode number */
+    printf("    mode:               %ld\n", info.st_mode);    /* protection */
+    printf("    nlink:              %ld\n", info.st_nlink);   /* number of hard links */
+    printf("    uid:                %ld\n", info.st_uid);     /* user ID of owner */
+    printf("    gid:                %ld\n", info.st_gid);     /* group ID of owner */
+    printf("    rdev:               %ld\n", info.st_rdev);    /* device ID (if special file) */
+    printf("    size:               %ld\n", info.st_size);    /* total size, in bytes */
+    printf("    blksize:            %ld\n", info.st_blksize); /* blocksize for file system I/O */
+    printf("    blocks:             %ld\n", info.st_blocks);  /* number of 512B blocks allocated */
+    printf("    atime:              %ld\n", info.st_atime);   /* time of last access */
+    printf("    mtime:              %ld\n", info.st_mtime);   /* time of last modification */
+    printf("    ctime:              %ld\n", info.st_ctime);   /* time of last status change */    return 0;
 }
 
 void print_prog_status(int status, char *path) {
@@ -60,7 +72,9 @@ int process_cmd(char *path, char *input) {
     if (!strcmp(input, "q")) {
         // Quit
         exit(0);
-    } else if (!strcmp(input, "list")) {
+    } 
+    
+    if (!strcmp(input, "list")) {
         // List directory
         return do_list(path);
     } 
@@ -71,14 +85,13 @@ int process_cmd(char *path, char *input) {
         return do_cd(path);
     }
 
-    strcat(path, "/");
-    strcat(path, input);
-
     if (!strcmp(input, "..")) {
+        strcat(path, "/");
+        strcat(path, input);
         return do_cd(path);
-    } else {
-        return do_stat(path);
-    }
+    } 
+    
+    return do_stat(input);
 }
 
 void do_child(int parent_pid) {
