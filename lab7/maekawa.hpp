@@ -5,8 +5,9 @@ private:
     /* data */
 public:
     Maekawa(/* args */);
-    void do_isr();
+    void set_i(int index);
     MaekawaLock lock();
+    void unlock();
     ~Maekawa();
 };
 

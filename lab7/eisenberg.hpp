@@ -1,8 +1,11 @@
+#include <stdlib.h>
 #include <sys/mman.h>
 
 enum pstate {
     IDLE, WAITING, ACTIVE
 };
+
+class Eisenberg;
 
 /**
  * Convenience class so we can do RAII lock shenanigans
@@ -16,25 +19,29 @@ public:
 };
 
 /**
- * Initialize prior to forking.
+ * Implements the Eisenberg & McGuire algorithm. Please initialize prior to forking, and call set_i after forking.
  */
 class Eisenberg {
 private:
     pstate *flags;
+    int *turn;
     const int n;
-    int turn = 0;
-    int index;
     int i;
 public:
     Eisenberg(int n) : n(n) {
-        flags = (pstate*)mmap(
+        turn = (int*)mmap(
             nullptr,
-            sizeof(pstate) * n,
+            sizeof(int) + sizeof(pstate) * n,
             PROT_READ | PROT_WRITE,
             MAP_SHARED | MAP_ANONYMOUS,
             -1,
             0
         );
+        flags = (pstate*)(turn + 1);
+        for (int i = 0; i < n; i++) {
+            flags[i] = IDLE;
+        }
+        *turn = 0;
     }
 
     void set_i(int i) {
@@ -42,36 +49,40 @@ public:
     }
 
     EisenbergLock lock() {
-        do {
+        int index;
+        while (1) {
             flags[i] = WAITING;
-            index = turn;
+            index = *turn;
             while (index != i) {
                 index = flags[index] != IDLE
-                    ? turn 
+                    ? *turn 
                     : index = (index + i) % n;
             }
 
             flags[i] = ACTIVE;
             index = 0;
-            while (index < n && index == i || flags[index] != ACTIVE) {
+            while (index < n && (index == i || flags[index] != ACTIVE)) {
                 index++;
             }
-        } while (!(index >= n && turn == i || flags[turn] == IDLE));
-        turn = i;
+            if (index >= n && (*turn == i || flags[*turn] == IDLE)) break;
+        }
+        *turn = i;
         return EisenbergLock(this);
     }
 
     void unlock() {
-        index = (turn + 1) % n;
+        int index = (*turn + 1) % n;
         while (flags[index] == IDLE) {
             index = (index + 1) % n;
         }
 
-        turn = index;
-        flags[index] = IDLE;
+        *turn = index;
+        flags[i] = IDLE;
     }
 
-    ~Eisenberg();
+    ~Eisenberg() {
+        if (i == 0) munmap(turn, sizeof(int) + sizeof(pstate) * n);
+    }
 };
 
 EisenbergLock::EisenbergLock(Eisenberg *parent)
