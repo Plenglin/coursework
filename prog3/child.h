@@ -9,7 +9,22 @@
 #include <sys/stat.h>
 
 
-void child_isr(int pid) {
+#define STATUS_ALIVE 0
+#define STATUS_UNKNOWN 1
+#define STATUS_QUIT 2
+
+#define const_print(str) write(0, str, sizeof(str) - 1)
+
+
+typedef struct Message {
+    int status;
+} Message;
+
+int __parent_pid;
+Message *__message;
+
+void child_isr(int sig) {
+    __message->status = STATUS_ALIVE;
     //kill(__parent_pid, SIGUSR1);  // Respond to parent's interrupt
 }
 
@@ -36,10 +51,10 @@ int do_stat(char *path) {
     printf("stat %s\n", path);
     printf("    dev:                %ld\n", info.st_dev);     /* ID of device containing file */
     printf("    ino:                %ld\n", info.st_ino);     /* inode number */
-    printf("    mode:               %ld\n", info.st_mode);    /* protection */
+    printf("    mode:               %d\n", info.st_mode);    /* protection */
     printf("    nlink:              %ld\n", info.st_nlink);   /* number of hard links */
-    printf("    uid:                %ld\n", info.st_uid);     /* user ID of owner */
-    printf("    gid:                %ld\n", info.st_gid);     /* group ID of owner */
+    printf("    uid:                %d\n", info.st_uid);     /* user ID of owner */
+    printf("    gid:                %d\n", info.st_gid);     /* group ID of owner */
     printf("    rdev:               %ld\n", info.st_rdev);    /* device ID (if special file) */
     printf("    size:               %ld\n", info.st_size);    /* total size, in bytes */
     printf("    blksize:            %ld\n", info.st_blksize); /* blocksize for file system I/O */
@@ -55,9 +70,9 @@ void print_prog_status(int status, char *path) {
     } else {  // Normal
         write(0, "\033[0;34m", 8);  // Blue
     }
-    write(0, "stat prog \033[0;36m", 18);
+    const_print("stat prog \033[0;36m");
     write(0, path, strlen(path));
-    write(0, "\033[0m$ ", 7);
+    const_print("\033[0m$ ");
     fflush(0);
 }
 
@@ -72,6 +87,8 @@ int do_cd(char *path) {
 int process_cmd(char *path, char *input) {
     if (!strcmp(input, "q")) {
         // Quit
+        const_print("Child quit\n");
+        __message->status = STATUS_QUIT;
         exit(0);
     } 
     
@@ -98,13 +115,20 @@ int process_cmd(char *path, char *input) {
 void do_child(int parent_pid) {
     char path[1000];
     char input[1000];
+    __parent_pid = parent_pid;
+    signal(SIGUSR1, child_isr);
 
     int status = 0;
 
     while (1) {
         getcwd(path, 1000);
         print_prog_status(status, path);
-        scanf("%s", input);
+        fgets(input, 999, stdin);
+        // Trim the trailing newline
+        int len = strlen(input);
+        if (len > 0) {
+            input[len - 1] = 0;
+        }
         status = process_cmd(path, input);
     }
 }
