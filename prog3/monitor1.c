@@ -11,7 +11,7 @@
 
 void do_parent(int child_pid) {
     while (1) {
-
+        
 
         sleep(10);
     }

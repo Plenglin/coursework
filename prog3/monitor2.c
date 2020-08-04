@@ -22,7 +22,6 @@ int main() {
         }
         wait(0);
         printf("Child process terminated. Sleeping 10 seconds and relaunching.\n");
-        return 0;
         sleep(SLEEP_SECONDS);
     }
     return 0;

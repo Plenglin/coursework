@@ -58,6 +58,7 @@ void print_prog_status(int status, char *path) {
     write(0, "stat prog \033[0;36m", 18);
     write(0, path, strlen(path));
     write(0, "\033[0m$ ", 7);
+    fflush(0);
 }
 
 int do_cd(char *path) {
