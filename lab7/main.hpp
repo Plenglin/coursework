@@ -8,37 +8,22 @@
 #include <sys/wait.h>
 #include <poll.h>
 
-#define FORK_N 1
-
-int parent_pid;
-int *kill_pids;
-int n_kill_pids;
+#define FORK_N 4
 
 /**
- * Creates n processes. Returns the index, where 0 is the parent.
+ * Creates n processes. Returns the index, where -1 is the parent.
  */
-int fork_n(int n) {
-    n_kill_pids = n - 1;
-    kill_pids = (int*)malloc(n_kill_pids * sizeof(int));
-    parent_pid = getpid();
-    for (int i = 1; i < n; i++) {
+int fork_n(int *pids, int n) {
+    for (int i = 0; i < n; i++) {
         int pid = fork();
         if (pid == 0) {
             return i;
         } else {
-            kill_pids[i - 1] = pid;
+            pids[i] = pid;
         }
     }
-    return 0;
+    return -1;
 }
-
-int __index = -1;
-int kill_pipe_fd;
-
-void handle_sigint(int sig) 
-{ 
-    printf("Caught signal %d\n", sig); 
-} 
 
 const char * const SENTENCES[] = {
     "Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It’s not a story the Jedi would tell you. ",
@@ -47,10 +32,42 @@ const char * const SENTENCES[] = {
 };
 const int SENTENCES_COUNT = sizeof(SENTENCES) / sizeof(char*);
 
+int child_pids[FORK_N];
+
+void handle_sigint(int sig) { 
+    char buf[1000];
+    sprintf(buf, "signal %d\n", sig); 
+    write(0, buf, strlen(buf));
+    for (int i = 0; i < FORK_N; i++) {
+        kill(child_pids[i], SIGKILL);
+    }
+    wait(0);
+    exit(0);
+} 
+
 template <class Lock>
 int run_mutex_test() {
     printf("parent %d\n", getpid());
     signal(SIGINT, handle_sigint); 
-    while (1) ; 
+    
+    char *buf = (char*)mmap(NULL, 8192, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    buf[0] = 0;
+
+    Lock mutex(FORK_N);
+    int index = fork_n(child_pids, FORK_N);
+    if (index == -1) {  // parent
+        while (1) sleep(1);
+    }
+    //mutex.set_i(index);
+
+    for (unsigned long i = 0;; i++) {
+        //auto _lock = mutex.lock();
+        if (index % 2 == 0) {
+            write(0, buf, strlen(buf));
+            write(0, "\n", 1);
+        } else {
+            strcpy(buf, SENTENCES[(i + index) % SENTENCES_COUNT]);
+        }
+    }
     return 0; 
 }
