@@ -1,21 +1,9 @@
 #include <stdlib.h>
 #include <sys/mman.h>
+#include "./raii_lock.hpp"
 
 enum pstate {
     IDLE, WAITING, ACTIVE
-};
-
-class Eisenberg;
-
-/**
- * Convenience class so we can do RAII lock shenanigans
- */
-class EisenbergLock {
-private:
-    Eisenberg *parent;
-public:
-    EisenbergLock(Eisenberg *parent);
-    ~EisenbergLock();
 };
 
 /**
@@ -48,7 +36,7 @@ public:
         this->i = i;
     }
 
-    EisenbergLock lock() {
+    RAIILock<Eisenberg> lock() {
         int index;
         while (1) {
             flags[i] = WAITING;
@@ -67,7 +55,7 @@ public:
             if (index >= n && (*turn == i || flags[*turn] == IDLE)) break;
         }
         *turn = i;
-        return EisenbergLock(this);
+        return RAIILock<Eisenberg>(this);
     }
 
     void unlock() {
@@ -84,11 +72,3 @@ public:
         if (i == 0) munmap(turn, sizeof(int) + sizeof(pstate) * n);
     }
 };
-
-EisenbergLock::EisenbergLock(Eisenberg *parent)
-    : parent(parent) 
-{ }
-
-EisenbergLock::~EisenbergLock() {
-    parent->unlock();
-}
