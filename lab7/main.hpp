@@ -35,13 +35,10 @@ int fork_n(int n) {
 int __index = -1;
 int kill_pipe_fd;
 
-void isr(int sig) {
-    char buf[1000];
-    int len = sprintf(buf, "int %d\n", __index);
-    char b = 'k';
-    write(0, buf, len);
-    close(kill_pipe_fd);
-}
+void handle_sigint(int sig) 
+{ 
+    printf("Caught signal %d\n", sig); 
+} 
 
 const char * const SENTENCES[] = {
     "Did you ever hear the tragedy of Darth Plagueis The Wise? I thought not. It’s not a story the Jedi would tell you. ",
@@ -52,49 +49,8 @@ const int SENTENCES_COUNT = sizeof(SENTENCES) / sizeof(char*);
 
 template <class Lock>
 int run_mutex_test() {
-    auto mutex = Lock(FORK_N);
-    struct pollfd killpollfd;
-    {
-        int fds[2];
-        pipe(fds);
-        killpollfd.fd = fds[0];
-        kill_pipe_fd = fds[1];
-    }
-    
-    char *buf = (char*)mmap(NULL, 8192, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    buf[0] = 0;
-
-    int index = fork_n(FORK_N);
-    __index = index;
-    signal(SIGINT, isr);
-    mutex.set_i(index);
-
-    for (unsigned long i = 0;; i++) {
-        auto _lock = mutex.lock();
-        if (index % 2 == 0) {
-            write(0, buf, strlen(buf));
-            write(0, "\n", 1);
-        } else {
-            strcpy(buf, SENTENCES[(i + index) % SENTENCES_COUNT]);
-        }
-        if (__index == 0) {
-            int ret = poll(&killpollfd, 1, 0);
-            if (killpollfd.events != 0) {
-                break;
-            }
-        }
-    }
-
-    printf("%d stopping\n", index);
-    fflush(0);
-    if (index != 0) {
-        exit(0);
-    } else {
-        for (int i = 0; i < n_kill_pids; i++) {
-            kill(kill_pids[i], SIGTERM);
-        }
-    }
-    wait(0);
-    munmap(buf, 8192);
-    free(kill_pids);
+    printf("parent %d\n", getpid());
+    signal(SIGINT, handle_sigint); 
+    while (1) ; 
+    return 0; 
 }
