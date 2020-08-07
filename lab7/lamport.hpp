@@ -44,7 +44,7 @@ public:
 
     RAIILock<Lamport> lock() {
         entering[i] = true;
-        int max = number[1];
+        int max = number[0];
         for (int j = 1; j < n; j++) {
             if (max < number[j]) {
                 max = number[j];
@@ -52,17 +52,15 @@ public:
         }
         number[i] = max + 1;
         entering[i] = false;
-        char buf[100];
         for (int j = 0; j < n; j++) {
             if (j == i) continue;
             while (entering[j]);
-            while (number[j] != 0 && (number[j] < number[i] || j < i));
+            while (number[j] != 0 && number[j] < number[i]);
         }
         return RAIILock<Lamport>(this);
     }
 
     void unlock() {
-        char buf[100];
         number[i] = 0;
     }
 
