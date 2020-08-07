@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 
@@ -43,22 +44,25 @@ public:
 
     RAIILock<Lamport> lock() {
         entering[i] = true;
-        for (int j = 0; j < n; j++) {
-            if (number[j] > number[i]) {
-                number[i] = this->number[j];
+        int max = number[1];
+        for (int j = 1; j < n; j++) {
+            if (max < number[j]) {
+                max = number[j];
             }
         }
-        number[i]++;
+        number[i] = max + 1;
         entering[i] = false;
-
+        char buf[100];
         for (int j = 0; j < n; j++) {
+            if (j == i) continue;
             while (entering[j]);
-            while (number[j] != 0 && number[j] < number[i] && j < i);
+            while (number[j] != 0 && (number[j] < number[i] || j < i));
         }
         return RAIILock<Lamport>(this);
     }
 
     void unlock() {
+        char buf[100];
         number[i] = 0;
     }
 

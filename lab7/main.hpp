@@ -33,6 +33,7 @@ const char * const SENTENCES[] = {
 const int SENTENCES_COUNT = sizeof(SENTENCES) / sizeof(char*);
 
 int child_pids[FORK_N];
+char *buf;
 
 void handle_sigint(int sig) { 
     char buf[1000];
@@ -42,6 +43,7 @@ void handle_sigint(int sig) {
         kill(child_pids[i], SIGKILL);
     }
     wait(0);
+    munmap(buf, 8192);
     exit(0);
 } 
 
@@ -50,7 +52,7 @@ int run_mutex_test() {
     printf("parent %d\n", getpid());
     signal(SIGINT, handle_sigint); 
     
-    char *buf = (char*)mmap(NULL, 8192, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    buf = (char*)mmap(NULL, 8192, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     buf[0] = 0;
 
     Lock mutex(FORK_N);
@@ -58,10 +60,10 @@ int run_mutex_test() {
     if (index == -1) {  // parent
         while (1) sleep(1);
     }
-    //mutex.set_i(index);
+    mutex.set_i(index);
 
     for (unsigned long i = 0;; i++) {
-        //auto _lock = mutex.lock();
+        auto _lock = mutex.lock();
         if (index % 2 == 0) {
             write(0, buf, strlen(buf));
             write(0, "\n", 1);
