@@ -1,8 +1,8 @@
 #if !defined(__UTIL_HPP__)
 #define __UTIL_HPP__
 
-#include "./eisenberg.hpp"
-#define Mutex Eisenberg
+#include "./lamport.hpp"
+#define Mutex Lamport
 
 template <class T>
 T* malloc_shared(int n = 1) {

@@ -17,48 +17,40 @@ class Stack
 {
 private:
     T *data;
-    int *capacity;
-    int *n;
+    int capacity;
+    int n = 0;
 
     void resize(int new_capacity) {
         T *new_data = malloc_shared<T>(new_capacity);
-        for (int i = 0; i < *n; i++) {
+        for (int i = 0; i < n; i++) {
             new_data[i] = data[i];
         }
-        free_shared(data, *capacity);
+        free_shared(data, capacity);
 
         data = new_data;
-        *capacity = new_capacity;
+        capacity = new_capacity;
     }
 public:
-    Stack(int users, int capacity = 1000) {
-        n = malloc_shared<int>(2);
-        *n = 0;
-        this->capacity = n + 1;
-        *this->capacity = capacity;
+    Stack(int capacity = 1000) : capacity(capacity) {
         data = malloc_shared<T>(capacity);
     }
 
     int size() {
-        return *n;
+        return n;
     }
 
     void push(T obj) {
-        if (*n >= *capacity) {
-            resize(*capacity * 2);
+        if (n >= capacity) {
+            resize(capacity * 2);
         }
-        data[(*n)++] = obj;
+        data[n++] = obj;
     }
 
     T pop() {
-        if (n <= 0) {
-            return;
-        }
-        return data[--(*n)];
+        return data[--n];
     }
 
-    ~Stack() {
-        free_shared(n, 2);
+    void free() {
         free_shared(data, capacity);
     }
 };
@@ -71,20 +63,32 @@ public:
 template <class T>
 class SharedStack {
 private:
-    Stack<T> stack;
+    Stack<T> *stack;
     Mutex stack_mutex;
+    int proc_i;
     
     /**
      * Write pipes being listened to by processes waiting on a new item.
      */
-    Stack<int> waiting_procs;
+    Stack<int> *waiting_procs;
     Mutex waiting_procs_mutex;
+
+    int *pipes;
+    int n_procs;
 public:
-    SharedStack(int n_procs) : stack_mutex(n_procs), waiting_procs_mutex(n_procs) {
-        stack = malloc_shared<Stack<T>>();
+    SharedStack(int n_procs) : n_procs(n_procs), stack_mutex(n_procs), waiting_procs_mutex(n_procs) {
+        stack = malloc_shared<Stack<T>>(1);
+        *stack = Stack<T>();
+        waiting_procs = malloc_shared<Stack<int>>(1);
+        *waiting_procs = Stack<int>();
+        pipes = malloc_shared<int>(n_procs * 2);
+        for (int i = 0; i < n_procs; i++) {
+            pipe(&pipes[i * 2]);
+        }
     }
 
     void set_proc_i(int proc_i) {
+        this->proc_i = proc_i;
         stack_mutex.set_i(proc_i);
         waiting_procs_mutex.set_i(proc_i);
     }
@@ -95,15 +99,18 @@ public:
     }
 
     void push(T obj) {
-        // Acquire stack ownership and push
-        auto l1 = stack_mutex.lock();
-        stack->push(obj);
+        {
+            // Acquire stack ownership and push
+            auto lock = stack_mutex.lock();
+            stack->push(obj);
+        }
         {
             // Notify waiting process that there is another task, if there are waiting processes
-            auto l2 = waiting_procs_mutex.lock();
-            if (waiting_procs.size() > 0) {
-                int fd = waiting_procs.pop();
-                close(fd);
+            auto lock = waiting_procs_mutex.lock();
+            if (waiting_procs->size() > 0) {
+                int fd = waiting_procs->pop();
+                char x = 0;
+                write(fd, &x, 1);
             }
         }
     }
@@ -118,8 +125,8 @@ public:
             {
                 // Pop if there are items
                 auto lock = stack_mutex.lock();
-                if (stack.size() > 0) {
-                    out[n++] = stack.pop();
+                if (stack->size() > 0) {
+                    out[n++] = stack->pop();
                     continue;
                 }
             }
@@ -130,23 +137,26 @@ public:
             }
 
             // We have not popped enough items to satisfy the lord. Wait for more.
-            int fd[2];
-            pipe(fd);
             {
                 // Submit pipe to waiting_procs
                 auto lock = waiting_procs_mutex.lock();
-                waiting_procs.push(fd[1]);
+                waiting_procs->push(pipes[proc_i * 2 + 1]);
             }
 
             // Read pipe (aka wait for pipe to be closed)
-            char buf;
-            read(fd[0], buf, 1);
+            char buf[100];
+            read(pipes[proc_i * 2], buf, 1);
         }
         return n;
     }
 
     ~SharedStack() {
-
+        close(pipes[proc_i * 2 + 1]);
+        if (proc_i != 0) return;
+        stack->free();
+        waiting_procs->free();
+        free_shared(stack, 1);
+        free_shared(waiting_procs, 1);
     }
 };
 
