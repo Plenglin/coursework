@@ -35,6 +35,14 @@ public:
         data = malloc_shared<T>(capacity);
     }
 
+    T* start() {
+        return data;
+    }
+
+    T* end() {
+        return data + n;
+    }
+
     int size() {
         return n;
     }
@@ -105,10 +113,12 @@ public:
             stack->push(obj);
         }
         {
-            // Notify waiting process that there is another task, if there are waiting processes
+            // Are there are waiting processes?
             auto lock = waiting_procs_mutex.lock();
             if (waiting_procs->size() > 0) {
                 int fd = waiting_procs->pop();
+
+                // send a single byte
                 char x = 0;
                 write(fd, &x, 1);
             }
@@ -143,7 +153,7 @@ public:
                 waiting_procs->push(pipes[proc_i * 2 + 1]);
             }
 
-            // Read pipe (aka wait for pipe to be closed)
+            // Block until someone sends us a signal byte
             char buf[100];
             read(pipes[proc_i * 2], buf, 1);
         }

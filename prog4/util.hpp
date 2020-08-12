@@ -16,5 +16,23 @@ void free_shared(T* ptr, int n = 1) {
 
 #define const_print(str) write(0, str, sizeof(str) - 1)
 
+/**
+ * Takes a file name and splits it into name and extension. 
+ * Modifies the string passed in. Returns the extension string.
+ */
+char* parse_name_ext(char *str) {
+    int last_period_offset = -1;
+    int i;
+    for (i = 0; str[i] != 0; i++) {
+        if (str[i] == '.') {
+            last_period_offset = i;
+        }
+    }
+    if (last_period_offset == -1) {
+        last_period_offset = i;
+    }
+    return str + last_period_offset;
+}
+
 
 #endif // __UTIL_HPP__

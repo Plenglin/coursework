@@ -18,10 +18,19 @@
 #define MAX_CHILD_PROCS 10
 
 
-struct Task {
+struct SearchParams {
+    bool subdirs;
+    char *ext;
+};
+class Task {
+public:
+    char path[256];
+};
+
+struct Result {
     char *path;
 };
-typedef SharedStack<Task> TaskQueue;
+typedef SharedStack<Task*> TaskQueue;
 
 
 enum ProcessStatus {
@@ -29,55 +38,98 @@ enum ProcessStatus {
 };
 
 struct SharedProcessData {
-    int pid;
     ProcessStatus status;
+    char current_dir[256];
 };
 
 /**
- * Handles the interfacing between main process and a SINGLE child process.
+ * Handles the interfacing between main process and a SINGLE child process for recursive searches.
  */
 class ProcessController {
-    SharedProcessData *shared;
     int i;
+    SharedProcessData *shared;
+    Mutex shared_mutex;
+    int child_pid;
     
-    // Communication pipes. c = controller, p = peripheral
-    int copi, cipo;
-    Mutex mutex;
+    Mutex results_mutex;
+    SearchParams *params;
+    TaskQueue *queue;
+    Stack<Result> *results;
 public: 
-    ProcessController(int i, TaskQueue *queue) : mutex(2), i(i) {
+    ProcessController(SearchParams *params, int i, TaskQueue *queue, Stack<Result> *results, Mutex results_mutex) : 
+        shared_mutex(2), 
+        i(i),
+        results(results),
+        results_mutex(results_mutex),
+        params(params)
+    {
         shared = malloc_shared<SharedProcessData>();
         shared->status = PROC_IDLE;
 
         int copi[2], cipo[2];
         pipe(copi);
         pipe(cipo);
-        int pid = fork();
-        if (pid) {
+        child_pid = fork();
+        if (child_pid) {
             // parent
-            mutex.set_i(0);
-            shared->pid = pid;
-            this->cipo = cipo[0];
-            this->copi = copi[1];
+            shared_mutex.set_i(0);
         } else {
             // child;
-            mutex.set_i(1);
-            this->cipo = cipo[1];
-            this->copi = copi[0];
-            do_child(queue);
+            shared_mutex.set_i(1);
+
+            queue->set_proc_i(i);
+            results_mutex.set_i(i);
+            do_child_recursive(params, queue, results, results_mutex);
         }
     }
 
-    void do_child(TaskQueue *queue) {
-        Task tasks[10];  // We want a buffer so that we aren't spending a ton of time in the mutex.
+    void do_child_recursive(SearchParams *params, TaskQueue *queue, Stack<Result> *results, Mutex mutex) {
+        Task* tasks[10];  // We want a buffer so that we aren't spending a ton of time in the mutex.
+        char buf[256];
         while (true) {
             for (int i = 0; i < queue->pop(1, 10, tasks); i++) {
-                // Scan dir and push subdirs as necessary
+                Task *task = tasks[i];
+                DIR *dir = opendir(task->path);
+                {
+                    auto lock = shared_mutex.lock();
+                    strcpy(shared->current_dir, task->path);
+                }
+
+                for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
+                    if (dirent->d_type == DT_DIR) {
+                        Task *new_task = malloc_shared<Task>(1);
+                        strcpy(task->path, dirent->d_name);
+                        queue->push(task);
+                        continue;
+                    }
+
+                    // not a directory
+                    if (params->ext != nullptr) {
+                        strcpy(buf, dirent->d_name);
+                        char *ext = parse_name_ext(buf);
+                        if (strcmp(ext, params->ext) != 0) {
+                            continue;
+                        }
+                    }
+
+                    Result result;
+                    result.path = malloc_shared<char>(strlen(dirent->d_name));
+                    strcpy(result.path, dirent->d_name);
+                    {
+                        auto lock = mutex.lock();
+                        results->push(result);
+                    }
+                }
+
+                closedir(dir);
+                free_shared(task);
             }
         }
+        exit(0);
     }
 
     ~ProcessController() {
-        kill(shared->pid, SIGTERM);
+        kill(child_pid, SIGTERM);
         free_shared(shared);
     }    
 };
@@ -85,6 +137,8 @@ public:
 template <int max_n>
 class ProcessPool {
     ProcessController* procs[max_n] = {nullptr};
+    Stack<Result> *results;
+    Mutex results_mutex;
     TaskQueue tasks;
     int n = 0;
 public:
@@ -97,18 +151,13 @@ public:
     }
 
     void search(char *dir) {
-        malloc(strlen())
+        //malloc(strlen())
     }
 
     ~ProcessPool() {
 
     }
 };
-
-void child_isr(int sig) {
-    __message->status = STATUS_ALIVE;
-    //kill(__parent_pid, SIGUSR1);  // Respond to parent's interrupt
-}
 
 int do_list(char *path) {
     DIR *dir = opendir(path);
@@ -135,27 +184,17 @@ void print_prog_status(int status, char *path) {
     fflush(0);
 }
 
-int do_cd(char *path) {
-    if (chdir(path)) {
-        printf("Error changing into %s\n", path);
-        return -1;
-    }
-    return 0;
-}
-
-int process_find_cmd() {
-
+int do_find_cmd(char *term, char *ext, bool subdirs) {
+    
 }
 
 int process_cmd(char *path, char *input) {
-
-    return do_stat(input);
 }
 
 void do_parent(int parent_pid) {
     char path[1000];
     char input[1000];
-    signal(SIGUSR1, child_isr);
+    //signal(SIGUSR1, child_isr);
 
     int status = 0;
 
