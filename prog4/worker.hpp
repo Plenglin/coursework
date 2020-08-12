@@ -11,7 +11,7 @@
 
 
 enum WorkerMessageType {
-    found_file, found_directory, change_state, failed_path
+    found_file, found_directory, change_state, failed_path, finish_scan, unprocessed_directory
 };
 
 enum ManagerMessageType {
@@ -33,6 +33,8 @@ public:
 
     void run() {
         send_change_state(idle);
+
+        // TODO buffered
         
         while (1) {
             ManagerMessageType type;

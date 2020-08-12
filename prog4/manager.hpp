@@ -57,8 +57,12 @@ void WorkerInstance::receive_message() {
         case found_file:
             receive_file();
             break;
-        case found_directory:
+        case found_directory: 
+        case unprocessed_directory:
             receive_directory();
+            break;
+        case finish_scan:
+            n_processing--;
             break;
         case change_state:
             receive_change_state();
@@ -181,8 +185,8 @@ void Manager::set_matcher(Matcher *matcher) {
 void Manager::add_directory(char *path) {
     directories.push(path);
     
-    char buf[1024];
-    int x = sprintf(buf, "%s\n", path);
+    char buf[4096];
+    int x = sprintf(buf, "d %s\n", path);
     write(0, buf, x);
 }
 
@@ -190,8 +194,8 @@ void Manager::add_file(char *path) {
     auto node = new LinkedList<char*>;
     node->value = path;
     results = append(results, node);
-    char buf[1024];
-    int x = sprintf(buf, "%s\n", path);
+    char buf[4096];
+    int x = sprintf(buf, "f %s\n", path);
     write(0, buf, x);
 }
 
