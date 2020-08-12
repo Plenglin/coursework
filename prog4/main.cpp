@@ -74,10 +74,10 @@ int search_directory(char *path, SearchParams *params, DirsCollection *tasks, Ma
 
             strcpy(buf, dirent->d_name);
             char *ext = parse_name_ext(buf); 
-            if (strcmp(buf, params->name) != 0) {  // No name match?
+            if (params->name[0] && strcmp(buf, params->name)) {  // No name match?
                 continue;
             }           
-            if (strcmp(ext, params->ext) != 0) {  // No extension match?
+            if (params->ext[0] && strcmp(ext, params->ext)) {  // No extension match?
                 continue;
             }
         }
@@ -238,10 +238,10 @@ int main() {
     Stack<Task*> tasks;
     SearchParams params;
     NullMutex mutex;
-    strcpy(params.ext, "");
+    strcpy(params.ext, "h");
     strcpy(params.name, "");
     params.subdirs = false;
-    search_directory<Stack<Task*>, Stack<Result*>, NullMutex>(".", &params, &tasks, &results, mutex);
+    search_directory<Stack<Task*>, Stack<Result*>, NullMutex>("prog2", &params, &tasks, &results, mutex);
     printf("files\n");
     for (auto iter = results.start(); iter != results.end(); iter++) {
         printf("%s\n", (*iter)->path);

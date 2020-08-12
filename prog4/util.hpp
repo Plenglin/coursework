@@ -25,11 +25,14 @@ char* parse_name_ext(char *str) {
     int i;
     for (i = 0; str[i] != 0; i++) {
         if (str[i] == '.') {
-            last_period_offset = i + 1;
+            last_period_offset = i;
         }
     }
     if (last_period_offset == -1) {
         last_period_offset = i;  // end of string, will be an empty string
+    } else {
+        str[last_period_offset] = 0;
+        last_period_offset++;
     }
     return str + last_period_offset;
 }
