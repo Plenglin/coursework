@@ -1,6 +1,8 @@
 #if !defined(__UTIL_HPP__)
 #define __UTIL_HPP__
 
+#include <string.h>
+
 #include "./lamport.hpp"
 #define Mutex Lamport
 
@@ -37,17 +39,62 @@ char* parse_name_ext(char *str) {
     return str + last_period_offset;
 }
 
-/**
- * Acts like a normal mutex, but it doesn't do anything.
- */
-class NullMutex {
-public:
-    NullMutex() {}
-    int lock() {
-        return 0;
+
+int build_path(char *dst, char *folder, char *child) {
+    strcpy(dst, folder);
+    int len = strlen(dst);
+    if (dst[len - 1] != '/') {
+        dst[len++] = '/';
     }
-    ~NullMutex() {}
+    strcpy(dst + len, child);
+    return len + strlen(dst + len);
+}
+
+template <class T>
+struct LinkedList {
+    LinkedList *next;
+    T value;
 };
 
+/**
+ * Appends a new node to the object and returns it.
+ */
+template <class T>
+LinkedList<T>* append(LinkedList<T> *list, LinkedList<T> *item) {
+    if (list == nullptr) return item;
+    item->next = list;
+    return item;
+}
+
+/**
+ * Describes a task where you scan a SINGLE directory.
+ */
+struct Matcher {
+    /**
+     * File extension
+     */
+    char ext[512];
+    /**
+     * File name
+     */
+    char name[512];
+
+    bool match(char *filename) {
+        char buf[256];
+        if (this->name[0] || this->ext[0]) {  // Filter strings are not empty strings?
+            // Prepare for filtering
+
+            strcpy(buf, filename);
+            char *ext = parse_name_ext(buf); 
+            if (this->name[0] && strcmp(buf, this->name)) {  // No name match?
+                return false;
+            }           
+            if (this->ext[0] && strcmp(ext, this->ext)) {  // No extension match?
+                return false;
+            }
+        }
+        return true;
+    }
+};
 
 #endif // __UTIL_HPP__
