@@ -18,7 +18,7 @@
 #define MAX_CHILD_PROCS 10
 
 int main() {
-    char path[] = ".";
+    char path[] = "/";
     Matcher matcher;
     strcpy(matcher.ext, "");
     strcpy(matcher.name, "");

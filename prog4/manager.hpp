@@ -21,7 +21,7 @@ private:
     Stack<WorkerInstance*> available;
 
     LinkedList<char*> *results = nullptr;
-    LinkedList<char*> *directories = nullptr;
+    Stack<char*> directories;
 public:
     Manager(int n_workers, char* path);
     void set_matcher(Matcher *matcher);
@@ -164,9 +164,12 @@ Manager::Manager(int n_workers, char *path) :
     for (int i = 0; i < n_workers; i++) {
         workers[i].manager = this;
     }
-    directories = new LinkedList<char*>;
-    directories->value = new char[strlen(path) + 1];
-    strcpy(directories->value, path);
+
+    auto len = strlen(path);
+    auto *item = new char[len + 1];
+    strcpy(item, path);
+    item[len] = 0;
+    directories.push(item);
 }
 
 void Manager::set_matcher(Matcher *matcher) {
@@ -176,9 +179,7 @@ void Manager::set_matcher(Matcher *matcher) {
 }
 
 void Manager::add_directory(char *path) {
-    auto node = new LinkedList<char*>;
-    node->value = path;
-    directories = append(directories, node);
+    directories.push(path);
     
     char buf[1024];
     int x = sprintf(buf, "%s\n", path);
@@ -204,19 +205,13 @@ void Manager::run() {
     while (1) {
         // Distribute tasks to workers evenly
         int i = 0;
-        while (directories != nullptr) {
-            workers[i].assign_worker(directories->value);
-            delete directories->value;
-            auto next = directories->next;
-            delete directories;
-            directories = next;
-
+        while (directories.size() > 0) {
+            workers[i].assign_worker(directories.pop());
             i = (i + 1) % n_workers;
         }
 
         // Poll, read inputs when they come
         int n_events = poll(pollfds, n_workers, -1);
-        write(0, "a", 1);
         bool all_idle;
         for (int i = 0; i < n_workers; i++) {
             if (pollfds[i].revents & POLLIN) {
@@ -226,7 +221,7 @@ void Manager::run() {
         }
 
         // Are we done with all our tasks?
-        if (directories == nullptr && all_idle) {
+        if (directories.size() == 0 && all_idle) {
             return;
         }
     }
