@@ -35,7 +35,12 @@ typedef SharedStack<Task*> TaskQueue;
 
 
 enum ProcessStatus {
-    PROC_WAITING, PROC_ACTIVE, PROC_TERMINATING, PROC_HALTED
+    PROC_IDLE, PROC_ACTIVE
+};
+
+struct SharedProcessData {
+    ProcessStatus status;
+    char current_dir[256];
 };
 
 void copy_path(char *dst, char *folder, char *child) {
@@ -88,16 +93,6 @@ int search_directory(char *path, SearchParams *params, DirsCollection *tasks, Ma
     return 0;
 }
 
-void worker_sig_handler(int sig) {
-    // noop
-}
-
-struct SharedProcessData {
-    ProcessStatus status;
-    char current_dir[256];
-    bool *active_flag;
-};
-
 /**
  * Handles the interfacing between the monitor process and a SINGLE child process for recursive searches.
  */
@@ -112,7 +107,7 @@ class ProcessController {
     TaskQueue *task_queue;
     Stack<Result*> *results;
 public: 
-    ProcessController(SearchParams *params, int i, TaskQueue *task_queue, Stack<Result*> *results, Mutex results_mutex, bool *active_flag) : 
+    ProcessController(SearchParams *params, int i, TaskQueue *task_queue, Stack<Result*> *results, Mutex results_mutex) : 
         shared_mutex(2), 
         i(i),
         results(results),
@@ -121,9 +116,7 @@ public:
         params(params)
     {
         shared = malloc_shared<SharedProcessData>();
-        shared->status = PROC_ACTIVE;
-        shared->active_flag = active_flag;
-        *active_flag = false;
+        shared->status = PROC_IDLE;
 
         int copi[2], cipo[2];
         pipe(copi);
@@ -138,28 +131,14 @@ public:
 
             task_queue->set_proc_i(i);
             results_mutex.set_i(i);
-            do_child();
-            exit(0);
+            do_child_recursive();
         }
     }
 
-    void do_child() {
-        signal(SIGTERM, worker_sig_handler);
-
+    void do_child_recursive() {
         Task* tasks[10];  // We want a buffer so that we aren't spending a ton of time in the mutex.
-        while (get_status() != PROC_TERMINATING) {
-            {
-                auto lock = shared_mutex.lock();
-                shared->status = PROC_WAITING;
-            }
-            int n_tasks = task_queue->pop(1, 10, tasks);
-            {
-                auto lock = shared_mutex.lock();
-                shared->status = PROC_ACTIVE;
-            }
-            
-            *shared->active_flag = true;
-            for (int i = 0; i < n_tasks; i++) {
+        while (true) {
+            for (int i = 0; i < task_queue->pop(1, 10, tasks); i++) {
                 Task *task = tasks[i];
                 {
                     auto lock = shared_mutex.lock();
@@ -168,27 +147,8 @@ public:
                 search_directory(task->path, params, task_queue, results, results_mutex);
                 free_shared(task);
             }
-            *shared->active_flag = false;
         }
-
-        {
-            auto lock = shared_mutex.lock();
-            shared->status = PROC_HALTED;
-        }
-        return;
-    }
-
-    ProcessStatus get_status() {
-        auto lock = shared_mutex.lock();
-        return shared->status;
-    }
-
-    void end_child_process() {
-        {
-            auto lock = shared_mutex.lock();
-            shared->status = PROC_TERMINATING;
-        }
-        kill(child_pid, SIGTERM);
+        exit(0);
     }
 
     ~ProcessController() {
@@ -209,9 +169,7 @@ class ProcessPool {
     int n = 0;
 public:
     ProcessPool() {
-        for (int i = 0; i < max_n; i++) {
-
-        }
+        
     }
 
     void search(char *dir) {
