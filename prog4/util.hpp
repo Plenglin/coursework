@@ -50,66 +50,86 @@ int build_path(char *dst, char *folder, char *child) {
     return len + strlen(dst + len);
 }
 
-template <class T>
-struct LinkedList {
-    LinkedList *next;
-    T value;
+enum MatcherFlags {
+    by_ext = 1,
+    by_name = 2
 };
-
-/**
- * Appends a new node to the object and returns it.
- */
-template <class T>
-LinkedList<T>* append(LinkedList<T> *list, LinkedList<T> *item) {
-    if (list == nullptr) return item;
-    item->next = list;
-    return item;
-}
 
 /**
  * Describes a task where you scan a SINGLE directory.
  */
 struct Matcher {
+    int filter = 0;
     /**
      * File extension
      */
-    char ext[512];
+    char ext[512] = "";
     /**
      * File name
      */
-    char name[512];
+    char name[512] = "";
 
     bool match(char *filename) {
-        char buf[256];
-        if (this->name[0] || this->ext[0]) {  // Filter strings are not empty strings?
-            // Prepare for filtering
+        if (!filter) return true;
 
-            strcpy(buf, filename);
-            char *ext = parse_name_ext(buf); 
-            if (this->name[0] && strcmp(buf, this->name)) {  // No name match?
-                return false;
-            }           
-            if (this->ext[0] && strcmp(ext, this->ext)) {  // No extension match?
-                return false;
-            }
+        char buf[256];
+        strcpy(buf, filename);
+        char *ext = parse_name_ext(buf); 
+        if ((filter & by_name) && strcmp(buf, this->name)) {  // No name match?
+            return false;
+        }           
+        if ((filter & by_ext) && strcmp(ext, this->ext)) {  // No extension match?
+            return false;
         }
         return true;
     }
 };
 
-char* read_sized_str(int fd) {
-    int size;
-    read(fd, &size, sizeof(int));
-    char* str = new char[size + 1];
-    str[size] = 0;
-    read(fd, str, size);
-    return str;
+void scan_path(char *path, Matcher *matcher, std::vector<char*> &dirs, std::vector<char*> &file_results) {
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        return;
+    }
+
+    // Scan this directory.
+    char buf[4096];
+    for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
+        if (dirent->d_type == DT_DIR) { // Is a directory?
+            if (strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
+                // Tell the parent about subdirectory
+                int len = build_path(buf, path, dirent->d_name);
+                auto str = strcpy(new char[len + 1], buf);
+                str[len] = 0;
+                dirs.push_back(str);
+            }
+            continue;
+        }
+
+        // Does the file match the filter?
+        if (!matcher->match(dirent->d_name)) continue;
+
+        // Tell the parent about the file match
+        int len = build_path(buf, path, dirent->d_name);
+        auto str = strcpy(new char[len + 1], buf);
+        str[len] = 0;
+        file_results.push_back(str);
+    }
+    closedir(dir);
 }
 
-void write_sized_str(int fd, char *str) {
-    int size = strlen(str);
-    write(fd, &size, sizeof(int));
-    write(fd, str, size);
+std::vector<char*> scan_path_recursive(Matcher *matcher, char *start_path) {
+    std::vector<char*> stack;
+    std::vector<char*> results;
+
+    stack.push_back(start_path);
+    while (!stack.empty()) {
+        auto path = stack.back();
+        stack.pop_back();
+        scan_path(path, matcher, stack, results);
+        delete path;
+    }
+
+    return results;
 }
 
 #endif // __UTIL_HPP__

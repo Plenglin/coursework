@@ -51,7 +51,20 @@
 			"streambuf": "cpp",
 			"cinttypes": "cpp",
 			"typeinfo": "cpp",
-			"typeindex": "cpp"
+			"typeindex": "cpp",
+			"ctime": "cpp",
+			"strstream": "cpp",
+			"bitset": "cpp",
+			"chrono": "cpp",
+			"complex": "cpp",
+			"functional": "cpp",
+			"numeric": "cpp",
+			"ratio": "cpp",
+			"set": "cpp",
+			"iomanip": "cpp",
+			"thread": "cpp",
+			"cfenv": "cpp",
+			"valarray": "cpp"
 		}
 	}
 }

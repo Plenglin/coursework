@@ -7,8 +7,10 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <vector>
+#include <string>
 
-#include "./manager.hpp"
+#include "./util.hpp"
 
 #define STATUS_ALIVE 0
 #define STATUS_UNKNOWN 1
@@ -17,13 +19,23 @@
 
 #define MAX_CHILD_PROCS 10
 
-int main() {
-    char path[] = "/";
+
+enum ProcState {
+    proc_dead, proc_active, proc_terminating
+};
+
+struct ProcessInfo {
+    int pid = 0;
+    int i;
+    ProcState state = proc_dead;
     Matcher matcher;
-    strcpy(matcher.ext, "");
-    strcpy(matcher.name, "");
-    Manager manager(1, path);
-    manager.set_matcher(&matcher);
-    manager.run();
+};
+
+Mutex stdin_mutex(MAX_CHILD_PROCS + 1);
+
+int main() {
+    ProcessInfo procs[10];
+    char path[] = "/";
+    
     return 0;
 }
