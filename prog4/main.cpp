@@ -20,7 +20,8 @@
 
 struct SearchParams {
     bool subdirs;
-    char *ext;
+    char ext[256];
+    char name[256];
 };
 class Task {
 public:
@@ -28,7 +29,7 @@ public:
 };
 
 struct Result {
-    char *path;
+    char path[256];
 };
 typedef SharedStack<Task*> TaskQueue;
 
@@ -42,8 +43,58 @@ struct SharedProcessData {
     char current_dir[256];
 };
 
+void copy_path(char *dst, char *folder, char *child) {
+    strcpy(dst, folder);
+    int len = strlen(dst);
+    if (dst[len - 1] != '/') {
+        dst[len++] = '/';
+    }
+    strcpy(dst + len, child);
+}
+
+template <class DirsCollection, class MatchesCollection, class TMutex>
+int search_directory(char *path, SearchParams *params, DirsCollection *tasks, MatchesCollection *matches, TMutex matches_mutex) {
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        return 1;
+    }
+    char buf[256];
+    for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
+        if (dirent->d_type == DT_DIR) { // Is a directory?
+            if (tasks != NULL && strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
+                Task *new_task = malloc_shared<Task>(1);
+                copy_path(new_task->path, path, dirent->d_name);
+                tasks->push(new_task);
+            }
+            continue;
+        }
+
+        if (params->name[0] || params->ext[0]) {  // Filter strings are not empty strings?
+            // Prepare for filtering
+
+            strcpy(buf, dirent->d_name);
+            char *ext = parse_name_ext(buf); 
+            if (strcmp(buf, params->name) != 0) {  // No name match?
+                continue;
+            }           
+            if (strcmp(ext, params->ext) != 0) {  // No extension match?
+                continue;
+            }
+        }
+
+        Result *result = malloc_shared<Result>(1);
+        copy_path(result->path, path, dirent->d_name);
+        {
+            auto lock = matches_mutex.lock();
+            matches->push(result);
+        }
+    }
+    closedir(dir);
+    return 0;
+}
+
 /**
- * Handles the interfacing between main process and a SINGLE child process for recursive searches.
+ * Handles the interfacing between the monitor process and a SINGLE child process for recursive searches.
  */
 class ProcessController {
     int i;
@@ -53,14 +104,15 @@ class ProcessController {
     
     Mutex results_mutex;
     SearchParams *params;
-    TaskQueue *queue;
-    Stack<Result> *results;
+    TaskQueue *task_queue;
+    Stack<Result*> *results;
 public: 
-    ProcessController(SearchParams *params, int i, TaskQueue *queue, Stack<Result> *results, Mutex results_mutex) : 
+    ProcessController(SearchParams *params, int i, TaskQueue *task_queue, Stack<Result*> *results, Mutex results_mutex) : 
         shared_mutex(2), 
         i(i),
         results(results),
         results_mutex(results_mutex),
+        task_queue(task_queue),
         params(params)
     {
         shared = malloc_shared<SharedProcessData>();
@@ -77,51 +129,22 @@ public:
             // child;
             shared_mutex.set_i(1);
 
-            queue->set_proc_i(i);
+            task_queue->set_proc_i(i);
             results_mutex.set_i(i);
-            do_child_recursive(params, queue, results, results_mutex);
+            do_child_recursive();
         }
     }
 
-    void do_child_recursive(SearchParams *params, TaskQueue *queue, Stack<Result> *results, Mutex mutex) {
+    void do_child_recursive() {
         Task* tasks[10];  // We want a buffer so that we aren't spending a ton of time in the mutex.
-        char buf[256];
         while (true) {
-            for (int i = 0; i < queue->pop(1, 10, tasks); i++) {
+            for (int i = 0; i < task_queue->pop(1, 10, tasks); i++) {
                 Task *task = tasks[i];
-                DIR *dir = opendir(task->path);
                 {
                     auto lock = shared_mutex.lock();
                     strcpy(shared->current_dir, task->path);
                 }
-
-                for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
-                    if (dirent->d_type == DT_DIR) {
-                        Task *new_task = malloc_shared<Task>(1);
-                        strcpy(task->path, dirent->d_name);
-                        queue->push(task);
-                        continue;
-                    }
-
-                    // not a directory
-                    if (params->ext != nullptr) {
-                        strcpy(buf, dirent->d_name);
-                        char *ext = parse_name_ext(buf);
-                        if (strcmp(ext, params->ext) != 0) {
-                            continue;
-                        }
-                    }
-
-                    Result result;
-                    result.path = malloc_shared<char>(strlen(dirent->d_name));
-                    strcpy(result.path, dirent->d_name);
-                    {
-                        auto lock = mutex.lock();
-                        results->push(result);
-                    }
-                }
-
-                closedir(dir);
+                search_directory(task->path, params, task_queue, results, results_mutex);
                 free_shared(task);
             }
         }
@@ -134,6 +157,9 @@ public:
     }    
 };
 
+/**
+ * Handles a collection of processes for recursive searches. Begins searching on allocation.
+ */
 template <int max_n>
 class ProcessPool {
     ProcessController* procs[max_n] = {nullptr};
@@ -143,10 +169,6 @@ class ProcessPool {
     int n = 0;
 public:
     ProcessPool() {
-        
-    }
-
-    void new_proc() {
         
     }
 
@@ -211,3 +233,22 @@ void do_parent(int parent_pid) {
     }
 }
 
+int main() {
+    Stack<Result*> results;
+    Stack<Task*> tasks;
+    SearchParams params;
+    NullMutex mutex;
+    strcpy(params.ext, "");
+    strcpy(params.name, "");
+    params.subdirs = false;
+    search_directory<Stack<Task*>, Stack<Result*>, NullMutex>(".", &params, &tasks, &results, mutex);
+    printf("files\n");
+    for (auto iter = results.start(); iter != results.end(); iter++) {
+        printf("%s\n", (*iter)->path);
+    }
+    printf("dirs\n");
+    for (auto iter = tasks.start(); iter != tasks.end(); iter++) {
+        printf("%s\n", (*iter)->path);
+    }
+    return 0;
+}

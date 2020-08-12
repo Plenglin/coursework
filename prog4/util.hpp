@@ -25,14 +25,26 @@ char* parse_name_ext(char *str) {
     int i;
     for (i = 0; str[i] != 0; i++) {
         if (str[i] == '.') {
-            last_period_offset = i;
+            last_period_offset = i + 1;
         }
     }
     if (last_period_offset == -1) {
-        last_period_offset = i;
+        last_period_offset = i;  // end of string, will be an empty string
     }
     return str + last_period_offset;
 }
+
+/**
+ * Acts like a normal mutex, but it doesn't do anything.
+ */
+class NullMutex {
+public:
+    NullMutex() {}
+    int lock() {
+        return 0;
+    }
+    ~NullMutex() {}
+};
 
 
 #endif // __UTIL_HPP__
