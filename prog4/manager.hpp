@@ -70,7 +70,7 @@ void WorkerInstance::receive_directory() {
     int size;
     read(miwo, &size, sizeof(int));
     char *path = new char[size + 1];
-    read(miwo, &size, sizeof(int));
+    read(miwo, path, size);
     path[size] = 0;
     manager->add_directory(path);
 }
@@ -79,7 +79,7 @@ void WorkerInstance::receive_file() {
     int size;
     read(miwo, &size, sizeof(int));
     char *path = new char[size + 1];
-    read(miwo, &size, sizeof(int));
+    read(miwo, path, size);
     path[size] = 0;
     manager->add_file(path);
 }

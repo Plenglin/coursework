@@ -22,7 +22,7 @@ int main() {
     Matcher matcher;
     strcpy(matcher.ext, "");
     strcpy(matcher.name, "");
-    Manager manager(1, path);
+    Manager manager(10, path);
     manager.set_matcher(&matcher);
     manager.run();
     return 0;
