@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
+#include <errno.h>
 #include "util.hpp"
 
 template <class T>
@@ -64,6 +64,10 @@ public:
 };
 
 
+#define SHARED_STACK_READY 0
+#define SHARED_STACK_INTR 1
+
+
 /**
  * A stack that multiple processes can use together. Used as the central task queue. 
  * Note that I'm using queue and stack somewhat interchangeably, because we want to do a 
@@ -82,6 +86,7 @@ private:
     Stack<int> *waiting_procs;
     Mutex waiting_procs_mutex;
 
+    bool *closed;
     int *pipes;
     int n_procs;
 public:
@@ -91,8 +96,10 @@ public:
         waiting_procs = malloc_shared<Stack<int>>(1);
         *waiting_procs = Stack<int>();
         pipes = malloc_shared<int>(n_procs * 2);
+        closed = malloc_shared<int>(n_procs);
         for (int i = 0; i < n_procs; i++) {
             pipe(&pipes[i * 2]);
+            closed[i] = false;
         }
     }
 
@@ -116,11 +123,15 @@ public:
         {
             // Are there are waiting processes?
             auto lock = waiting_procs_mutex.lock();
-            if (waiting_procs->size() > 0) {
-                int fd = waiting_procs->pop();
+            while (waiting_procs->size() > 0) {
+                int i = waiting_procs->pop();
+                int fd = pipes[i];
+                if (closed[i]) {
+                    continue;
+                }
 
                 // send a single byte
-                char x = 0;
+                char x = SHARED_STACK_READY;
                 write(fd, &x, 1);
             }
         }
@@ -128,7 +139,8 @@ public:
 
     /**
      * Attempts to pop multiple items from the stack. If no items exist, waits until 
-     * there are items. Returns the number of items popped.
+     * there are items. If interrupted, will exit whether or not it popped enough items. 
+     * Returns the number of items popped.
      */
     int pop(int min_n, int max_n, T *out) {
         int n = 0;
@@ -154,20 +166,32 @@ public:
                 waiting_procs->push(pipes[proc_i * 2 + 1]);
             }
 
-            // Block until someone sends us a signal byte
-            char buf[100];
-            read(pipes[proc_i * 2], buf, 1);
+            // Block until someone sends us a signal byte or we get interrupted
+            char x;
+            read(pipes[proc_i * 2], &x, 1);
+            if (x == SHARED_STACK_INTR) {
+                break;
+            }
         }
         return n;
     }
 
+    void destroy_process(int i) {
+        char x = SHARED_STACK_INTR;
+        write(pipes[i * 2 + 1], x, 1);
+        closed[proc_i] = true;
+    }
+
     ~SharedStack() {
         close(pipes[proc_i * 2 + 1]);
+
         if (proc_i != 0) return;
         stack->free();
         waiting_procs->free();
         free_shared(stack, 1);
-        free_shared(waiting_procs, 1);
+        free_shared(waiting_procs, n);
+        free_shared(pipes, n * 2);
+        free_shared(closed, n);
     }
 };
 
