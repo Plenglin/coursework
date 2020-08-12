@@ -18,237 +18,244 @@
 #define MAX_CHILD_PROCS 10
 
 
-struct SearchParams {
-    bool subdirs;
-    char ext[256];
-    char name[256];
-};
-class Task {
-public:
+
+struct FileResult {
+    FileResult *next = nullptr;
     char path[256];
+
+    static FileResult* create() {
+        auto *list = malloc_shared<FileResult>();
+        list->next = nullptr;
+        return list;
+    }
 };
 
-struct Result {
-    char path[256];
+/**
+ * A collection containing the results of a directory search.
+ */
+struct DirectoryResult {
+    /**
+     * Siblings of this.
+     */
+    DirectoryResult *next;
+    /**
+     * Files in this.
+     */
+    FileResult *files;
+    /**
+     * Appended to by this object.
+     */
+    DirectoryResult *subdirs;
+
+    static DirectoryResult* create() {
+        auto *list = malloc_shared<DirectoryResult>();
+        list->next = nullptr;
+        list->files = nullptr;
+        list->subdirs = nullptr;
+        return list;
+    }
 };
-typedef SharedStack<Task*> TaskQueue;
 
+/**
+ * Appends a new node to the object and returns it.
+ */
+template <class Node>
+Node* append(Node *list, Node *item) {
+    if (list == nullptr) return item;
+    item->next = list;
+    return item;
+}
 
-enum ProcessStatus {
-    PROC_IDLE, PROC_ACTIVE
+/**
+ * Describes a task where you scan a SINGLE directory.
+ */
+struct RecursiveSearchParams {
+    /**
+     * The directory result you want to set the files and subdirs of. Next will not be modified.
+     */
+    DirectoryResult *results;
+    /**
+     * Path to look in
+     */
+    char *path;
+    /**
+     * File extension
+     */
+    char *ext;
+    /**
+     * File name
+     */
+    char *name;
+    /**
+     * Next item in the task list.
+     */
+    RecursiveSearchParams *next;
+
+    bool match(char *filename) {
+        char buf[256];
+        if (this->name[0] || this->ext[0]) {  // Filter strings are not empty strings?
+            // Prepare for filtering
+
+            strcpy(buf, filename);
+            char *ext = parse_name_ext(buf); 
+            if (this->name[0] && strcmp(buf, this->name)) {  // No name match?
+                return false;
+            }           
+            if (this->ext[0] && strcmp(ext, this->ext)) {  // No extension match?
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static RecursiveSearchParams* create() {
+        auto *task = malloc_shared<RecursiveSearchParams>();
+        task->next = nullptr;
+        return task;
+    }
 };
 
-struct SharedProcessData {
-    ProcessStatus status;
-    char current_dir[256];
-};
-
-void copy_path(char *dst, char *folder, char *child) {
+int build_path(char *dst, char *folder, char *child) {
     strcpy(dst, folder);
     int len = strlen(dst);
     if (dst[len - 1] != '/') {
         dst[len++] = '/';
     }
     strcpy(dst + len, child);
+    return len + strlen(dst + len);
 }
 
-template <class DirsCollection, class MatchesCollection, class TMutex>
-int search_directory(char *path, SearchParams *params, DirsCollection *tasks, MatchesCollection *matches, TMutex matches_mutex) {
-    DIR *dir = opendir(path);
-    if (dir == NULL) {
-        return 1;
-    }
-    char buf[256];
-    for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
-        if (dirent->d_type == DT_DIR) { // Is a directory?
-            if (tasks != NULL && strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
-                Task *new_task = malloc_shared<Task>(1);
-                copy_path(new_task->path, path, dirent->d_name);
-                tasks->push(new_task);
-            }
-            continue;
-        }
-
-        if (params->name[0] || params->ext[0]) {  // Filter strings are not empty strings?
-            // Prepare for filtering
-
-            strcpy(buf, dirent->d_name);
-            char *ext = parse_name_ext(buf); 
-            if (params->name[0] && strcmp(buf, params->name)) {  // No name match?
-                continue;
-            }           
-            if (params->ext[0] && strcmp(ext, params->ext)) {  // No extension match?
-                continue;
-            }
-        }
-
-        Result *result = malloc_shared<Result>(1);
-        copy_path(result->path, path, dirent->d_name);
-        {
-            auto lock = matches_mutex.lock();
-            matches->push(result);
-        }
-    }
-    closedir(dir);
-    return 0;
-}
-
-/**
- * Handles the interfacing between the monitor process and a SINGLE child process for recursive searches.
- */
-class ProcessController {
-    int i;
-    SharedProcessData *shared;
-    Mutex shared_mutex;
-    int child_pid;
-    
-    Mutex results_mutex;
-    SearchParams *params;
-    TaskQueue *task_queue;
-    Stack<Result*> *results;
-public: 
-    ProcessController(SearchParams *params, int i, TaskQueue *task_queue, Stack<Result*> *results, Mutex results_mutex) : 
-        shared_mutex(2), 
-        i(i),
-        results(results),
-        results_mutex(results_mutex),
-        task_queue(task_queue),
-        params(params)
-    {
-        shared = malloc_shared<SharedProcessData>();
-        shared->status = PROC_IDLE;
-
-        int copi[2], cipo[2];
-        pipe(copi);
-        pipe(cipo);
-        child_pid = fork();
-        if (child_pid) {
-            // parent
-            shared_mutex.set_i(0);
-        } else {
-            // child;
-            shared_mutex.set_i(1);
-
-            task_queue->set_proc_i(i);
-            results_mutex.set_i(i);
-            do_child_recursive();
-        }
-    }
-
-    void do_child_recursive() {
-        Task* tasks[10];  // We want a buffer so that we aren't spending a ton of time in the mutex.
-        while (true) {
-            for (int i = 0; i < task_queue->pop(1, 10, tasks); i++) {
-                Task *task = tasks[i];
-                {
-                    auto lock = shared_mutex.lock();
-                    strcpy(shared->current_dir, task->path);
-                }
-                search_directory(task->path, params, task_queue, results, results_mutex);
-                free_shared(task);
-            }
-        }
-        exit(0);
-    }
-
-    ~ProcessController() {
-        kill(child_pid, SIGTERM);
-        free_shared(shared);
-    }    
-};
-
-/**
- * Handles a collection of processes for recursive searches. Begins searching on allocation.
- */
-template <int max_n>
 class ProcessPool {
-    ProcessController* procs[max_n] = {nullptr};
-    Stack<Result> *results;
-    Mutex results_mutex;
-    TaskQueue tasks;
-    int n = 0;
+    struct Shared {
+        int available_procs;
+    };
+    Mutex mutex;
+    const int original_max_procs;
+    int max_procs;
+    int *child_pids;
+    Shared *shared;
+    RecursiveSearchParams *tasks;
 public:
-    ProcessPool() {
-        
+    ProcessPool(int max_procs) : 
+        original_max_procs(max_procs), 
+        max_procs(max_procs),
+        mutex(max_procs + 1), 
+        tasks(nullptr) 
+    {
+        shared = malloc_shared<Shared>();
+        child_pids = new int[max_procs];
     }
 
-    void search(char *dir) {
-        //malloc(strlen())
+    int search_directory_recursive_fork(RecursiveSearchParams params) {
+        RecursiveSearchParams *tasks = nullptr;
+
+        {
+            DIR *dir = opendir(params.path);
+            if (dir == NULL) {
+                return 1;
+            }
+
+            // Scan this directory.
+            FileResult *files = nullptr;
+            DirectoryResult *directories = nullptr;
+            char buf[4096];
+            for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
+                if (dirent->d_type == DT_DIR) { // Is a directory?
+                    if (strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
+                        // Add directory to list
+                        auto directory = DirectoryResult::create();
+                        directories = append(directories, directory);
+
+                        auto task = new RecursiveSearchParams;
+                        task->results = directory;
+                        task->name = params.name;
+                        task->ext = params.ext;
+                        int len = build_path(buf, params.path, dirent->d_name);
+                        task->path = strcpy(new char[len + 1], buf);
+                        tasks = append(tasks, task);
+                    }
+                    continue;
+                }
+
+                // Does the file match the filter?
+                if (!params.match(dirent->d_name)) continue;
+
+                // Add file to list
+                auto *file = FileResult::create();
+                strcpy(file->path, dirent->d_name);
+                files = append(files, file);
+            }
+            closedir(dir);
+
+            // Set the results.
+            params.results->files = files;
+            params.results->subdirs = directories;
+        }
+
+        // Spawn new threads, or scan it ourselves if we can't spawn new threads.
+        for (auto *task = tasks; task != nullptr;) {
+            auto task_value = *task;
+            delete task;
+            task = task_value.next;
+            
+            if (!request_proc(task_value)) {
+                search_directory_recursive_fork(task_value);
+            }
+        }
+        
+        free_shared<char>(params.path, strlen(params.path) + 1);
+        return 0;
+    }
+
+    void do_parent() {
+        mutex.set_i(0);
+        while (shared->available_procs < original_max_procs) {
+            auto lock = mutex.lock();
+            while (tasks != nullptr) {
+                auto task = *tasks;
+                free_shared(tasks);
+                tasks = task.next;
+
+                auto pid = fork();
+                if (pid) {  // parent
+                    child_pids[shared->available_procs] = pid;
+                } else {  // child
+                    search_directory_recursive_fork(task);
+                    exit(0);
+                }
+            }
+        }
+    }
+
+    /**
+     * Attempts to spawn a new thread. If there are too many threads, nothing happens.
+     * Returns whether or not a thread was spawned.
+     */
+    bool request_proc(RecursiveSearchParams task) {
+        auto lock = mutex.lock();
+        if (shared->available_procs == 0) return false;
+
+        shared->available_procs--;
+        auto *pTask = malloc_shared<RecursiveSearchParams>();
+        *pTask = task;
+        tasks = append(tasks, pTask);
+        return true;
     }
 
     ~ProcessPool() {
-
+        delete child_pids;
+        free_shared(shared);
     }
 };
 
-int do_list(char *path) {
-    DIR *dir = opendir(path);
-    if (!dir) {
-        printf("Directory not available: %s\n", path);
-        return -1;
-    }
-    for (struct dirent *ent = readdir(dir); ent != NULL; ent = readdir(dir)) {
-        printf("%s\n", ent->d_name);
-    }
-    closedir(dir);
-    return 0;
-}
-
-void print_prog_status(int status, char *path) {
-    if (status) {  // Error
-        write(0, "\033[0;31m", 8);  // Red
-    } else {  // Normal
-        write(0, "\033[0;34m", 8);  // Blue
-    }
-    const_print("findstuff \033[0;36m");
-    write(0, path, strlen(path));
-    const_print("\033[0m$ ");
-    fflush(0);
-}
-
-int do_find_cmd(char *term, char *ext, bool subdirs) {
-    
-}
-
-int process_cmd(char *path, char *input) {
-}
-
-void do_parent(int parent_pid) {
-    char path[1000];
-    char input[1000];
-    //signal(SIGUSR1, child_isr);
-
-    int status = 0;
-
-    while (1) {
-        getcwd(path, 1000);
-        print_prog_status(status, path);
-        fgets(input, 999, stdin);
-        // Trim the trailing newline
-        int len = strlen(input);
-        if (len > 0) {
-            input[len - 1] = 0;
-        }
-        status = process_cmd(path, input);
-    }
-}
-
 int main() {
-    Stack<Result*> results;
-    Stack<Task*> tasks;
-    SearchParams params;
-    NullMutex mutex;
-    strcpy(params.ext, "h");
-    strcpy(params.name, "");
-    params.subdirs = false;
-    search_directory<Stack<Task*>, Stack<Result*>, NullMutex>("prog2", &params, &tasks, &results, mutex);
-    printf("files\n");
-    for (auto iter = results.start(); iter != results.end(); iter++) {
-        printf("%s\n", (*iter)->path);
-    }
-    printf("dirs\n");
-    for (auto iter = tasks.start(); iter != tasks.end(); iter++) {
-        printf("%s\n", (*iter)->path);
-    }
+    ProcessPool pool(2);
+    DirectoryResult result;
+    RecursiveSearchParams params;
+    params.path = ".";
+    params.results = &result;
+    params.name = "";
+    params.ext = "";
+    pool.search_directory_recursive_fork(params);
     return 0;
 }
