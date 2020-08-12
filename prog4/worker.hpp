@@ -6,12 +6,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <poll.h>
 
+#include "stack.hpp"
 #include "util.hpp"
 
+#define MAX_TASKS 200
 
 enum WorkerMessageType {
-    found_file, found_directory, change_state, failed_path, finish_scan, unprocessed_directory
+    found_file, found_directory, change_state, failed_path, finished_scan, unprocessed_directory, terminating
 };
 
 enum ManagerMessageType {
@@ -26,17 +29,25 @@ class Worker {
 private:
     int mowi, miwo;
     Matcher matcher;
+    Queue<char*> file_results;
+    
+    Queue<char*> directory_results;
+    Queue<char*> tasks;
 public:
     Worker(int mowi, int miwo) : mowi(mowi), miwo(miwo) {
 
     }
 
-    void run() {
-        send_change_state(idle);
-
-        // TODO buffered
-        
+    void read_messages() {
+        pollfd pollfd;
         while (1) {
+            pollfd.fd = mowi;
+            pollfd.events = POLLIN;
+            poll(&pollfd, 1, 0);
+            if (!(pollfd.revents & POLLIN)) {
+                return;
+            }
+
             ManagerMessageType type;
             read(mowi, &type, sizeof(ManagerMessageType));
             switch (type) {
@@ -47,8 +58,33 @@ public:
                     do_terminate();
                     return;
                 case ManagerMessageType::scan_path:
-                    receive_send_path();
+                    receive_scan_path();
                     break;
+            }
+        }
+    }
+
+    void run() {        
+        while (1) {
+            read_messages();
+
+            int i = 0;
+            while (tasks.size() > 0) {
+                consume_path(tasks.pop());
+                i++;
+            }
+            if (i > 0) {
+                auto type = finished_scan;
+                write(miwo, &type, sizeof(WorkerMessageType));
+                write(miwo, &i, sizeof(int));
+            }
+
+            auto type = found_directory;
+            while (directory_results.size() > 0) {
+                auto str = directory_results.pop();
+                write(miwo, &type, sizeof(WorkerMessageType));
+                write_sized_str(miwo, str);
+                delete str;
             }
         }
     }
@@ -58,18 +94,9 @@ public:
         close(miwo);
     }
 
-    void receive_send_path() {
-        int size;
-        read(mowi, &size, sizeof(int));
-        char *path = new char[size + 1];
-        read(mowi, path, size);
-        path[size] = 0;
-        
-        send_change_state(active);
-        process_path(path);
-        send_change_state(idle);
-
-        delete path;
+    void receive_scan_path() {
+        char *path = read_sized_str(mowi);
+        tasks.push(path);
     }
 
     void send_change_state(WorkerStatus status) {
@@ -82,7 +109,7 @@ public:
         read(mowi, &matcher, sizeof(Matcher));
     }
 
-    void process_path(char *path) {        
+    void consume_path(char *path) {        
         DIR *dir = opendir(path);
         if (dir == NULL) {
             return;
@@ -95,10 +122,9 @@ public:
                 if (strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
                     // Tell the parent about subdirectory
                     int len = build_path(buf, path, dirent->d_name);
-                    auto type = found_directory;
-                    write(miwo, &type, sizeof(WorkerMessageType));
-                    write(miwo, &len, sizeof(int));
-                    write(miwo, buf, len);
+                    auto str = strcpy(new char[len + 1], buf);
+                    str[len] = 0;
+                    directory_results.push(str);
                 }
                 continue;
             }
@@ -108,12 +134,12 @@ public:
 
             // Tell the parent about the file match
             int len = build_path(buf, path, dirent->d_name);
-            auto type = found_file;
-            write(miwo, &type, sizeof(WorkerMessageType));
-            write(miwo, &len, sizeof(int));
-            write(miwo, buf, len);
+            auto str = strcpy(new char[len + 1], buf);
+            str[len] = 0;
+            file_results.push(str);
         }
         closedir(dir);
+        delete path;
     }
 
     ~Worker() {

@@ -97,4 +97,19 @@ struct Matcher {
     }
 };
 
+char* read_sized_str(int fd) {
+    int size;
+    read(fd, &size, sizeof(int));
+    char* str = new char[size + 1];
+    str[size] = 0;
+    read(fd, str, size);
+    return str;
+}
+
+void write_sized_str(int fd, char *str) {
+    int size = strlen(str);
+    write(fd, &size, sizeof(int));
+    write(fd, str, size);
+}
+
 #endif // __UTIL_HPP__

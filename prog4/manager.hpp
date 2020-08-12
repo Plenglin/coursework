@@ -3,10 +3,13 @@
 
 #include <poll.h>
 #include <sys/select.h>
+#include <fcntl.h>
 
 #include "./util.hpp"
 #include "./stack.hpp"
 #include "./worker.hpp"
+
+#define MAX_BUFFERED 1000
 
 enum WorkerInstanceStatus {
     wis_idle, wis_active, wis_halting, wis_dead
@@ -18,9 +21,10 @@ class Manager {
 private:
     WorkerInstance *workers;
     int n_workers;
-    Stack<WorkerInstance*> available;
+    int n_dirs = 0;
+    Queue<WorkerInstance*> available;
 
-    LinkedList<char*> *results = nullptr;
+    Queue<char*> results;
     Stack<char*> directories;
 public:
     Manager(int n_workers, char* path);
@@ -32,65 +36,55 @@ public:
 
 class WorkerInstance {
     WorkerInstanceStatus status;
+    Queue<char*> tasks_buffer;
     int i;
-    void receive_message();
     void receive_change_state();
     void receive_directory();
     void receive_file();
+    void receive_finished_scan();
 public:
     int mowi, miwo, child_pid, n_processing;
     Manager *manager;
     WorkerInstance();
 
+    int buffered();
     void send_set_matcher(Matcher *matcher);
     void terminate_worker();
-    void assign_worker(char *path);
-    void read_messages(pollfd *pollfd);
+    bool assign_worker(char *path);
+    void read_messages();
+    void write_messages();
 
     ~WorkerInstance();
 };
 
-void WorkerInstance::receive_message() {
-    WorkerMessageType type;
-    read(miwo, &type, sizeof(type));
-    switch (type) {
-        case found_file:
-            receive_file();
-            break;
-        case found_directory: 
-        case unprocessed_directory:
-            receive_directory();
-            break;
-        case finish_scan:
-            n_processing--;
-            break;
-        case change_state:
-            receive_change_state();
-            break;
+int WorkerInstance::buffered() {
+    return tasks_buffer.size();
+}
+
+void WorkerInstance::write_messages() {
+    auto type = scan_path;
+    while (tasks_buffer.size() > 0 && n_processing < MAX_TASKS) {
+        char *path = tasks_buffer.pop();
+        n_processing++;
+        write(mowi, &type, sizeof(ManagerMessageType));
+        write_sized_str(mowi, path);
+        delete path;
     }
 }
 
 void WorkerInstance::receive_directory() {
-    int size;
-    read(miwo, &size, sizeof(int));
-    char *path = new char[size + 1];
-    read(miwo, path, size);
-    path[size] = 0;
+    char *path = read_sized_str(miwo);
     manager->add_directory(path);
 }
 
 void WorkerInstance::receive_file() {
-    int size;
-    read(miwo, &size, sizeof(int));
-    char *path = new char[size + 1];
-    read(miwo, path, size);
-    path[size] = 0;
+    char *path = read_sized_str(miwo);
     manager->add_file(path);
 }
 
 void WorkerInstance::receive_change_state() {
     WorkerStatus status;
-    read(miwo, &status, sizeof(status));
+    read(miwo, &status, sizeof(WorkerStatus));
     switch (status) {
         case WorkerStatus::idle:
             this->status = wis_idle;
@@ -140,24 +134,47 @@ void WorkerInstance::terminate_worker() {
     status = wis_halting;
 }
 
-void WorkerInstance::assign_worker(char *path) {
+bool WorkerInstance::assign_worker(char *path) {
+    if (tasks_buffer.size() >= MAX_BUFFERED) return false;
+    tasks_buffer.push(path);
     auto type = scan_path;
-    write(mowi, &type, sizeof(ManagerMessageType));
-    int size = strlen(path);
-    write(mowi, &size, sizeof(int));
-    write(mowi, path, size);
+    return true;
 }
 
-void WorkerInstance::read_messages(pollfd *pollfd) {
+void WorkerInstance::receive_finished_scan() {
+    int size;
+    read(miwo, &size, sizeof(int));
+    n_processing -= size;
+}
+
+void WorkerInstance::read_messages() {
+    pollfd pollfd;
     while (1) {
-        receive_message();
+        pollfd.events = POLLIN;
+        pollfd.fd = miwo;
+        poll(&pollfd, 1, 0);
+        if (!(pollfd.revents & POLLIN)) {
+            return;
+        }
 
-        pollfd->fd = miwo;
-        pollfd->events = POLLIN;
-        poll(pollfd, 1, 0);
-
-        if (!pollfd->revents & POLLIN) break;
-    }
+        WorkerMessageType type;
+        read(miwo, &type, sizeof(WorkerMessageType));
+        switch (type) {
+            case found_file:
+                receive_file();
+                break;
+            case found_directory: 
+            case unprocessed_directory:
+                receive_directory();
+                break;
+            case finished_scan:
+                receive_finished_scan();
+                break;
+            case change_state:
+                receive_change_state();
+                break;
+        }
+    } 
 }
 
 Manager::Manager(int n_workers, char *path) : 
@@ -184,53 +201,44 @@ void Manager::set_matcher(Matcher *matcher) {
 
 void Manager::add_directory(char *path) {
     directories.push(path);
+    n_dirs++;
     
     char buf[4096];
-    int x = sprintf(buf, "d %s\n", path);
+    int x = sprintf(buf, "f %d %s\n", n_dirs, path);
     write(0, buf, x);
 }
 
 void Manager::add_file(char *path) {
-    auto node = new LinkedList<char*>;
-    node->value = path;
-    results = append(results, node);
+    results.push(path);
     char buf[4096];
-    int x = sprintf(buf, "f %s\n", path);
+    int x = sprintf(buf, "f %d %s\n", results.size(), path);
     write(0, buf, x);
 }
 
 void Manager::run() {
-    pollfd *pollfds = new pollfd[n_workers];
-    for (int i = 0; i < n_workers; i++) {
-        pollfds[i].fd = workers[i].miwo;
-        pollfds[i].events = POLLIN;
-    }
-
     while (1) {
         // Distribute tasks to workers evenly
-        int i = 0;
-        while (directories.size() > 0) {
-            workers[i].assign_worker(directories.pop());
-            i = (i + 1) % n_workers;
+        for (int i = 0; i < n_workers; i++) {
+            // Assign directories
+            while (directories.size() > 0 && workers[i].assign_worker(directories.pop()));
+            workers[i].read_messages();
+            workers[i].write_messages();
         }
 
-        // Poll, read inputs when they come
-        int n_events = poll(pollfds, n_workers, -1);
-        bool all_idle;
+        // Look for idle
+        bool all_idle = true;
         for (int i = 0; i < n_workers; i++) {
-            if (pollfds[i].revents & POLLIN) {
-                workers[i].read_messages(pollfds + 1);
+            if (workers[i].n_processing > 0) {
+                all_idle = false;
+                break;
             }
-            all_idle = false;
         }
 
         // Are we done with all our tasks?
         if (directories.size() == 0 && all_idle) {
-            return;
+            //return;
         }
     }
-
-    delete pollfds;
 }
 
 
