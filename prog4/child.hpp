@@ -50,9 +50,9 @@ void print_results(std::vector<char*> &results) {
 }
 
 void do_child(ProcessInfo *proc_info) {
-    std::vector<char*> &dirs;
-    std::vector<char*> &file_results;
-    
+    std::vector<char*> dirs;
+    std::vector<char*> file_results;
+
     if (proc_info->is_recursive) {
         
     }
