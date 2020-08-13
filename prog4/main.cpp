@@ -1,14 +1,8 @@
-#include "./child.hpp"
+#include "./cmd.hpp"
 
 int main() {
-    ProcessInfo procs[10];
-
     ProcessInfo proc;
-    proc.path = strcpy(new char[100], ".");
-    strcpy(proc.matcher.name, "child");
-    proc.matcher.filter = by_name;
-    proc.is_recursive = true;
-
-    do_child(&proc);
+    char cmd[] = " child -f:s -s";
+    parse_args(&proc, cmd);
     return 0;
 }

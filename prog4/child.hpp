@@ -29,6 +29,7 @@ enum ProcState {
 
 struct ProcessInfo {
     int pid = 0;
+    int write_fd = 0;
     int i;
     bool is_recursive;
     char *path;
@@ -36,14 +37,16 @@ struct ProcessInfo {
     Matcher matcher;
 };
 
-Mutex stdin_mutex(MAX_CHILD_PROCS + 1);
+Mutex stdout_mutex(MAX_CHILD_PROCS + 1);
 
-void print_results(std::vector<char*> &results) {
-    auto lock = stdin_mutex.lock();
+void print_results(int fd, std::vector<char*> &results) {
+    auto lock = stdout_mutex.lock();
 
+    char buf[4000];
     for (auto iter = results.begin(); iter != results.end(); iter++) {
         auto str = *iter;
-        printf("%s\n", str);
+        int size = sprintf(buf, "%s\n", str);
+        write(fd, buf, size + 1);
         delete str;
     }
 
@@ -53,6 +56,7 @@ void print_results(std::vector<char*> &results) {
 void do_child(ProcessInfo *proc_info) {
     std::vector<char*> dirs;
     std::vector<char*> file_results;
+    stdout_mutex.set_i(proc_info->i);
 
     if (proc_info->is_recursive) {
         scan_path_recursive(&proc_info->matcher, proc_info->path, file_results);
@@ -60,7 +64,7 @@ void do_child(ProcessInfo *proc_info) {
         scan_path(proc_info->path, &proc_info->matcher, nullptr, file_results);
     }
 
-    print_results(file_results);
+    print_results(proc_info->write_fd, file_results);
 }
 
 #endif // ___CHILD_HPP___
