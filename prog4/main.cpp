@@ -2,16 +2,13 @@
 
 int main() {
     ProcessInfo procs[10];
-    char path[] = ".";
-    Matcher matcher;
-    matcher.filter = by_name | by_ext;
-    strcpy(matcher.name, "lab");
-    strcpy(matcher.ext, "zip");
-    std::vector<char*> results;
-    scan_path_recursive(&matcher, path, results);
 
-    for (auto iter = results.begin(); iter != results.end(); iter++) {
-        printf("%s\n", *iter);
-    }
+    ProcessInfo proc;
+    proc.path = strcpy(new char[100], ".");
+    strcpy(proc.matcher.name, "child");
+    proc.matcher.filter = by_name;
+    proc.is_recursive = true;
+
+    do_child(&proc);
     return 0;
 }

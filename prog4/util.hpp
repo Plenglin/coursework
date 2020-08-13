@@ -80,22 +80,22 @@ struct Matcher {
     }
 };
 
-void scan_path(char *path, Matcher *matcher, std::vector<char*> &dirs, std::vector<char*> &file_results) {
+void scan_path(char *path, Matcher *matcher, std::vector<char*> *dirs, std::vector<char*> &file_results) {
     DIR *dir = opendir(path);
-    if (dir == NULL) {
+    if (dir == nullptr) {
         return;
     }
 
     // Scan this directory.
     char buf[4096];
-    for (struct dirent *dirent = readdir(dir); dirent != NULL; dirent = readdir(dir)) {
+    for (struct dirent *dirent = readdir(dir); dirent != nullptr; dirent = readdir(dir)) {
         if (dirent->d_type == DT_DIR) { // Is a directory?
-            if (strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
+            if (dirs && strcmp(dirent->d_name, ".") && strcmp(dirent->d_name, "..")) {  // Not a fake directory?
                 // Tell the parent about subdirectory
                 int len = build_path(buf, path, dirent->d_name);
                 auto str = strcpy(new char[len + 1], buf);
                 str[len] = 0;
-                dirs.push_back(str);
+                dirs->push_back(str);
             }
             continue;
         }
@@ -120,7 +120,7 @@ void scan_path_recursive(Matcher *matcher, char *start_path, std::vector<char*> 
     while (!stack.empty()) {
         auto path = stack.back();
         stack.pop_back();
-        scan_path(path, matcher, stack, file_results);
+        scan_path(path, matcher, &stack, file_results);
         delete path;
     }
 }

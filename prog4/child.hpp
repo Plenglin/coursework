@@ -31,6 +31,7 @@ struct ProcessInfo {
     int pid = 0;
     int i;
     bool is_recursive;
+    char *path;
     ProcState state = proc_dead;
     Matcher matcher;
 };
@@ -54,8 +55,12 @@ void do_child(ProcessInfo *proc_info) {
     std::vector<char*> file_results;
 
     if (proc_info->is_recursive) {
-        
+        scan_path_recursive(&proc_info->matcher, proc_info->path, file_results);
+    } else {
+        scan_path(proc_info->path, &proc_info->matcher, nullptr, file_results);
     }
+
+    print_results(file_results);
 }
 
 #endif // ___CHILD_HPP___
