@@ -75,7 +75,7 @@ struct Matcher {
         char buf[256];
         strcpy(buf, filename);
         char *ext = parse_name_ext(buf); 
-        if ((filter & by_name) && strcmp(buf, this->name)) {  // No name match?
+        if ((filter & by_name) && strstr(buf, this->name)) {  // No name match?
             return false;
         }           
         if ((filter & by_ext) && strcmp(ext, this->ext)) {  // No extension match?
@@ -117,19 +117,18 @@ void scan_path(char *path, Matcher *matcher, std::vector<char*> &dirs, std::vect
     closedir(dir);
 }
 
-std::vector<char*> scan_path_recursive(Matcher *matcher, char *start_path) {
+void scan_path_recursive(Matcher *matcher, char *start_path, std::vector<char*> &file_results) {
     std::vector<char*> stack;
-    std::vector<char*> results;
 
+    start_path = strcpy(new char[strlen(start_path) + 1], start_path);
     stack.push_back(start_path);
     while (!stack.empty()) {
         auto path = stack.back();
+        printf("%s\n", path);
         stack.pop_back();
-        scan_path(path, matcher, stack, results);
+        scan_path(path, matcher, stack, file_results);
         delete path;
     }
-
-    return results;
 }
 
 #endif // __UTIL_HPP__

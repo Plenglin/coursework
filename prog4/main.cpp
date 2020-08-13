@@ -1,41 +1,9 @@
-#include <time.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <vector>
-#include <string>
-
-#include "./util.hpp"
-
-#define STATUS_ALIVE 0
-#define STATUS_UNKNOWN 1
-#define STATUS_QUIT 2
-
-
-#define MAX_CHILD_PROCS 10
-
-
-enum ProcState {
-    proc_dead, proc_active, proc_terminating
-};
-
-struct ProcessInfo {
-    int pid = 0;
-    int i;
-    ProcState state = proc_dead;
-    Matcher matcher;
-};
-
-Mutex stdin_mutex(MAX_CHILD_PROCS + 1);
+#include "./child.hpp"
 
 int main() {
     ProcessInfo procs[10];
     char path[] = "/";
-    
+    Matcher matcher;
+    scan_path_recursive(&matcher, path);
     return 0;
 }

@@ -64,7 +64,8 @@
 			"iomanip": "cpp",
 			"thread": "cpp",
 			"cfenv": "cpp",
-			"valarray": "cpp"
+			"valarray": "cpp",
+			"codecvt": "cpp"
 		}
 	}
 }
