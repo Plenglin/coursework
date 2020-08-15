@@ -3,6 +3,58 @@
 
 #include "./child.hpp"
 
+
+void print_prog_status(int status) {
+    if (status) {  // Error
+        write(STDOUT_FILENO, "\033[0;31m", 8);  // Red
+    } else {  // Normal
+        write(STDOUT_FILENO, "\033[0;34m", 8);  // Blue
+    }
+    const_print("superduper finder program \033[0;36m");
+    //write(0, path, strlen(path));
+    const_print("\033[0m$ ");
+    fflush(0);
+}
+
+int execute_list() {
+    printf("List of procs\n");
+    int proc_count = 0;
+    for (int i = 0; i < MAX_CHILD_PROCS; i++) {
+        auto proc = all_procs + i;
+        if (!proc->pid) continue;
+        proc_count++;
+        printf("%d. child PID: %d, state: ", i, proc->pid);
+        switch (*proc->state) {
+            case proc_active:
+                printf("active\n");
+                break;
+            case proc_terminating:
+                printf("terminating\n");
+                break;
+            case proc_dead:
+                printf("dead\n");
+                break;
+        }
+    }
+    if (!proc_count) {
+        printf("(none)\n");
+    }
+}
+
+int execute_kill(int index) {
+    auto proc = all_procs + 1;
+    if (!proc->pid) {
+        printf("No process exists at index %d\n", index);
+        return 1;
+    }
+    if (!proc->state) {
+        printf("Process at index %d is already dead\n", index);
+        return 1;
+    }
+    printf("Killing process index %d (pid %d)\n", index, proc->pid);
+    *proc->state = proc_terminating;
+}
+
 int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
     char *tok = strtok(arg_str, " \n");
     bool valid = false;
@@ -32,7 +84,13 @@ char* get_command_type(char *str, Command &command) {
     if (end_cmd != nullptr) {
         *end_cmd = '\0';
         end_cmd++;
+    } else {
+        end_cmd = strchr(str, '\n');
+        if (end_cmd != nullptr) {
+            *end_cmd = '\0';
+        }
     }
+
     char *tok = str;
     if (!strcmp(tok, "find")) {
         command = cmd_find;
@@ -61,45 +119,52 @@ int execute_command(char *str, ProcessInfo *next_proc) {
             return 0;
         case cmd_find:
             if (!next_proc) {
-                printf("No more available processes");
+                printf("No more available processes\n");
                 return 2;
             }
             if (!args || !parse_find_args(next_proc, args)) { 
-                printf("Must provide args to find");
+                printf("Must provide args to find\n");
                 return 3;
             }
             dispatch_proc(next_proc);
             return 0;
         case cmd_list:
-            //todo 
-            break;
-        case cmd_kill:
-            //todo
+            return execute_list();
+        case cmd_kill: {
+            int i;
+            sscanf(args, "%d", &i);
+            return execute_kill(i);
+        }
         case cmd_quit:
             return -1;
-    default:
-        break;
     }
-
-    return 0;
+    printf("Invalid command\n");
+    return 1;
 }
 
 void run_cmd_loop_until_quit() {
     char buf[4096];
-
-    //int stdin_alias = dup(STDIN_FILENO); 
     int status = 0;
-
     while (1) {
+        print_prog_status(status);
         fgets(buf, 4096, stdin);
+
+        if (was_interrupted) {
+            is_child_printing = true;
+            printf("%s", buf);
+        }
+        while (is_child_printing) {
+            fgets(buf, 4096, stdin);
+            printf("%s", buf);
+        }
+
+        is_child_printing = false;
+
         auto proc_info = get_available_proc();
         status = execute_command(buf, proc_info);
         if (status < 0) {
             printf("Goodbye\n");
             return;
-        }
-        if (status) {
-            printf("Invalid arguments");
         }
     }
 

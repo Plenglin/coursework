@@ -28,8 +28,8 @@ enum ProcState {
 };
 
 struct ProcessInfo {
+    int fds[2];
     int pid = 0;
-    int write_fd = 0;
     int i;
     bool is_recursive;
     /**
@@ -55,18 +55,24 @@ struct ProcessInfo {
 };
 
 Mutex stdin_mutex(MAX_CHILD_PROCS + 1);
+ProcessInfo *interrupting_proc;
+int stdin_save;
+bool was_interrupted = false;
+bool is_child_printing = false;
 
-void print_results(int fd, std::vector<char*> &results) {
+void print_results(int *fd, std::vector<char*> &results) {
     auto lock = stdin_mutex.lock();
+
+    close(fd[0]);
 
     char buf[4000];
     for (auto iter = results.begin(); iter != results.end(); iter++) {
         auto str = *iter;
         int size = sprintf(buf, "echo %s\n", str);
-        write(fd, buf, size + 1);
+        write(fd[1], buf, size + 1);
         delete str;
     }
-    close(fd);
+    close(fd[1]);
 }
 
 void do_child(ProcessInfo *proc_info) {
@@ -81,7 +87,7 @@ void do_child(ProcessInfo *proc_info) {
         scan_path(buf, &proc_info->matcher, nullptr, file_results);
     }
 
-    print_results(proc_info->write_fd, file_results);
+    print_results(proc_info->fds, file_results);
     *proc_info->state = proc_dead;
 }
 
@@ -96,7 +102,22 @@ void dispatch_proc(ProcessInfo *proc_info) {
 
 ProcessInfo all_procs[MAX_CHILD_PROCS];
 
+void interrupt_handler(int sig) {
+    auto fd = interrupting_proc->fds;
+    was_interrupted = true;
+    close(fd[1]);
+    dup2(fd[0], STDIN_FILENO);
+    close(fd[0]);
+}
+
 void init_procs() {
+    int fds[2];
+    pipe(fds);
+
+    stdin_save = dup(STDIN_FILENO); 
+
+    dup2(STDOUT_FILENO, fds[1]);
+
     for (int i = 0; i < MAX_CHILD_PROCS; i++) {
         auto proc_info = all_procs + i;
         proc_info->i = i;
