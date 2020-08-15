@@ -2,6 +2,7 @@
 #define __UTIL_HPP__
 
 #include <string.h>
+#include <vector>
 
 #include "./lamport.hpp"
 #define Mutex Lamport
@@ -80,7 +81,30 @@ struct Matcher {
     }
 };
 
-void scan_path(char *path, Matcher *matcher, std::vector<char*> *dirs, std::vector<char*> &file_results) {
+bool file_contains_contents(char *path, char *contents) {
+    auto file = fopen(path, "r");
+
+    if (file == NULL) {
+        return false;
+    }
+
+    char file_c;
+    char *match_c = contents;
+    while (fread(&file_c, 1, 1, file)) {
+        if (*match_c == '\0') {
+            return true;
+        }
+        if (*match_c == file_c) {
+            match_c++;
+        } else {
+            match_c = contents;
+        }
+    }
+
+    return false;
+}
+
+void scan_path(char *path, Matcher *matcher, char *contents, std::vector<char*> *dirs, std::vector<char*> &file_results) {
     DIR *dir = opendir(path);
     if (dir == nullptr) {
         return;
@@ -103,6 +127,9 @@ void scan_path(char *path, Matcher *matcher, std::vector<char*> *dirs, std::vect
         // Does the file match the filter?
         if (!matcher->match(dirent->d_name)) continue;
 
+        // Does the file contain the string? 
+        if (contents && !file_contains_contents(path, contents)) continue;
+
         // Tell the parent about the file match
         int len = build_path(buf, path, dirent->d_name);
         auto str = strcpy(new char[len + 1], buf);
@@ -112,7 +139,7 @@ void scan_path(char *path, Matcher *matcher, std::vector<char*> *dirs, std::vect
     closedir(dir);
 }
 
-void scan_path_recursive(Matcher *matcher, char *start_path, std::vector<char*> &file_results) {
+void scan_path_recursive(Matcher *matcher, char *start_path, char *contents, std::vector<char*> &file_results) {
     std::vector<char*> stack;
 
     start_path = strcpy(new char[strlen(start_path) + 1], start_path);
@@ -120,7 +147,7 @@ void scan_path_recursive(Matcher *matcher, char *start_path, std::vector<char*> 
     while (!stack.empty()) {
         auto path = stack.back();
         stack.pop_back();
-        scan_path(path, matcher, &stack, file_results);
+        scan_path(path, matcher, contents, &stack, file_results);
         delete path;
     }
 }

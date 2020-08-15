@@ -36,6 +36,7 @@ struct ProcessInfo {
      * This state indicator is atomic. No mutex needed to access.
      */
     ProcState *state = malloc_shared<ProcState>();
+    char *match_contents = nullptr;
     Matcher matcher;
 
     void terminate() {
@@ -89,13 +90,14 @@ void do_child(ProcessInfo *proc_info) {
     char buf[] = ".";
 
     if (proc_info->is_recursive) {
-        scan_path_recursive(&proc_info->matcher, buf, file_results);
+        scan_path_recursive(&proc_info->matcher, proc_info->match_contents, buf, file_results);
     } else {
-        scan_path(buf, &proc_info->matcher, nullptr, file_results);
+        scan_path(buf, &proc_info->matcher, proc_info->match_contents, nullptr, file_results);
     }
 
     print_results(proc_info, file_results);
     *proc_info->state = proc_dead;
+    delete proc_info->match_contents;
 }
 
 void dispatch_proc(ProcessInfo *proc_info) {
