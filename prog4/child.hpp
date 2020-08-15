@@ -55,27 +55,31 @@ struct ProcessInfo {
 };
 
 Mutex stdin_mutex(MAX_CHILD_PROCS + 1);
-ProcessInfo *interrupting_proc;
+int *interrupting_proc_i;
 int stdin_save;
 bool was_interrupted = false;
 bool is_child_printing = false;
 
-void print_results(int *fd, std::vector<char*> &results) {
+void print_results(ProcessInfo *proc, std::vector<char*> &results) {
     auto lock = stdin_mutex.lock();
-
-    close(fd[0]);
+    *interrupting_proc_i = proc->i;
+    kill(getppid(), SIGUSR1);
 
     char buf[4000];
+    int buf_len = sprintf(buf, "%d found %ud files:\n", proc->i, results.size());
+    write(proc->fds[1], buf, buf_len);
     for (auto iter = results.begin(); iter != results.end(); iter++) {
         auto str = *iter;
-        int size = sprintf(buf, "echo %s\n", str);
-        write(fd[1], buf, size + 1);
+        write(proc->fds[1], str, strlen(str) + 1);
         delete str;
     }
-    close(fd[1]);
+    close(proc->fds[1]);
+    while (*interrupting_proc_i != -1);
 }
 
 void do_child(ProcessInfo *proc_info) {
+    close(proc_info->fds[0]);
+
     std::vector<char*> dirs;
     std::vector<char*> file_results;
     stdin_mutex.set_i(proc_info->i);
@@ -87,7 +91,7 @@ void do_child(ProcessInfo *proc_info) {
         scan_path(buf, &proc_info->matcher, nullptr, file_results);
     }
 
-    print_results(proc_info->fds, file_results);
+    print_results(proc_info, file_results);
     *proc_info->state = proc_dead;
 }
 
@@ -102,9 +106,9 @@ void dispatch_proc(ProcessInfo *proc_info) {
 
 ProcessInfo all_procs[MAX_CHILD_PROCS];
 
-void interrupt_handler(int sig) {
-    auto fd = interrupting_proc->fds;
-    was_interrupted = true;
+void handle_prints(int sig) {
+    auto proc = all_procs + *interrupting_proc_i;
+    int *fd = proc->fds;
     close(fd[1]);
     dup2(fd[0], STDIN_FILENO);
     close(fd[0]);
@@ -115,8 +119,11 @@ void init_procs() {
     pipe(fds);
 
     stdin_save = dup(STDIN_FILENO); 
+    interrupting_proc_i = malloc_shared<int>();
+    *interrupting_proc_i = -1;
 
     dup2(STDOUT_FILENO, fds[1]);
+    signal(SIGUSR1, handle_prints);
 
     for (int i = 0; i < MAX_CHILD_PROCS; i++) {
         auto proc_info = all_procs + i;
@@ -130,6 +137,11 @@ void destroy_procs() {
         auto proc_info = all_procs + i;
         proc_info->terminate();
     }
+    for (int i = 0; i < MAX_CHILD_PROCS; i++) {
+        auto proc_info = all_procs + i;
+        waitpid(proc_info->pid, 0, 0);
+    }
+    free_shared(interrupting_proc_i);
 }
 
 ProcessInfo *get_available_proc() {

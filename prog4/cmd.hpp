@@ -142,23 +142,32 @@ int execute_command(char *str, ProcessInfo *next_proc) {
     return 1;
 }
 
+void handle_child_print() {
+    auto proc = all_procs + *interrupting_proc_i;
+    int *fd = proc->fds;
+
+    char buf[4096];
+    int n = read(STDIN_FILENO, buf, 1);
+    while (n > 0) {
+        write(STDOUT_FILENO, buf, n);
+        n = read(STDIN_FILENO, buf, 1);
+    }
+    dup2(stdin_save, STDIN_FILENO);
+
+    *interrupting_proc_i = -1;
+}
+
 void run_cmd_loop_until_quit() {
     char buf[4096];
     int status = 0;
     while (1) {
         print_prog_status(status);
-        fgets(buf, 4096, stdin);
-
-        if (was_interrupted) {
-            is_child_printing = true;
-            printf("%s", buf);
+        auto test = fgets(buf, 4096, stdin);
+        if (*interrupting_proc_i != -1) {
+            printf("%s\n", buf);
+            handle_child_print();
+            continue;
         }
-        while (is_child_printing) {
-            fgets(buf, 4096, stdin);
-            printf("%s", buf);
-        }
-
-        is_child_printing = false;
 
         auto proc_info = get_available_proc();
         status = execute_command(buf, proc_info);
