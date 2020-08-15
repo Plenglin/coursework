@@ -66,13 +66,16 @@ void print_results(ProcessInfo *proc, std::vector<char*> &results) {
     kill(getppid(), SIGUSR1);
 
     char buf[4000];
-    int buf_len = sprintf(buf, "%d found %ud files:\n", proc->i, results.size());
+    int buf_len = sprintf(buf, "\nProcess index %d found %d files:\n", proc->i, results.size());
     write(proc->fds[1], buf, buf_len);
+
     for (auto iter = results.begin(); iter != results.end(); iter++) {
         auto str = *iter;
-        write(proc->fds[1], str, strlen(str) + 1);
+        buf_len = sprintf(buf, "%s\n", str);
+        write(proc->fds[1], buf, buf_len + 1);
         delete str;
     }
+
     close(proc->fds[1]);
     while (*interrupting_proc_i != -1);
 }
@@ -97,11 +100,15 @@ void do_child(ProcessInfo *proc_info) {
 
 void dispatch_proc(ProcessInfo *proc_info) {
     *proc_info->state = proc_active;
+    pipe(proc_info->fds);
+    
     proc_info->pid = fork();
+
     if (!proc_info->pid) {
         do_child(proc_info);
         exit(0);
     }
+    close(proc_info->fds[1]);
 }
 
 ProcessInfo all_procs[MAX_CHILD_PROCS];
@@ -109,20 +116,21 @@ ProcessInfo all_procs[MAX_CHILD_PROCS];
 void handle_prints(int sig) {
     auto proc = all_procs + *interrupting_proc_i;
     int *fd = proc->fds;
-    close(fd[1]);
     dup2(fd[0], STDIN_FILENO);
     close(fd[0]);
 }
 
 void init_procs() {
-    int fds[2];
-    pipe(fds);
-
     stdin_save = dup(STDIN_FILENO); 
     interrupting_proc_i = malloc_shared<int>();
     *interrupting_proc_i = -1;
 
+    // Copy 
+    int fds[2];
+    pipe(fds);
+    close(fds[0]);
     dup2(STDOUT_FILENO, fds[1]);
+    
     signal(SIGUSR1, handle_prints);
 
     for (int i = 0; i < MAX_CHILD_PROCS; i++) {

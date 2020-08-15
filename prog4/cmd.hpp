@@ -1,6 +1,8 @@
 #ifndef ___CMD_HPP___
 #define ___CMD_HPP___
 
+#include <stdio.h> 
+
 #include "./child.hpp"
 
 
@@ -162,9 +164,15 @@ void run_cmd_loop_until_quit() {
     int status = 0;
     while (1) {
         print_prog_status(status);
-        auto test = fgets(buf, 4096, stdin);
+
+        for (int i = 0; i < 4096; i++) {
+            int n = read(STDIN_FILENO, buf + i, 1);
+            if (!n || buf[i] == '\n') {
+                break;
+            }
+        }
         if (*interrupting_proc_i != -1) {
-            printf("%s\n", buf);
+            printf("\n");
             handle_child_print();
             continue;
         }
