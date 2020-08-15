@@ -61,6 +61,16 @@ int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
     char *tok = strtok(arg_str, " \n");
     bool valid = false;
     while (tok != NULL) {
+        if (tok[0] == '"') {
+            tok = strtok(tok + 1, "\"");
+            if (!tok) break;
+            int len = strlen(tok);
+            proc_info->match_contents = strcpy(new char[len + 1], tok);
+            tok = strtok(NULL, " \n");
+            valid = true;
+            continue;
+        } 
+        
         if (tok[0] == '-') {
             if (tok[1] == 'f' && tok[2] == ':') {
                 strcpy(proc_info->matcher.ext, tok + 3);

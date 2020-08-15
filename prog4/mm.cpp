@@ -16,7 +16,7 @@
 
 int main() {
     char p[] = "./.gitignore";
-    char m[] = "asdffdf";
+    char m[] = ".";
     bool foo = file_contains_contents(p, m);
 
     printf("%d", foo);

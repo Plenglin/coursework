@@ -111,6 +111,7 @@ void dispatch_proc(ProcessInfo *proc_info) {
         exit(0);
     }
     close(proc_info->fds[1]);
+    delete proc_info->match_contents;
 }
 
 ProcessInfo all_procs[MAX_CHILD_PROCS];

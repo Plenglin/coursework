@@ -100,6 +100,7 @@ bool file_contains_contents(char *path, char *contents) {
             match_c = contents;
         }
     }
+    fclose(file);
 
     return false;
 }
@@ -127,11 +128,13 @@ void scan_path(char *path, Matcher *matcher, char *contents, std::vector<char*> 
         // Does the file match the filter?
         if (!matcher->match(dirent->d_name)) continue;
 
+        // File contents
+        int len = build_path(buf, path, dirent->d_name);
+
         // Does the file contain the string? 
-        if (contents && !file_contains_contents(path, contents)) continue;
+        if (contents && !file_contains_contents(buf, contents)) continue;
 
         // Tell the parent about the file match
-        int len = build_path(buf, path, dirent->d_name);
         auto str = strcpy(new char[len + 1], buf);
         str[len] = 0;
         file_results.push_back(str);
