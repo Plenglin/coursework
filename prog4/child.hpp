@@ -158,7 +158,7 @@ void destroy_procs() {
 ProcessInfo *get_available_proc() {
     for (int i = 0; i < MAX_CHILD_PROCS; i++) {
         auto proc_info = all_procs + i;
-        if (!proc_info->pid || *proc_info->state) {
+        if (!proc_info->pid || *proc_info->state == proc_dead) {
             return proc_info;
         }
     }

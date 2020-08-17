@@ -12,7 +12,7 @@ void print_prog_status(int status) {
     } else {  // Normal
         write(STDOUT_FILENO, "\033[0;34m", 8);  // Blue
     }
-    const_print("superduper finder program \033[0;36m");
+    const_print("astrid's cool finder program \033[0;36m");
     //write(0, path, strlen(path));
     const_print("\033[0m$ ");
     fflush(0);
@@ -44,17 +44,17 @@ int execute_list() {
 }
 
 int execute_kill(int index) {
-    auto proc = all_procs + 1;
+    auto proc = all_procs + index;
     if (!proc->pid) {
         printf("No process exists at index %d\n", index);
         return 1;
     }
-    if (!proc->state) {
+    if (*proc->state == proc_dead) {
         printf("Process at index %d is already dead\n", index);
         return 1;
     }
     printf("Killing process index %d (pid %d)\n", index, proc->pid);
-    *proc->state = proc_terminating;
+    proc->terminate();
 }
 
 int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
@@ -88,7 +88,7 @@ int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
 }
 
 enum Command {
-    cmd_none = 0, cmd_find, cmd_list, cmd_kill, cmd_echo, cmd_quit
+    cmd_none = 0, cmd_find, cmd_list, cmd_kill, cmd_quit
 };
 
 char* get_command_type(char *str, Command &command) {
@@ -110,8 +110,6 @@ char* get_command_type(char *str, Command &command) {
         command = cmd_list;
     } else if (!strcmp(tok, "kill")) {
         command = cmd_kill;
-    } else if (!strcmp(tok, "echo")) {  // Used by child procs to print results
-        command = cmd_echo;
     } else if (!strcmp(tok, "quit") || !strcmp(tok, "q")) {
         command = cmd_quit;
     } else {
@@ -126,9 +124,6 @@ int execute_command(char *str, ProcessInfo *next_proc) {
     char *args = get_command_type(str, command);
 
     switch (command) {
-        case cmd_echo:
-            printf("%s", args);
-            return 0;
         case cmd_find:
             if (!next_proc) {
                 printf("No more available processes\n");
@@ -138,6 +133,7 @@ int execute_command(char *str, ProcessInfo *next_proc) {
                 printf("Must provide args to find\n");
                 return 3;
             }
+            printf("Starting child #%d\n", next_proc->i);
             dispatch_proc(next_proc);
             return 0;
         case cmd_list:
