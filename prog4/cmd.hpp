@@ -60,7 +60,7 @@ int execute_kill(int index) {
 int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
     char *tok = strtok(arg_str, " \n");
     bool valid = false;
-    proc_info->matcher.filter = 0;
+    proc_info->matcher.reset();
 
     while (tok != NULL) {
         if (tok[0] == '"') {

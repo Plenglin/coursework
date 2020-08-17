@@ -31,7 +31,7 @@ char* parse_name_ext(char *str) {
             last_period_offset = i;
         }
     }
-    
+
     int ext_offset;
     if (last_period_offset == -1) {  // no period found
         ext_offset = i;  // end of string, will be an empty string
@@ -88,6 +88,12 @@ struct Matcher {
         }
         
         return true;
+    }
+
+    void reset() {
+        ext[0] = 0;
+        name[0] = 0;
+        filter = 0;
     }
 };
 
