@@ -20,11 +20,11 @@
 #define STATUS_QUIT 2
 
 
-#define MAX_CHILD_PROCS 10
+#define MAX_CHILD_PROCS 2
 
 
 enum ProcState {
-    proc_dead = 0, proc_active, proc_terminating
+    proc_dead = 0, proc_starting, proc_active, proc_terminating
 };
 
 struct ProcessInfo {
@@ -33,7 +33,7 @@ struct ProcessInfo {
     int i;
     bool is_recursive;
     /**
-     * This state indicator is atomic. No mutex needed to access.
+     * Accessing this state indicator is an atomic operation. No mutex is needed.
      */
     ProcState *state = malloc_shared<ProcState>();
     char *match_contents = nullptr;
@@ -89,8 +89,9 @@ void do_child(ProcessInfo *proc_info) {
     stdin_mutex.set_i(proc_info->i);
     char buf[] = ".";
 
+    *proc_info->state = proc_active;
     if (proc_info->is_recursive) {
-        scan_path_recursive(&proc_info->matcher, proc_info->match_contents, buf, file_results);
+        scan_path_recursive(&proc_info->matcher, buf, proc_info->match_contents, file_results);
     } else {
         scan_path(buf, &proc_info->matcher, proc_info->match_contents, nullptr, file_results);
     }
@@ -105,12 +106,13 @@ void dispatch_proc(ProcessInfo *proc_info) {
     pipe(proc_info->fds);
     
     proc_info->pid = fork();
-
+    *proc_info->state = proc_starting;
     if (!proc_info->pid) {
         do_child(proc_info);
         exit(0);
     }
     close(proc_info->fds[1]);
+    while (*proc_info->state == proc_starting);
     delete proc_info->match_contents;
 }
 

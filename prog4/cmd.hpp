@@ -60,6 +60,8 @@ int execute_kill(int index) {
 int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
     char *tok = strtok(arg_str, " \n");
     bool valid = false;
+    proc_info->matcher.filter = 0;
+
     while (tok != NULL) {
         if (tok[0] == '"') {
             tok = strtok(tok + 1, "\"");
@@ -74,11 +76,14 @@ int parse_find_args(ProcessInfo *proc_info, char *arg_str) {
         if (tok[0] == '-') {
             if (tok[1] == 'f' && tok[2] == ':') {
                 strcpy(proc_info->matcher.ext, tok + 3);
+                proc_info->matcher.filter |= by_ext;
+                valid = true;
             } else if (tok[1] == 's') {
                 proc_info->is_recursive = true;
             }
         } else {
             valid = true;
+            proc_info->matcher.filter |= by_name;
             strcpy(proc_info->matcher.name, tok);
         }
         
@@ -133,8 +138,9 @@ int execute_command(char *str, ProcessInfo *next_proc) {
                 printf("Must provide args to find\n");
                 return 3;
             }
-            printf("Starting child #%d\n", next_proc->i);
+            printf("Starting child #%d... ", next_proc->i);
             dispatch_proc(next_proc);
+            printf("Success!\n");
             return 0;
         case cmd_list:
             return execute_list();

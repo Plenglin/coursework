@@ -31,13 +31,15 @@ char* parse_name_ext(char *str) {
             last_period_offset = i;
         }
     }
-    if (last_period_offset == -1) {
-        last_period_offset = i;  // end of string, will be an empty string
+    
+    int ext_offset;
+    if (last_period_offset == -1) {  // no period found
+        ext_offset = i;  // end of string, will be an empty string
     } else {
         str[last_period_offset] = 0;
-        last_period_offset++;
+        ext_offset = last_period_offset + 1;
     }
-    return str + last_period_offset;
+    return str + ext_offset;
 }
 
 
@@ -76,8 +78,16 @@ struct Matcher {
         char buf[256];
         strcpy(buf, filename);
         char *ext = parse_name_ext(buf); 
-        return (!(filter & by_ext) || !strcmp(ext, this->ext))
-            && (!(filter & by_name) || strstr(buf, this->name));
+
+        if ((filter & by_ext) && strcmp(ext, this->ext) != 0) {
+            return false;
+        }
+
+        if ((filter & by_name) && strstr(buf, this->name) == NULL) {
+            return false;
+        }
+        
+        return true;
     }
 };
 
