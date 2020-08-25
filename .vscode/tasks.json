@@ -11,7 +11,8 @@
                 "-g",
                 "mympi.cpp",
                 "-o",
-                "mympi"
+                "mympi",
+                "-lrt"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

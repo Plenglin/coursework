@@ -26,6 +26,32 @@
             "miDebuggerPath": "/usr/bin/gdb"
         },
         {
+            "name": "debug mympi, follow fork",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/mympi",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Follow fork to child",
+                    "text": "set follow-fork-mode child",
+                    "ignoreFailures": false
+                }
+            ],
+            "preLaunchTask": "build mympi",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
             "name": "debug myprogram",
             "type": "cppdbg",
             "request": "launch",

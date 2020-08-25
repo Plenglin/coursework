@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <fcntl.h>
-#include <string>
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <string>
 
 
 int __sync_i, __sync_n;

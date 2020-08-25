@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <iostream>
 
 #define MATRIX_PRINT_WOLFRAM_ALPHA // debugging
 
@@ -15,7 +15,8 @@ struct SharedData {
 };
 
 int main(int argc, char *argv[]) {
-    SharedData *shared;
+    std::cout << argc << std::endl;
+    /*SharedData *shared;
     MPResourceManager<SharedData> mp_mgr("astrid_yu_final_shm", shared, 0, 1);
     
     mp_seed_random();
@@ -28,5 +29,5 @@ int main(int argc, char *argv[]) {
     auto pc = &c;
     pc <<= a * b;
 
-    std::cout << a << "*" << b << "=" << c << std::endl;
+    std::cout << a << "*" << b << "=" << c << std::endl;*/
 }
