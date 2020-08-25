@@ -16,8 +16,8 @@ void isr(int sig) {
 }
 
 int main(int argc, char *argv[]) {
-    char* prog = (char*)"./myprogram";
-    n_procs = 16;
+    char* prog = argv[1];
+    n_procs = atoi(argv[2]);
     std::string n_procs_str = std::to_string(n_procs);
 
     std::cout << "Astrid MPI initializing " << n_procs_str << " instances of " << prog << std::endl;   

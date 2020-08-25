@@ -9,7 +9,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/mympi",
-            "args": [],
+            "args": [
+                "./myprogram",
+                "8"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

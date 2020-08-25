@@ -32,7 +32,8 @@ public:
 
     Matrix() {}
 
-    void operator *=(const Matrix<rows, cols> &other) {
+    template <int ocols>
+    Matrix<rows, ocols> operator *(const Matrix<cols, ocols> &other) {
         int rows_start, rows_end;
         get_row_range<rows>(rows_start, rows_end);
 
@@ -40,32 +41,24 @@ public:
         // multiple procs are performing this one operation without 
         // overwriting each others' results.
 
+        Matrix<rows, ocols> out;
         for (int i = rows_start; i < rows_end; i++) {
             // Write into a temporary array
             float row_result[cols];
-            for (int j = 0; j < cols; j++) {
+            for (int j = 0; j < ocols; j++) {
                 float sum = 0;
                 for (int k = 0; k < cols; k++) {
                     sum += nums[i][k] * other.nums[k][j];
                 }
-                row_result[j] = sum;
-            }
-
-            // Write temporary array to self
-            for (int j = 0; j < cols; j++) {
-                nums[i][j] = row_result[j];
+                out.nums[i][j] = sum;
             }
         }
-    }
-
-    Matrix<rows, cols> operator *(const Matrix<rows, cols> &other) {
-        Matrix<rows, cols> out = *this;
-        out *= other;
         return out;
     }
 
     /**
-     * Call it a semi-manual unit test.
+     * Returns a Python expression that, assuming that `import numpy as np`
+     * has been called, creates an exact copy of this matrix, but in Python.
      */
     void print_numpy(std::ostream &os) {
         os << "np.array([";
@@ -81,17 +74,19 @@ public:
         os << "], np.float32)";
     }
 
-    void print_pretty(std::ostream &os) {
+     void print_pretty(std::ostream &os) {
         for (int i = 0; i < rows; i++) {
             bool is_first = i == 0;
             bool is_last = i == rows - 1;
 
             os << (is_first ? "┌" : is_last ? "└" : "|");
+
             for (int j = 0; j < cols; j++) {
                 os << nums[i][j] << "\t";
             }
 
             os << (is_first ? "┐" : is_last ? "┘" : "|"); 
+            
             if (!is_last) {
                 os << std::endl;
             }
