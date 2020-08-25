@@ -56,18 +56,18 @@ public:
     /**
      * Call it a semi-manual unit test.
      */
-    void print_wolfram_alpha(std::ostream &os) {
-        os << "[";
+    void print_numpy(std::ostream &os) {
+        os << "np.array([";
         for (int i = 0; i < rows; i++) {
             os << "[";
             for (int j = 0; j < cols; j++) {
                 os << nums[i][j];
-                if (j != cols - 1) os << ", ";
+                if (j != cols - 1) os << ",";
             }
             os << "]";
-            if (i != rows - 1) os << ", ";
+            if (i != rows - 1) os << ",";
         }
-        os << "]";
+        os << "], np.float32)";
     }
 
     void print_pretty(std::ostream &os) {
@@ -126,8 +126,8 @@ void operator <<=(Matrix<rows, cols> &dst, Matrix<rows, cols> src) {
 
 template <int rows, int cols>
 std::ostream& operator <<(std::ostream& os, Matrix<rows, cols>& m) {
-    #ifdef MATRIX_PRINT_WOLFRAM_ALPHA
-        m.print_wolfram_alpha(os);
+    #ifdef MATRIX_PRINT_NUMPY
+        m.print_numpy(os);
     #else
         m.print_pretty(os);
     #endif

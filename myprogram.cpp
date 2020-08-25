@@ -1,6 +1,6 @@
 #include <iostream>
 
-#define MATRIX_PRINT_WOLFRAM_ALPHA // debugging/verification
+#define MATRIX_PRINT_NUMPY  // debugging/verification
 
 
 #include "sync.hpp"
@@ -37,10 +37,10 @@ int main(int argc, char *argv[]) {
 
     LEADER {
         std::cout 
-            << shr->a << std::endl 
-            << "*" << std::endl
-            << shr->b << std::endl 
-            << "=" << std::endl 
-            << shr->c << std::endl;
+            << "np.array_equal(np.matmul(" << shr->a
+            << ","
+            << shr->b
+            << ")," 
+            << shr->c << ")" << std::endl;
     }
 }
