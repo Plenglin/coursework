@@ -16,15 +16,13 @@ void isr(int sig) {
 }
 
 int main(int argc, char *argv[]) {
-    char* prog = "/bin/echo";
+    char* prog = (char*)"./myprogram";
     n_procs = 2;
     std::string n_procs_str = std::to_string(n_procs);
 
     std::cout << "Astrid MPI initializing " << n_procs_str << " instances of " << prog << std::endl;
-
     pids = new int[n_procs];
-    char * parmList[] = {prog, NULL, (char*)n_procs_str.c_str(), NULL};
-
+    char * args[] = {prog, NULL, (char*)n_procs_str.c_str(), NULL};
     for (int i = 0; i < n_procs; i++) {
         int pid = fork();
         if (pid) {
@@ -32,8 +30,8 @@ int main(int argc, char *argv[]) {
             continue;
         }
         auto i_str = std::to_string(i);
-        parmList[1] = (char*)i_str.c_str();
-        execv(prog, parmList);
+        args[1] = (char*)i_str.c_str();
+        execv(prog, args);
     }
     wait(0);
 

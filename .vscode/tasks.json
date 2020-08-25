@@ -23,7 +23,10 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
+            },
+            "dependsOn":[
+                "build myprogram"
+            ]
         },
         {
             "type": "shell",
