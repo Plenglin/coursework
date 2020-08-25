@@ -30,24 +30,35 @@ public:
 
     Matrix() {}
 
-    template <int ocols>
-    Matrix<rows, ocols> operator *(const Matrix<cols, ocols> &other) {
-
-        // Calculate which row we're doing
+    void operator *=(const Matrix<rows, cols> &other) {
         int rows_start, rows_end;
         get_row_range<rows>(rows_start, rows_end);
 
-        Matrix<rows, ocols> out;
+        // The following technique ensures that you can use *= when
+        // multiple procs are performing this one operation without 
+        // overwriting each others' results.
+
         for (int i = rows_start; i < rows_end; i++) {
-            for (int j = 0; j < ocols; j++) {
+            // Write into a temporary array
+            float row_result[cols];
+            for (int j = 0; j < cols; j++) {
                 float sum = 0;
                 for (int k = 0; k < cols; k++) {
                     sum += nums[i][k] * other.nums[k][j];
                 }
-                out.nums[i][j] = sum;
+                row_result[j] = sum;
+            }
+
+            // Write temporary array to self
+            for (int j = 0; j < cols; j++) {
+                nums[i][j] = row_result[j];
             }
         }
+    }
 
+    Matrix<rows, cols> operator *(const Matrix<rows, cols> &other) {
+        Matrix<rows, cols> out = *this;
+        out *= other;
         return out;
     }
 
@@ -93,6 +104,22 @@ public:
         }
     }
 };
+
+/**
+ * C <<= A is not exactly C = A but eh, it's close enough. Fira Code's ligature
+ * for it looks nice too.
+ */
+template <int rows, int cols>
+void operator <<=(Matrix<rows, cols> *dst, Matrix<rows, cols> src) {
+    int start, end;
+    get_row_range<rows>(start, end);
+    
+    for (int i = start; i < end; i++) {
+        for (int j = 0; j < cols; j++) {
+            dst->nums[i][j] = src.nums[i][j];
+        }
+    }
+}
 
 template <int rows, int cols>
 void mp_randomize(Matrix<rows, cols> &m) {

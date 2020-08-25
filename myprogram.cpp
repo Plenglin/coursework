@@ -13,7 +13,9 @@ int main(int argc, char *argv[]) {
     mp_randomize(a);
     mp_randomize(b);
 
-    auto c = a * b;
+    Matrix<2, 2> c;
+    auto pc = &c;
+    pc <<= a * b;
 
     std::cout << a << "*" << b << "=" << c << std::endl;
 }
