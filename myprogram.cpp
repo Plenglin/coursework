@@ -2,11 +2,12 @@
 
 #define MATRIX_PRINT_WOLFRAM_ALPHA // debugging/verification
 
+
 #include "sync.hpp"
 #include "matrix.hpp"
 
 
-typedef Matrix<4, 4> Mat;
+typedef Matrix<8, 8> Mat;
 
 struct SharedData {
     Mat a; 
@@ -15,30 +16,31 @@ struct SharedData {
 };
 
 int main(int argc, char *argv[]) {
-    SharedData *shared;
+    SharedData *shr;
     MPResourceManager<SharedData> mp_mgr(
         "astrid_yu_final_shm", 
-        shared, 
+        shr, 
         atoi(argv[1]), 
         atoi(argv[2])); 
     mp_seed_random();
 
-    auto A = &shared->a;
-    auto B = &shared->b;
-    auto C = &shared->c;
-    mp_randomize(A);
-    mp_randomize(B);
+    mp_randomize(shr->a);
+    mp_randomize(shr->b);
     mp_synch();
     
-    C <<= shared->a * shared->b;
+    shr->c <<= shr->a * shr->b;
+    mp_synch();
+    shr->c <<= shr->a * shr->b;
+    mp_synch();
+    shr->c <<= shr->a * shr->b;
     mp_synch();
 
     LEADER {
         std::cout 
-            << shared->a << std::endl 
+            << shr->a << std::endl 
             << "*" << std::endl
-            << shared->b << std::endl 
+            << shr->b << std::endl 
             << "=" << std::endl 
-            << shared->c << std::endl;
+            << shr->c << std::endl;
     }
 }

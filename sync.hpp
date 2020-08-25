@@ -96,9 +96,6 @@ public:
             for (int j = 0; j < __sync_n + 1; j++) {
                 __ready_arr[j] = 0;
             }
-            for (int j = 0; j < __sync_n + 1; j++) {
-                std::cout << __sync_i << ": " << __ready_arr[j] << "\n";
-            }
         } else {
             // Follower waits for ready array to have been fully cleaned.
             while (true) {
@@ -113,12 +110,8 @@ public:
                     break;
                 }
             }
-            for (int j = 0; j < __sync_n + 1; j++) {
-                std::cout << __sync_i << ": " << __ready_arr[j] << "\n";
-            }
         }
 
-        std::cout << i << "/" << __sync_n << " ready" << std::endl;
         mp_synch();
     }
 

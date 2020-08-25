@@ -96,30 +96,30 @@ public:
     }
 };
 
+template <int rows, int cols>
+void mp_randomize(Matrix<rows, cols> &m) {
+    int start, end;
+    get_row_range<rows>(start, end);
+
+    for (int i = start; i < end; i++) {
+        for (int j = 0; j < cols; j++) {
+            m.nums[i][j] = (float)(rand() % 3);
+        }
+    }
+}
+
 /**
  * C <<= A is not exactly C = A but eh, it's close enough. Fira Code's ligature
  * for it looks nice too.
  */
 template <int rows, int cols>
-void operator <<=(Matrix<rows, cols> *dst, Matrix<rows, cols> src) {
+void operator <<=(Matrix<rows, cols> &dst, Matrix<rows, cols> src) {
     int start, end;
     get_row_range<rows>(start, end);
     
     for (int i = start; i < end; i++) {
         for (int j = 0; j < cols; j++) {
-            dst->nums[i][j] = src.nums[i][j];
-        }
-    }
-}
-
-template <int rows, int cols>
-void mp_randomize(Matrix<rows, cols> *m) {
-    int start, end;
-    get_row_range<rows>(start, end);
-
-    for (int i = start; i < end; i++) {
-        for (int j = 0; j < cols; j++) {
-            m->nums[i][j] = (float)(rand() % 3);
+            dst.nums[i][j] = src.nums[i][j];
         }
     }
 }
