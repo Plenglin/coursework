@@ -28,8 +28,12 @@ int main(int argc, char *argv[]) {
         atoi(argv[2])); 
     mp_seed_random();
 
-    mp_randomize(shr->a);
-    mp_randomize(shr->b);
+    Mat &A = shr->a;
+    Mat &B = shr->b;
+    Mat &C = shr->c;
+
+    mp_randomize(A);
+    mp_randomize(B);
     mp_synch();
 
     clock_t start;
@@ -37,18 +41,18 @@ int main(int argc, char *argv[]) {
         start = clock();
     }
 
-    shr->c <<= shr->a * shr->b;
+    C = A * B;
     mp_synch();
-    shr->a <<= shr->b * shr->c;
+    A = B * C;
     mp_synch();
-    shr->b <<= shr->a * shr->c;
+    B = A * C;
     mp_synch();
 
     LEADER {
         clock_t duration = clock() - start;
-        std::cout << "A:" << std::endl << shr->a << std::endl << std::endl;
-        std::cout << "B:" << std::endl << shr->b << std::endl << std::endl;
-        std::cout << "C:" << std::endl << shr->c << std::endl << std::endl;
+        std::cout << "A:" << std::endl << A << std::endl << std::endl;
+        std::cout << "B:" << std::endl << B << std::endl << std::endl;
+        std::cout << "C:" << std::endl << C << std::endl << std::endl;
         std::cout << "Computed in " << duration / (float)CLOCKS_PER_SEC << " seconds" << std::endl;
     }
 }

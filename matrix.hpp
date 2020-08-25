@@ -56,6 +56,17 @@ public:
         return out;
     }
 
+    Matrix<rows, cols>& operator =(Matrix<rows, cols> src) {
+        int start, end;
+        get_row_range<rows>(start, end);
+        
+        for (int i = start; i < end; i++) {
+            for (int j = 0; j < cols; j++) {
+                nums[i][j] = src.nums[i][j];
+            }
+        }
+    }
+
     /**
      * Returns a Python expression that, assuming that `import numpy as np`
      * has been called, creates an exact copy of this matrix, but in Python.
@@ -74,7 +85,7 @@ public:
         os << "], np.float32)";
     }
 
-     void print_pretty(std::ostream &os) {
+    void print_pretty(std::ostream &os) {
         for (int i = 0; i < rows; i++) {
             bool is_first = i == 0;
             bool is_last = i == rows - 1;
@@ -110,22 +121,6 @@ void mp_randomize(Matrix<rows, cols> &m) {
     for (int i = start; i < end; i++) {
         for (int j = 0; j < cols; j++) {
             m.nums[i][j] = (float)(rand() % 3);
-        }
-    }
-}
-
-/**
- * C <<= A is not exactly C = A but eh, it's close enough. Fira Code's ligature
- * for it looks nice too.
- */
-template <int rows, int cols>
-void operator <<=(Matrix<rows, cols> &dst, Matrix<rows, cols> src) {
-    int start, end;
-    get_row_range<rows>(start, end);
-    
-    for (int i = start; i < end; i++) {
-        for (int j = 0; j < cols; j++) {
-            dst.nums[i][j] = src.nums[i][j];
         }
     }
 }

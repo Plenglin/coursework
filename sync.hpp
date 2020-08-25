@@ -12,7 +12,7 @@
 int __sync_i, __sync_n;
 int *__ready_arr;
 
-#define LEADER_I 1
+#define LEADER_I 0
 #define LEADER if (__sync_i == LEADER_I)
 #define FOLLOWER if (__sync_i != LEADER_I)
 
