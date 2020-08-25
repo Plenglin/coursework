@@ -4,14 +4,25 @@
 
 #include "sync.hpp"
 
+/**
+ * Outputs the rows assigned to this process, start inclusive and end exclusive.
+ */
 template <int rows>
 void get_row_range(int &start, int &end) {
-    int slices_size = rows / __sync_n;
-    start = slices_size * __sync_i;
-    end = slices_size * (__sync_i + 1);
-    if (end > rows) {
-        end = rows;
+    static int _start = -1;
+    static int _end;
+
+    if (_start == -1) {
+        float slices_size = (float)rows / __sync_n;
+        _start = slices_size * __sync_i;
+        _end = slices_size * (__sync_i + 1);
+        if (_end > rows) {
+            _end = rows;
+        }
     }
+
+    start = _start;
+    end = _end;
 }
 
 template <int rows, int cols>

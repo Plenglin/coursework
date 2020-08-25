@@ -67,15 +67,12 @@ public:
 
             fd = shm_open(shm_name.c_str(), O_RDWR | O_CREAT, 0777);
             ftruncate(fd, alloc_size);
-
-            std::cout << i << "/" << __sync_n << " Creating shared memory " << shm_name << " at fd=" << fd << std::endl;
         } else {
             // Wait for leader to open shared memory.
             while (fd <= 0) {
                 usleep(50000);
                 fd = shm_open(shm_name.c_str(), O_RDWR, 0777);
             }
-            std::cout << i << "/" << __sync_n << " opened " << shm_name << " at fd=" << fd << std::endl;
         }
 
         // Memory map to the data array
@@ -120,7 +117,6 @@ public:
         close(fd);
         munmap(mmap_base, alloc_size);
         LEADER {
-            std::cout << "Unlinking shared memory" << std::endl;
             shm_unlink(shm_name.c_str());
         }
     }
