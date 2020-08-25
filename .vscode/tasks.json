@@ -32,7 +32,8 @@
                 "-g",
                 "myprogram.cpp",
                 "-o",
-                "myprogram"
+                "myprogram",
+                "-lrt"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

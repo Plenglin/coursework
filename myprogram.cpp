@@ -2,11 +2,22 @@
 
 #define MATRIX_PRINT_WOLFRAM_ALPHA // debugging
 
+#include "sync.hpp"
 #include "matrix.hpp"
 
 
+typedef Matrix<2, 2> Mat;
+
+struct SharedData {
+    Mat a; 
+    Mat b;
+    Mat c;    
+};
+
 int main(int argc, char *argv[]) {
-    mp_initialize(0, 1);
+    SharedData *shared;
+    MPResourceManager<SharedData> mp_mgr("astrid_yu_final_shm", shared, 0, 1);
+    
     mp_seed_random();
 
     Matrix<2, 2> a, b;

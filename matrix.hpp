@@ -1,17 +1,8 @@
+#pragma once
+
 #include <iostream>
 
-#include <stdlib.h>
-#include <time.h>
-
-int __sync_i, __sync_n;
-void mp_initialize(int i, int n) {
-    __sync_i = i;
-    __sync_n = n;
-}
-
-void mp_seed_random() {
-    srand(time(NULL) * (__sync_n + __sync_i) / __sync_n);
-}
+#include "sync.hpp"
 
 template <int rows>
 void get_row_range(int &start, int &end) {
