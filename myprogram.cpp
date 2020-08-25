@@ -7,7 +7,7 @@
 #include "matrix.hpp"
 
 
-typedef Matrix<8, 8> Mat;
+typedef Matrix<32, 32> Mat;
 
 struct SharedData {
     Mat a; 

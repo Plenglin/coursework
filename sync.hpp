@@ -12,7 +12,7 @@
 int __sync_i, __sync_n;
 int *__ready_arr;
 
-#define LEADER_I 0
+#define LEADER_I 1
 #define LEADER if (__sync_i == LEADER_I)
 #define FOLLOWER if (__sync_i != LEADER_I)
 
@@ -101,7 +101,7 @@ public:
             while (true) {
                 bool breakout = true;
                 for (int j = 0; j < __sync_n + 1; j++) {
-                    if (j != LEADER_I && __ready_arr[j] != 0) {
+                    if (j != LEADER_I && __ready_arr[j] != 0 && __ready_arr[j] != 1) {
                         breakout = false;
                         break;
                     }
