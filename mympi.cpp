@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     n_procs = 2;
     std::string n_procs_str = std::to_string(n_procs);
 
-    std::cout << "Astrid MPI initializing " << n_procs_str << " instances of " << prog << std::endl;
+    std::cout << "Astrid MPI initializing " << n_procs_str << " instances of " << prog << std::endl;   
     pids = new int[n_procs];
     char * args[] = {prog, NULL, (char*)n_procs_str.c_str(), NULL};
     for (int i = 0; i < n_procs; i++) {
@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
         args[1] = (char*)i_str.c_str();
         execv(prog, args);
     }
+    
+    signal(SIGINT, isr);
     wait(0);
 
     delete pids;

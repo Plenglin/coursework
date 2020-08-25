@@ -11,15 +11,16 @@
 
 int __sync_i, __sync_n;
 int *__ready_arr;
-#define LEADER if (__sync_i == 0)
-#define FOLLOWER if (__sync_i != 0)
+
+#define LEADER_I 0
+#define LEADER if (__sync_i == LEADER_I)
+#define FOLLOWER if (__sync_i != LEADER_I)
 
 void mp_synch() {
     int synchid = __ready_arr[__sync_n] + 1; 
     __ready_arr[__sync_i] = synchid; 
-    bool breakout = false;
     while (true) {
-        breakout = true; 
+        bool breakout = true; 
         for (int i = 0; i < __sync_n; i++) {
             if (__ready_arr[i] < synchid) {
                 breakout = false;
@@ -41,6 +42,7 @@ class MPResourceManager {
     std::string shm_name;
     size_t ready_arr_size, alloc_size;
     void *mmap_base;
+    int fd = 0;
 public:
     MPResourceManager(
         std::string shm_name,
@@ -59,17 +61,21 @@ public:
         alloc_size = ready_arr_size + sizeof(Data);
 
         // Loading shared memory phase.
-        int fd = 0;
         LEADER {
-            // Create shared memory and truncate.
+            // Leader creates shared memory and truncates.
+            shm_unlink(shm_name.c_str());  // Unlink if exists
+
             fd = shm_open(shm_name.c_str(), O_RDWR | O_CREAT, 0777);
             ftruncate(fd, alloc_size);
+
+            std::cout << i << "/" << __sync_n << " Creating shared memory " << shm_name << " at fd=" << fd << std::endl;
         } else {
             // Wait for leader to open shared memory.
-            while (!fd) {
+            while (fd <= 0) {
+                usleep(50000);
                 fd = shm_open(shm_name.c_str(), O_RDWR, 0777);
-                usleep(1000);
             }
+            std::cout << i << "/" << __sync_n << " opened " << shm_name << " at fd=" << fd << std::endl;
         }
 
         // Memory map to the data array
@@ -86,30 +92,42 @@ public:
         data_ptr = (Data*)((char*)mmap_base + ready_arr_size);
         
         LEADER {
-            // Clean ready array.
-            for (int i = 0; i < __sync_n + 1; i++) {
-                __ready_arr[i] = 0;
+            // Leader cleans ready array.
+            for (int j = 0; j < __sync_n + 1; j++) {
+                __ready_arr[j] = 0;
+            }
+            for (int j = 0; j < __sync_n + 1; j++) {
+                std::cout << __sync_i << ": " << __ready_arr[j] << "\n";
             }
         } else {
-            // Wait for ready array to have been fully cleaned.
+            // Follower waits for ready array to have been fully cleaned.
             while (true) {
                 bool breakout = true;
-                for (int j = 0; j < n + 1; j++) {
-                    if (__ready_arr[j] != 0) {
+                for (int j = 0; j < __sync_n + 1; j++) {
+                    if (j != LEADER_I && __ready_arr[j] != 0) {
                         breakout = false;
+                        break;
                     }
                 }
                 if (breakout) {
                     break;
                 }
             }
+            for (int j = 0; j < __sync_n + 1; j++) {
+                std::cout << __sync_i << ": " << __ready_arr[j] << "\n";
+            }
         }
+
+        std::cout << i << "/" << __sync_n << " ready" << std::endl;
+        mp_synch();
     }
 
     ~MPResourceManager() {
         mp_synch();
+        close(fd);
         munmap(mmap_base, alloc_size);
         LEADER {
+            std::cout << "Unlinking shared memory" << std::endl;
             shm_unlink(shm_name.c_str());
         }
     }

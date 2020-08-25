@@ -113,13 +113,13 @@ void operator <<=(Matrix<rows, cols> *dst, Matrix<rows, cols> src) {
 }
 
 template <int rows, int cols>
-void mp_randomize(Matrix<rows, cols> &m) {
+void mp_randomize(Matrix<rows, cols> *m) {
     int start, end;
     get_row_range<rows>(start, end);
 
     for (int i = start; i < end; i++) {
         for (int j = 0; j < cols; j++) {
-            m.nums[i][j] = (float)(rand() % 3);
+            m->nums[i][j] = (float)(rand() % 3);
         }
     }
 }
