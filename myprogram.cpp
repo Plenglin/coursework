@@ -50,9 +50,7 @@ int main(int argc, char *argv[]) {
 
     LEADER {
         clock_t duration = clock() - start;
-        std::cout << "A:" << std::endl << A << std::endl << std::endl;
-        std::cout << "B:" << std::endl << B << std::endl << std::endl;
-        std::cout << "C:" << std::endl << C << std::endl << std::endl;
+        std::cout << C << std::endl << std::endl;
         std::cout << "Computed in " << duration / (float)CLOCKS_PER_SEC << " seconds" << std::endl;
     }
 }

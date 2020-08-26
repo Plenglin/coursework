@@ -25,6 +25,21 @@ void get_row_range(int &start, int &end) {
     end = _end;
 }
 
+template <int mrows, int mcols>
+class MatrixPatch {
+public:
+    float *nums[mcols];
+    int rows;
+    int row_offset;
+
+    MatrixPatch(int row_offset, int rows) : row_offset(row_offset), rows(rows) {
+        nums = new float[rows][mcols];
+    }
+    ~MatrixPatch() {
+        delete nums;
+    }
+};
+
 template <int rows, int cols>
 class Matrix {
 public:
@@ -86,20 +101,9 @@ public:
     }
 
     void print_pretty(std::ostream &os) {
-        for (int i = 0; i < rows; i++) {
-            bool is_first = i == 0;
-            bool is_last = i == rows - 1;
-
-            os << (is_first ? "┌" : is_last ? "└" : "|");
-
-            for (int j = 0; j < cols; j++) {
-                os << nums[i][j] << "\t";
-            }
-
-            os << (is_first ? "┐" : is_last ? "┘" : "|"); 
-            
-            if (!is_last) {
-                os << std::endl;
+        for (int j = 0; j < cols; j++) {
+            for (int i = 0; i < rows; i++) {
+                os << nums[i][j] << "\n";
             }
         }        
     }
