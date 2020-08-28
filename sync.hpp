@@ -12,8 +12,13 @@
 int __sync_i, __sync_n;
 int *__ready_arr;
 
+// Convenience macro for testing (follow-fork-mode child only goes down first one)
 #define LEADER_I 0
+
+// Convenience macro for executing leader-only code.
 #define LEADER if (__sync_i == LEADER_I)
+
+// Convenience macro for executing follower-only code.
 #define FOLLOWER if (__sync_i != LEADER_I)
 
 void mp_synch() {

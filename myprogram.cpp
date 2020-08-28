@@ -50,7 +50,16 @@ int main(int argc, char *argv[]) {
 
     LEADER {
         clock_t duration = clock() - start;
-        std::cout << C << std::endl << std::endl;
+        #ifdef MATRIX_PRINT_NUMPY
+            std::cout 
+                << "np.max((np.matmul(" << A
+                << ","
+                << C
+                << ")-" 
+                << B << ")/" << B << ")" << std::endl;
+        #else
+            std::cout << C << std::endl;
+        #endif
         std::cout << "Computed in " << duration / (float)CLOCKS_PER_SEC << " seconds" << std::endl;
     }
 }

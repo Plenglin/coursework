@@ -117,6 +117,7 @@ public:
     }
 };
 
+// Multi-process matrix randomization
 template <int rows, int cols>
 void mp_randomize(Matrix<rows, cols> &m) {
     int start, end;
@@ -124,7 +125,7 @@ void mp_randomize(Matrix<rows, cols> &m) {
 
     for (int i = start; i < end; i++) {
         for (int j = 0; j < cols; j++) {
-            m.nums[i][j] = (float)(rand() % 3);
+            m.nums[i][j] = (float)(rand() % 20);
         }
     }
 }
