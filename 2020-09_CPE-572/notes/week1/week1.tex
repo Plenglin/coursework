@@ -1,0 +1,64 @@
+\chapter{Simple Harmonic Motion}
+
+Book chapter 17
+
+\section{2020-09-15}
+
+\subsection{Introduction}
+
+\subsubsection{Every week}
+
+\begin{itemize}
+    \item Videos
+    \item Meet Tuesday to discuss videos (synchronous part)
+    \item Thursday is extended office hours
+    \item Lab due Friday
+    \item No midterms, but presentations
+\end{itemize}
+
+\subsubsection{Presentations}
+
+\begin{itemize}
+    \item Present in groups of 3 or 4, shuffled
+\end{itemize}
+
+\subsubsection{Environments to set up}
+
+\begin{itemize}
+    \item OpenGL Libraries
+    \item Compute shaders not allowed on Mac?
+    \item Windows - Use Visual Studio
+    \item Linux - Ask Sydney
+\end{itemize}
+
+\subsection{Lecture}
+
+\subsubsection{3D Graphics}
+
+\begin{outline}
+    \1 How to store 3D stuff?
+        \2 Things are completely hollow
+        \2 Surface is triangles. 3 points = a plane. 4 points = saddle
+        \2 The 3D modeler has given you the mesh already
+        \2 Easiest case: float triplets make a point, point triplets make a triangle
+    \1 Rendering a triangle?
+        \2 Screen has a fixed number of discrete pixels on a 2D screen
+        \2 2 coordinate systems: world (3D float) and screen (2D int). 
+        Matrix $\mathbf{M}$ such that $\mathbf{M}\vec{v_w} = \vec{v_s}$
+        \2 Triangle needs to get filled in
+    \1 Computation
+        \2 First 3D graphics were done on single-core CPUs and were slow and primitive. 
+        \2 Originally, CPU writes directly into VRAM that gets directly drawn to monitor, you see the image get drawn in front of you
+        \2 Double-buffering: 2 VRAM buffers, write to A, copy A to B when finished, render B
+        \2 Page-flipping: 2 VRAM buffers, write to A, render A and start writing to B, etc.
+        \2 The VRAM alone is the original "graphics card"
+        \2 Now, 150-250k triangles, offload them onto a highly parallel non-CPU processor (GPU), lots of tiny cores, bigger memory, store triangles and pictures on it
+        \2 VRAM closer to GPU = higher clock rates
+    \1 Shaders 
+        \2 Copy data from RAM into VRAM
+        \2 Write a shader to work on the memory (named so because it's often used for light calculations)
+        \2 Scientists and engineers write shaders for matrices. The course is graphics and simulations
+
+\end{outline}
+
+\section{2020-09-16}
