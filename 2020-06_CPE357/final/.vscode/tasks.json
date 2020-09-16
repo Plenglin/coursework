@@ -1,0 +1,54 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "build mympi",
+            "command": "/usr/bin/g++-7",
+            "args": [
+                "-g",
+                "mympi.cpp",
+                "-o",
+                "mympi",
+                "-lrt"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn":[
+                "build myprogram"
+            ]
+        },
+        {
+            "type": "shell",
+            "label": "build myprogram",
+            "command": "/usr/bin/g++-7",
+            "args": [
+                "-g",
+                "myprogram.cpp",
+                "-o",
+                "myprogram",
+                "-lrt"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
