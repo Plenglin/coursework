@@ -511,3 +511,4 @@ MigrationBackup/
 
 # End of https://www.toptal.com/developers/gitignore/api/clion,visualstudio,cmake,c++
 
+!resources/**/*.obj
