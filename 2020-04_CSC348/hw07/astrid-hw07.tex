@@ -1,0 +1,331 @@
+\documentclass{article}
+
+\usepackage{geometry}
+\usepackage{afterpage}
+\usepackage{graphicx}
+\usepackage{outlines}
+\usepackage{mathtools}
+\usepackage{changepage}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{pdflscape}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{blindtext}
+\usepackage{hyperref}
+
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+\newcommand{\divides}{\ |\ }
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 -- Homework \#7}
+\date{\today}
+
+\newcommand{\contradiction}{$\rightarrow\leftarrow$}
+\renewcommand\qedsymbol{\texttt{d(\textbf{\^{}\_\^{}})>}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{claim}{Claim}[theorem]
+\newtheorem{lemma}{Lemma}
+\newtheorem{lclaim}{Claim}[lemma]
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Questions}
+\begin{outline}[enumerate]
+    \1 \begin{theorem}
+        $\mathbb{Z}_{\geq 10}$ is countably infinite.
+    \end{theorem}
+    \begin{proof}
+        Let $f: \mathbb{Z}_{\geq 10} \rightarrow \mathbb{N}$ be defined as 
+        $$f(x) = x - 10$$.
+        \begin{claim}
+            $f$ is 1-1.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Suppose $a, b \in \mathbb{Z}_{\geq 10}$ and $f(a) = f(b)$. Thus,
+            $$a - 10 = b - 10$$
+            $$a = b$$
+            Thus, $f$ is 1-1 by definition.
+        \end{adjustwidth}
+        \begin{claim}
+            $f$ is onto.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Consider $y \in \mathbb{N}$. Note that $y = (y + 10) - 10 = f(y + 10)$.
+
+            Additionally, note that the lowest possible value for $y + 10$ is $0 + 10 = 10 \in \mathbb{Z}_{\geq 10}$. All values greater than that are elements of $\mathbb{Z}_{\geq 10}$ by definition of that set. Thus, $y + 10 \in \mathbb{Z}_{\geq 10}$
+            
+            Therefore, $f$ is onto by definition.
+        \end{adjustwidth}
+
+        Since $f$ is both 1-1 and onto, it is bijective. Therefore, $\abs{\mathbb{Z}_{\geq 10}} = \abs{\mathbb{N}}$, so $\mathbb{Z}_{\geq 10}$ is countably infinite.
+    \end{proof}
+
+    \1 \begin{theorem}
+        $\mathbb{Z}^-_{odd}$ is countably infinite.
+    \end{theorem}
+    
+    \begin{proof}
+        Let $f: \mathbb{Z}^-_{odd} \rightarrow \mathbb{Z}^+_{odd}$ be defined as 
+        $$f(x) = -x$$
+        \begin{claim}
+            $f$ is 1-1.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Suppose $a, b \in \mathbb{Z}^-_{odd}$ and $f(a) = f(b)$. Thus,
+            $$-a = -b$$
+            $$a = b$$
+            Thus, $f$ is 1-1 by definition.
+        \end{adjustwidth}
+        \begin{claim}
+            $f$ is onto.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Consider $i \in \mathbb{N}$ such that $2i + 1 \in \mathbb{Z}^+_{odd}$. Note that $2i + 1 = -(-(2i + 1)) = f(-(2i + 1))$. 
+            
+            Additionally, note that 
+            $$-(2i + 1) = -2i - 1 = 2(-i) + 2 - 2 - 1 = 2(-i - 1) +1$$
+
+            Suppose $j = -i - 1$. Thus,
+            $$-(2i + 1) = 2j + 1$$
+            Therefore, $-(2i + 1)$ is odd by definition.
+
+            Additionally, since $2i + 1$ is always negative, $-(2i + 1)$ is always positive. Thus, since it is positive and odd, $-(2i + 1) \in \mathbb{Z}^+_{odd}$.
+
+            Therefore, $f$ is onto by definition.
+        \end{adjustwidth}
+
+        Since $f$ is both 1-1 and onto, it is bijective. Therefore, $\abs{\mathbb{Z}^-_{odd}} = \abs{\mathbb{Z}^+_{odd}}$, so $\mathbb{Z}_{\geq 10}$ is countably infinite.
+    \end{proof}
+
+    \1 \begin{theorem}
+        $\mathbb{Z}^-_{odd}$ is countably infinite.
+    \end{theorem}
+    
+    \begin{proof}
+        Let $f: \mathbb{Z} \rightarrow 10\mathbb{Z}$ be defined as 
+        $$f(x) = 10x$$
+        \begin{claim}
+            $f$ is 1-1.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Suppose $a, b \in \mathbb{Z}$ and $f(a) = f(b)$. Thus,
+            $$10a = 10b$$
+            $$a = b$$
+            Thus, $f$ is 1-1 by definition.
+        \end{adjustwidth}
+        \begin{claim}
+            $f$ is onto.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Consider some number $n \in 10\mathbb{Z}$. By definition of $10\mathbb{Z}$, there exists a $m \in \mathbb{Z}$ such that $n = 10m$. 
+
+            Note that $n = 10m = f(m)$. Since, by definition, $m \in \mathbb{Z}$, $f$ is onto. 
+        \end{adjustwidth}
+
+        Since $f$ is both onto and 1-1, it is bijective. Therefore, $\abs{\mathbb{Z}} = \abs{10\mathbb{Z}}$ and $10\mathbb{Z}$ is countably infinite.
+    \end{proof}
+
+    \1 \begin{theorem}
+        $S = \left\{x \in \mathbb{Z} \ \vert \ \abs{x} < 1,000,000 \right\}$ is finite.
+    \end{theorem}
+    \begin{proof}
+        Suppose $T = \mathbb{N}_{\leq 1,999,999}$. Note that $T$ is finite. Define $f: S \rightarrow T$ as
+
+        $$f(x) = x + 999,999$$
+
+        \begin{claim}
+            $f$ is 1-1.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Suppose $a, b \in \mathbb{Z}$ and $f(a) = f(b)$. Thus,
+            $$a + 999,999 = b + 999,999$$
+            $$a = b$$
+            Thus, $f$ is 1-1 by definition.
+        \end{adjustwidth}
+
+        \begin{claim}
+            $f$ is onto.
+        \end{claim}
+        \begin{adjustwidth}{.5cm}{.5cm}
+            Let $n \in \mathbb{N}_{\leq 1,999,999}$. Consider the value $x = n - 999,999$. 
+            \begin{itemize}
+                \item When $n = 0$, $x = -999,999$. Note that $|x| < 1,000,000$.
+                \item When $n = 1,999,999$, $x = 999,999$. Note that $|x| < 1,000,000$.
+            \end{itemize}
+
+            Thus, for all values of $n$, $x \in \mathbb{N}_{\leq 1,999,999}$. 
+
+            Note that $n = (n - 999,999) + 999,999 = x + 999,999 = f(x)$. Thus, by definition, $f$ is onto. 
+        \end{adjustwidth}
+
+        Since $f$ is 1-1 and onto, it is bijective, so $|S| = |T|$. Since $T$ is finite, then $S$ is finite as well.
+    \end{proof}
+
+    \1 \begin{theorem}
+        ${1, 2} \times \mathbb{N}$ is countably infinite.
+    \begin{proof}
+        By definition of cartesian product, 
+        $${1, 2} \times \mathbb{N} = \left\{(1, x) \divides x \in \mathbb{N}\right\} \cup \left\{(2, x) \divides x \in \mathbb{N}\right\}$$
+
+        By Lemma \ref{lem:cart1}, $|\left\{(1, x) \divides x \in \mathbb{N}\right\}| = |\mathbb{N}|$ and $|\left\{(2, x) \divides x \in \mathbb{N}\right\}| = |\mathbb{N}|$, so both are countably infinite sets. Thus, by definition of union, their union ${1, 2} \times \mathbb{N}$ is also countably infinite as well.
+    \end{proof}
+    \end{theorem}
+
+    \1 
+        \2 \begin{theorem}
+            $7\mathbb{N} \cap 11\mathbb{N}$ is countably infinite.
+            \begin{proof}
+                Let $S = 7\mathbb{N} \cap 11\mathbb{N}$. By definition of set $S$,
+                $$S = 7\mathbb{N} \cap 11\mathbb{N} = \left\{7x \divides x \in \mathbb{N}\right\} \cap \left\{11y \divides y \in \mathbb{N}\right\}$$
+
+                Thus, $n \in S$ if and only if there exists some $x, y \in \mathbb{N}$ such that $n = 7x = 11y$.
+
+                Consider $n = 77j$ for some $j \in \mathbb{N}$. Note that $n = 7(11j) = 11(7j)$. Setting $x = 11j$ and $y = 7j$, $n = 7x = 11y$. Therefore, $n \in S$.
+
+                Note that there are $|\mathbb{N}|$ choices for $j$ by its definition, so there are $|\mathbb{N}|$ elements of $S$. Therefore, $|S| = |\mathbb{N}|$ and $S$ is countably infinite.
+            \end{proof}
+        \end{theorem}
+        \2 \begin{theorem}
+        $\mathbb{N}_{even} \cap \mathbb{N}_{odd}$ is finite.
+        \begin{proof}
+            Suppose by way of contradiction that there exists some $x \in \mathbb{N}$ such that $x \in \mathbb{N}_{even}$ and $x \in \mathbb{N}_{odd}$. By definition of even and odd, $x = 2i = 2j + 1$ for some $i, j \in \mathbb{N}$. Rearranging the equation,
+            $$2i - 2j = 1$$
+            $$2(i - j) = 1$$
+
+            Let $k = i - j$. Thus, $2k = 1$ and 1 is an even number. \contradiction
+
+            This is a contradiction because 1 is not an even number. Therefore, $x$ does not exist, so $\mathbb{N}_{even} \cap \mathbb{N}_{odd} = \emptyset$. Thus, $\mathbb{N}_{odd} \cap \mathbb{N}_{even}$ is a finite set.
+        \end{proof}
+        \end{theorem}
+    \1
+        \2 \begin{theorem}
+            $\mathbb{N} \setminus \mathbb{Z}^+$ is finite.
+            \begin{proof}
+                Note that $0 \in \mathbb{N}$ but $0 \notin \mathbb{Z}^+$. Thus, $0 \in \mathbb{N} \setminus \mathbb{Z}^+$.
+
+                By way of contradiction, suppose there exists some $x \in \mathbb{N}$ such that $x \neq 0$ and $x \notin \mathbb{Z}^+$. Since $0$ is the smallest item in $\mathbb{N}$, $x \neq 0$ is equivalent to $x > 0$, so $x$ must be positive. \contradiction
+
+                There is a contradiction because we assumed that $x \notin \mathbb{Z}^+$, or in other words, that $x$ is not positive. Therefore, $\mathbb{N} \setminus \mathbb{Z}^+ = \{0\}$ and $\mathbb{N} \setminus \mathbb{Z}^+$ is finite.
+            \end{proof}
+        \end{theorem}
+        \2 \begin{theorem}
+            Let $\mathbb{P}$ be the set of primes.$\mathbb{P} \setminus \mathbb{N}_{odd}$ is finite. (Note that both $\mathbb{N}_{odd}$ and $\mathbb{P}$ are countably infinite.) 
+            \begin{proof}
+                By definition of set subtraction, 
+                $$\mathbb{P} \setminus \mathbb{N}_{odd} = \mathbb{P} \cap \mathbb{N}_{even}$$
+
+                Note that 2 is even, and prime by definition. Thus, $2 \in (\mathbb{P} \cap \mathbb{N}_{even})$
+                
+                We will prove that there are no primes greater than 2. By way of contradiction, suppose there is some $x \in P$ such that $x > 2$, $x$ is even, and $x$ is prime. By definition of even, $x = 2j$ for some $j \in \mathbb{N}$. \contradiction
+
+                This violates the assumption that $x$ is prime. Thus, $x$ cannot exist. Therefore, $\mathbb{N}_{even} \cap \mathbb{P} = \mathbb{P} \setminus \mathbb{N}_{odd} = \{2\}$ and it is a finite set.
+            \end{proof}
+        \end{theorem}
+
+    \1 \begin{theorem}
+        If $|A| = |B|$ and $|B| = |C|$ then $|A| = |C|$. 
+    \begin{proof}
+        Since $|A| = |B|$, there exists a bijection $f: A \rightarrow B$. Since $|B| = |C|$, there exists a bijection $g: B \rightarrow C$. Thus, there exists a bijection $(g \circ f): A \rightarrow C$. Therefore, $|A| = |C|$.
+    \end{proof}
+    \end{theorem}
+
+    \1 \begin{theorem}
+        If $A$ and $B$ are sets, then $|A \cup B| = |A| + |B \setminus A|$
+    \end{theorem}
+
+    \begin{proof}
+        Consider $S = (A \cup B) \setminus A$. By Lemma \ref{lem:aubsuba}, $T = B \setminus A$. Note that every element in $A$ is contained in $A \cup B$ and there are no elements of $A$ that are not contained in $A \cup B$ by definition of union. Therefore, $(A \cup B) \setminus A = B \setminus A$ has $|A|$ less elements in it than $A \cup B$. 
+
+        Written as an equation:
+
+        $$|A \cup B| - |A| = |B \setminus A|$$
+
+        Rearranging the equation produces our result. 
+        $$|A \cup B| = |A| + |B \setminus A|$$
+    \end{proof}
+
+    \1 \begin{theorem}
+        If $A$ and $B$ are sets, then $|A \times B| = |A| \cdot |B|$
+    \begin{proof}
+        By definition of cartesian product, $A \times B$ is expanded out to the following:
+        $$\left\{(a, b) \divides a \in A, b \in B\right\}$$
+
+        We can rewrite this as the following union:
+        $$S = \bigcup_{a \in A} \left\{(a, b) \divides b \in B\right\}$$
+
+        By Lemma \ref{lem:cart1}, every such $\left\{(a, b) \divides b \in B\right\}$ has cardinality $|B|$. Additionally, there are $|A|$ possible $a \in A$ being iterated through. Therefore, $|S| = |A \times B| = |A|\cdot|B|$.
+    \end{proof}
+    \end{theorem}
+
+\end{outline} 
+
+\section{Additional Lemmas with Proofs}
+
+\begin{lemma}
+    Let $A$ and $B$ be sets. $(A \cup B) \setminus A = B \setminus A$.
+    \label{lem:aubsuba}
+
+    \begin{proof}
+        By definition of set subtraction,
+        \begin{equation}
+            (A \cup B) \setminus A = (A \cup B) \cap \overline{A}
+        \end{equation}
+
+        Using the distributive property, this expression is equivalent to
+        \begin{equation}
+            (A \cap \overline{A}) \cup (B \cap \overline{A})
+        \end{equation}
+
+        By definition of intersection, this is reduced to
+        \begin{equation}
+            \emptyset \cup (B \cap \overline{A})
+        \end{equation}
+
+        By definition of union, this is reduced to 
+        \begin{equation}
+            B \cap \overline{A}
+        \end{equation}
+
+        Therefore, $(A \cup B) \setminus A = B \setminus A$.
+    \end{proof}
+\end{lemma}
+
+\begin{lemma}
+    Let $A$ and $B$ be sets, and $a \in A$. Suppose the set $S_a = \left\{(a, b)\ |\ b \in B\right\}$. Then, $|S_a| = |B|$ is countably infinite.
+    \label{lem:cart1}    
+\begin{proof}
+    Let $f_a: B \rightarrow S_a$ be defined as follows:
+    $$f_a(b) = (a, b)$$
+
+    \begin{lclaim}
+        $f_n$ is 1-1.
+    \end{lclaim}
+    \begin{adjustwidth}{.5cm}{.5cm}
+        Suppose $x, y \in B$ such that $f_a(x) = f_a(y)$. Thus, by definition of $f$,
+        $$(a, x) = (a, y)$$
+        Therefore, $x = y$, and $f_n$ is 1-1.
+    \end{adjustwidth}
+    \begin{lclaim}
+        $f_a$ is onto.
+    \end{lclaim}
+    \begin{adjustwidth}{.5cm}{.5cm}
+        Let $(a, b) \in S$. Note that $(a, b) = f_a(b)$. Thus, there exists some $b \in B$ such that $f_a(b) = (a, b)$, so $f_a$ is onto.
+    \end{adjustwidth}
+
+    Because $f_b$ is both 1-1 and onto, $f_b$ is bijective. Therefore, for all $b \in B$, $|S_a| = |B|$.
+\end{proof}
+\end{lemma}
+
+\newgeometry{margin=2cm}
+\begin{landscape}
+\end{landscape}
+
+\restoregeometry
+
+\section{Scratch Work}
+    
+\end{document}

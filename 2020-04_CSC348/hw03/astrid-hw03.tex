@@ -1,0 +1,498 @@
+\documentclass{article}
+\usepackage{outlines}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{blindtext}
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 -- Homework \#2}
+\date{\today}
+
+\renewcommand\qedsymbol{\texttt{d(\textbf{\^{}\_\^{}})>}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{case}{Case}
+\newtheorem{subcase}{Case}
+\numberwithin{subcase}{case}
+
+\begin{document}
+\maketitle
+\begin{outline}[enumerate]
+
+    \1 \begin{theorem}
+        Let $A$ and $B$ be sets with some universe $U$. $A \setminus B = A \cap \overline{B}$.
+
+        \begin{proof}
+            $(\rightarrow)$ Suppose $x \in (A \setminus B)$. By definition of set difference, 
+            \begin{equation}
+                \begin{aligned}
+                    x \in A \wedge x \notin B
+                \end{aligned}
+            \end{equation}
+            
+            By definition of complement:
+            \begin{equation}
+                \begin{aligned}
+                    x \in A \wedge x \in \overline{B}
+                \end{aligned}
+            \end{equation}
+
+            By definition of intersection:
+            \begin{equation}
+                \begin{aligned}
+                    x \in (A \setminus \overline{B}) 
+                \end{aligned}
+            \end{equation}
+
+            Therefore, $x \in (A \setminus B) \rightarrow x \in (A \cap \overline{B})$.
+
+            By definition of subset, $(A \setminus B) \subseteq (A \cap \overline{B})$.
+
+            $(\leftarrow)$ Let $x \in U$. Suppose $x \in A \cap \overline{B}$. 
+            
+            By a symmetric argument, $x \in (A \cap \overline{B}) \rightarrow x \in (A \setminus B)$.  
+
+            By definition of subset, $(A \cap \overline{B}) \subseteq (A \setminus B)$.
+
+            Because $(A \setminus B) \subseteq (A \cap \overline{B})$ and $(A \cap \overline{B}) \subseteq (A \setminus B)$, 
+            by definition of equivalent sets, $(A \setminus B) = (A \cap \overline{B})$.
+        \end{proof} 
+    \end{theorem}
+
+    \1 \begin{theorem}
+        Let A, B, and C be sets. $A \cap (B \cup C) = (A \cap B) \cup (A \cap C)$.
+        \begin{proof}
+            $(\rightarrow)$ Let $x \in A \cap (B \cup C)$. By definition of intersection: 
+            \begin{equation}
+                (x \in A) \wedge [x \in (B \cup C)]
+            \end{equation}
+
+            By definition of union: 
+            \begin{equation}
+                (x \in A) \wedge (x \in B \vee x \in C)
+            \end{equation}
+
+            Using the boolean distributive property: 
+            \begin{equation}
+                (x \in A \wedge x \in B) \vee (x \in A \wedge x \in C)
+            \end{equation}
+
+            By definition of intersection: 
+            \begin{equation}
+                (x \in A \cap B) \vee (x \in A \cap B)
+            \end{equation}
+
+            By definition of union:
+            \begin{equation}
+                x \in (A \cap B) \cup (A \cap B)
+            \end{equation}
+
+            Therefore, $x \in [A \cap (B \cup C)] \rightarrow x \in [(A \cap B) \cup (A \cap C)]$.
+
+            By definition of subset, $A \cap (B \cup C) \subseteq (A \cap B) \cup (A \cap C)$.
+
+            $(\leftarrow)$ Suppose $x \in (A \cap B) \cup (A \cap C)$. 
+            
+            By a symmetric argument,
+            \begin{equation}
+                x \in [(A \cap B) \cup (A \cap C)] \rightarrow x \in [A \cap (B \cup C)]  
+            \end{equation}
+            
+            By definition of subset, 
+            \begin{equation}
+                (A \cap B) \cup (A \cap C) \subseteq A \cap (B \cup C)
+            \end{equation}
+
+            Therefore, by definition of equivalent sets, 
+            \begin{equation}
+                A \cap (B \cup C) = (A \cap B) \cup (A \cap C)
+            \end{equation}
+        \end{proof}
+        
+    \end{theorem}
+
+    \1 \begin{theorem}
+        Let A, B, and C be sets. $A \cup (B \cap C) = (A \cup B) \cap (A \cup C)$.
+
+        \begin{proof}
+            $(\rightarrow)$ Let $x \in A \cup (B \cap C)$. By definition of union: 
+            \begin{equation}
+                (x \in A) \vee [x \in (B \cap C)]
+            \end{equation}
+
+            By definition of intersection: 
+            \begin{equation}
+                (x \in A) \vee (x \in B \wedge x \in C)
+            \end{equation}
+        
+            Using the boolean distributive property: 
+            \begin{equation}
+                (x \in A \vee x \in B) \wedge (x \in A \vee x \in C)
+            \end{equation}
+
+            By definition of union: 
+            \begin{equation}
+                (x \in A \cup B) \wedge (x \in A \cup B)
+            \end{equation}
+
+            By definition of intersection:
+            \begin{equation}
+                x \in (A \cup B) \cap (A \cup B)
+            \end{equation}
+
+            Therefore, $x \in [A \cup (B \cap C)] \rightarrow x \in [(A \cup B) \cap (A \cup C)]$.
+
+            By definition of subset, $A \cup (B \cap C) \subseteq (A \cup B) \cap (A \cup C)$.
+
+            $(\leftarrow)$ Suppose $x \in (A \cup B) \cap (A \cup C)$. 
+            
+            By a symmetric argument,
+            \begin{equation}
+                x \in [(A \cup B) \cap (A \cup C)] \rightarrow x \in [A \cup (B \cap C)]  
+            \end{equation}
+            
+            By definition of subset, 
+            \begin{equation}
+                (A \cup B) \cap (A \cup C) \subseteq A \cup (B \cap C)
+            \end{equation}
+
+            Therefore, by definition of equivalent sets, 
+            \begin{equation}
+                A \cup (B \cap C) = (A \cup B) \cap (A \cup C)
+            \end{equation}
+        \end{proof}
+    \end{theorem}
+
+    \1 \begin{theorem}
+            Let $A$ and $B$ be sets. $\overline{A \cup B} = \overline{A} \cap \overline{B}$.
+        \end{theorem}
+        \begin{proof}
+            $(\rightarrow)$ Suppose $x \in \overline{A \cup B}$. By 
+            definition of set complement, 
+            \begin{equation}
+                \overline{x \in (A \cup B)}
+            \end{equation} 
+
+            By definition of union, 
+            \begin{equation}
+                \overline{(x \in A) \vee (x \in B)}
+            \end{equation}
+
+            Using DeMorgan's Law, this is equivalent to 
+            \begin{equation}
+                \overline{x \in A} \wedge \overline{x \in B}
+            \end{equation}
+
+            By definition of intersection,
+            \begin{equation}
+                x \in (\overline{A} \cap \overline{B})
+            \end{equation}
+            
+            Therefore, $x \in \overline{A \cup B} \rightarrow x \in \overline{A} \cap \overline{B}$.
+
+            $(\leftarrow)$ Suppose $x \in \overline{A} \cap \overline{B}$. 
+            
+            By a symmetric argument, 
+            \begin{equation}
+                x \in \overline{A} \cap \overline{B} \rightarrow x \in \overline{A \cup B}  
+            \end{equation}
+            
+            By definition of subset, the following are true:
+            \begin{equation}
+                \begin{aligned}
+                    \overline{A} \cap \overline{B} \subseteq \overline{A \cup B}   \\
+                    \overline{A \cup B} \subseteq \overline{A} \cap \overline{B}  
+                \end{aligned}
+            \end{equation}
+
+            Therefore, by definition of set equivalence,
+            \begin{equation}
+                \overline{A \cup B} = \overline{A} \cap \overline{B}
+            \end{equation}
+        \end{proof}
+    
+    \1 \begin{theorem}
+        Let $A$ and $B$ be sets. $\overline{A \cup B} = \overline{A} \cap \overline{B}$.
+        \end{theorem}
+        \begin{proof}
+            $(\rightarrow)$ Suppose $x \in \overline{A \cap B}$. By 
+            definition of set complement, 
+            \begin{equation}
+                \overline{x \in (A \cap B)}
+            \end{equation} 
+
+            By definition of intersection, 
+            \begin{equation}
+                \overline{(x \in A) \wedge (x \in B)}
+            \end{equation}
+
+            Using DeMorgan's Law, this is equivalent to 
+            \begin{equation}
+                \overline{x \in A} \vee \overline{x \in B}
+            \end{equation}
+
+            By definition of union,
+            \begin{equation}
+                x \in (\overline{A} \cup \overline{B})
+            \end{equation}
+            
+            Therefore, $x \in \overline{A \cap B} \rightarrow x \in \overline{A} \cup \overline{B}$.
+
+            $(\leftarrow)$ Suppose $x \in \overline{A} \cup \overline{B}$. 
+            
+            By a symmetric argument, 
+            \begin{equation}
+                x \in \overline{A} \cup \overline{B} \rightarrow x \in \overline{A \cap B}  
+            \end{equation}
+            
+            By definition of subset, the following are true:
+            \begin{equation}
+                \begin{aligned}
+                    \overline{A} \cup \overline{B} \subseteq \overline{A \cap B}   \\
+                    \overline{A \cap B} \subseteq \overline{A} \cup \overline{B}  
+                \end{aligned}
+            \end{equation}
+
+            Therefore, by definition of set equivalence,
+            \begin{equation}
+                \overline{A \cap B} = \overline{A} \cup \overline{B}
+            \end{equation}
+        \end{proof}
+
+    \1 \begin{theorem}
+            \label{thm:q6}
+            Let $m, n, p \in \mathbb{Z}$. If $m + n$ is even and $n + p$ is even, then 
+            $m + p$ is even.
+        \end{theorem}
+            
+        First, let us additionally define the following lemma:
+
+        \begin{lemma}
+            \label{thm:evenlemma}
+            Let $a, b \in \mathbb{Z}$. $a + b$ is even if and only if $a$ and $b$ have 
+            the same parity, and odd if and only if $a$ and $b$ have different parities.
+        \end{lemma}
+            
+        \begin{proof}[Proof of Lemma \ref{thm:evenlemma}]
+            
+            \textbf{Case 1.} $a$ and $b$ are both even.
+
+            By definition of even:
+            \begin{equation}
+                \begin{aligned}
+                    a &= 2k \\ 
+                    b &= 2l
+                \end{aligned}
+            \end{equation}
+
+            Therefore,
+            \begin{equation}
+                \begin{aligned}
+                    a + b &= 2k + 2l \\
+                    &= 2(k + l) 
+                \end{aligned}
+            \end{equation}
+
+            Let $m = k + l$. Then
+            \begin{equation}
+                a + b = 2m
+            \end{equation}
+
+            By definition of even, $a + b$ is even.  
+           
+            \textbf{Case 2.} $a$ and $b$ are both odd.
+
+            By definition of odd:
+            \begin{equation}
+                \begin{aligned}
+                    a &= 2k + 1 \\
+                    b &= 2l + 1
+                \end{aligned}
+            \end{equation}
+
+            Therefore, 
+            \begin{equation}
+                \begin{aligned}
+                    a + b &= 2k + 1 + 2l + 1 \\ 
+                    &= 2(k + l + 1) 
+                \end{aligned}
+            \end{equation}
+/lnoy
+            Let $m = k + l + 1$. Then,
+            \begin{equation}
+                a + b = 2m
+            \end{equation}
+
+            By definition of even, a + b is even.
+
+            \textbf{Case 3.} $a$ and $b$ have different parity. WLOG let $a$ be even and $b$ be odd.
+
+            By definition of even:
+            \begin{equation}
+                a = 2k
+            \end{equation}
+
+            By definition of odd:
+            \begin{equation}
+                b = 2l + 1
+            \end{equation}
+
+            Therefore,
+            \begin{equation}
+                \begin{aligned}
+                    a + b &= 2k + 2l + 1 \\
+                    &= 2(k + l) + 1
+                \end{aligned}
+            \end{equation}
+
+            Let $m = k + l$. Then,
+            \begin{equation}
+                a + b = 2m + 1
+            \end{equation}
+
+            By definition of odd, a + b is odd.
+
+            \textbf{In Summary:}
+
+            \begin{center}
+                \begin{tabular}{c c | c}
+                    $a$ parity & $b$ parity & $a + b$ parity \\
+                    \hline
+                    even & even & even \\ 
+                    even & odd & odd \\ 
+                    odd & even & odd \\ 
+                    odd & odd & even
+                \end{tabular}
+            \end{center}
+
+            Therefore, $a + b$ is only even when a's parity $=$ b's parity, and only odd when 
+            a's parity $\neq$ b's parity, concluding the lemma.
+        \end{proof}
+
+        \begin{proof}[Proof of Theorem \ref{thm:q6}]
+            Let $m, n, p \in \mathbb{Z}$. Suppose $m + n$ is even and $n + p$ is even. 
+            
+            WLOG, let $P \in \{even, odd\}$ be the parity of $m$.
+
+            By Lemma \ref{thm:evenlemma}, because $m + n$ is even and $m$ has parity $P$, then $n$
+            must have parity $P$ as well. 
+
+            By the same lemma, because $n + p$ is even and $n$ has parity $P$, then $p$ must  have 
+            parity $P$ as well.
+
+            Also by the same lemma, because $m$ and $p$ have the same parity $P$, $m + p$ must be even.  
+
+            Therefore, if $m + n$ is even and $n + p$ is even, then $m + p$ is even.
+        \end{proof}
+
+    \1 \begin{theorem}
+        \begin{equation}
+            \min(x, y) = \frac{x + y - | x - y |}{2}
+        \end{equation}
+    \end{theorem}
+
+    \begin{proof}
+        By definition of absolute value:
+        \begin{equation}
+            |x - y| = \begin{cases}
+                x - y &if x \geq y \\
+                y - x &if y > x
+            \end{cases}
+        \end{equation}
+
+        In both cases, it is always equal to the positive difference, no matter if x is greater or y is greater.
+
+        WLOG suppose $x \geq y$. Thus, $|x - y| = x - y$. Substituting into the equation:
+        \begin{equation}
+            \begin{aligned}
+                \min(x, y) &= \frac{x + y - (x - y)}{2} \\
+                &= \frac{x + y - x + y}{2} \\
+                &= \frac{2y}{2} \\
+                \min(x, y) &= y \\
+            \end{aligned}
+        \end{equation}
+
+        This statement is true by definition of $\min$. 
+        
+        Therefore, $\min(x, y) = \frac{x + y - | x - y |}{2}$
+    \end{proof}
+
+    \1 \begin{theorem}
+        \begin{equation}
+            max(x, y) = \frac{x + y - | x - y |}{2}
+        \end{equation}
+    \end{theorem}
+
+    \begin{proof}
+        WLOG suppose $x \geq y$. Therefore, $|x - y| = x - y$. Substituting into the equation:
+        \begin{equation}
+            \begin{aligned}
+                \max(x, y) = x &= \frac{x + y + (x - y)}{2} \\
+                &= \frac{2x}{2} \\
+                \max(x, y) &= x \\
+            \end{aligned}
+        \end{equation}
+
+        This statement is true by definition of $\max$. 
+        
+        Therefore, $\max(x, y) = \frac{x + y + | x - y |}{2}$
+    \end{proof}
+
+    \1 
+        \2 True. $k = 9$.
+        \2 True. $k = -4$.
+        \2 False. $4 > 1$ so there can't be a $k \in \mathbb{Z}$ such that $4k = 1$.
+        \2 False. 7 is prime, and $2 \notin \{1, 7\}$.
+        \2 False. $0k = 17$ means that $0 = 17$ which means it is false for all $k$.
+        \2 False. 17 is prime, and $3 \notin \{1, 17\}$.
+        \2 True. $k = 0$.
+
+    \1
+        \2 False 
+        \2 True 
+        \2 True
+        \2 True. Let $x \in \mathbb{Z}$ and $k = 0$. Therefore $xk = 0$. By definition of 
+            divides, $\forall x (x | 0)$.
+        \2 True. Let $y \in \mathbb{Z}$, and $k = y$. $1k = y$. By definition of divides, 
+            $\forall y(1 | y)$.
+        \2 False. By way of contradiction, assume $\forall x \forall y (x | y)$ to be true. 
+            Let $x = 10$ and $y = 6$. Therefore, according to the statement, 
+            $(x | y) \equiv (10 | 6)$. However, this is false, contradicting
+            the original premise that $\forall x \forall y (x | y)$. Therefore, 
+            the statement is false.
+        \2 True, for $x = 1$ as proven above.
+
+    \1 \begin{theorem}
+        Let $a, b, c \in \mathbb{Z}$. If $a | b$ and $b | c$ then $a | c$.
+    \end{theorem}
+
+    \begin{proof}
+        By definition of divides, the following are true:
+        \begin{itemize}
+            \item $ak = b$ for some $k \in \mathbb{Z}$
+            \item $bl = c$ for some $l \in \mathbb{Z}$
+        \end{itemize}
+
+        Therefore, we can multiply the equations together:
+        \begin{equation}
+            \begin{aligned}
+                (ak)(bl) &= (b)(c) \\
+                aklb &= cb 
+            \end{aligned}
+        \end{equation}
+
+        Then, we can unmultiply\footnote{Because division is not closed on 
+        $\mathbb{Z}$ :(} $b$ from both sides: 
+        \begin{equation}
+            akl = c
+        \end{equation}
+
+        Let $m = kl$. Then, $am = c$. Therefore, by definition of divides, 
+        $a | c$.
+    \end{proof}
+
+\end{outline} 
+\end{document}

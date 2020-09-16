@@ -1,0 +1,353 @@
+\documentclass{article}
+
+\usepackage{geometry}
+\usepackage{afterpage}
+\usepackage{graphicx}
+\usepackage{outlines}
+\usepackage{hyperref}
+\usepackage{changepage}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{pdflscape}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{blindtext}
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 -- Homework \#5}
+\date{\today}
+
+\newcommand{\contradiction}{$\rightarrow\leftarrow$}
+\renewcommand\qedsymbol{\texttt{d(\textbf{\^{}\_\^{}})>}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{claim}{Claim}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Questions}
+\begin{outline}[enumerate]
+    \1 $f(n) = n^2 + 1$ is not 1-1.
+        \begin{proof}
+            Consider $-1, 1 \in \mathbb{R}$. Note that $1 \neq -1$, but that $f(-1) = f(1) = 1^2 + 1 = 2$. Thus, $f$ is not 1-1 by definition of 1-1.
+        \end{proof}
+    \1 $f(x) = n^5$ is 1-1.
+        \begin{proof}
+            Suppose for some $x, y \in \mathbb{R}$, $f(x) = f(y)$.
+            \begin{equation}
+                \begin{aligned}
+                    x^5 &= y^5 \\
+                    \sqrt[5]{x^5} &= \sqrt[5]{y^5} \\
+                    x &= y
+                \end{aligned}
+            \end{equation}
+
+            Thus, by definition of 1-1, $f$ is 1-1.
+        \end{proof}
+    \1 $f(n) = n - 1$ is onto.
+        \begin{proof}
+            Let $y \in \mathbb{R}$. Note that $y = (y + 1) - 1 = f(y + 1)$. Since $(y + 1) - 1 \in \mathbb{R}$, $f(x)$ is onto by definition of onto.
+        \end{proof}
+    \1 $f(n) = n^2 + 1$ is not onto.
+        \begin{proof}
+            Consider $0 \in \mathbb{R}$. Note that $x = \sqrt{0 - 1} \notin \mathbb{R}$. Because of this, no $x \in \mathbb{R}$ such that $f(x) = x^2 + 1 = 0$ is possible. Therefore, by definition of onto, $f$ is not onto.
+        \end{proof}
+    \1 $f(n) = \sqrt[5]{n}$ is onto.
+        \begin{proof}
+            Let $y \in \mathbb{R}$. Note that $y = \left(\sqrt[5]{y}\right)^5 = f\left(\sqrt[5]{y}\right)$. Since $(\sqrt[5]{y})^5 \in \mathbb{R}$, $f(x)$ is onto by definition of onto.
+        \end{proof}
+    \1 $f: \mathbb{N} \rightarrow \mathbb{N}; f(n) = 2n$ is injective, but not surjective.
+    \begin{proof}[Proof of injectivity.]
+        Suppose $n = 3$
+    \end{proof}
+    \begin{proof}[Proof of non-surjectivity.]
+        Suppose 
+    \end{proof}
+
+    \1 $f: \mathbb{N} \rightarrow \mathbb{N}; f(n) = \sqrt{n}$ is surjective, but not injective.
+    \begin{proof}[Proof of non-injectivity.]
+        Suppose 
+    \end{proof}
+    \begin{proof}[Proof of surjectivity.]
+        Suppose 
+    \end{proof}
+
+    \1 $f: \mathbb{N} \rightarrow \mathbb{N}; f(n) = (-1)^n + n$ is one-to-one and onto.
+
+    \begin{proof}[Proof of injectivity.]
+        Suppose $a, b \in \mathbb{N}$ and $f(a) = f(b)$.
+
+        By the definition of those functions,
+        \begin{equation}
+            (-1)^a + a = (-1)^b + b
+        \end{equation}
+
+        Note that the terms $(-1)^a$ and $(-1)^b$ will either be 1 or $-1$, which are both odd. Thus, $(-1)^a$ and $(-1)^b$ are always odd.
+
+        \textbf{Case 1.} $f(a) = f(b)$ is even.
+        \begin{adjustwidth}{0.5cm}{0.5cm}
+            By Lemma \ref{thm:evenlemma}, since this value is even, its addends have the same sign. Thus, $a$ and $b$ must be odd.
+            
+            By definition of odd, there exists some $i, j \in \mathbb{Z}$ such that $a = 2i + 1$ and $b = 2j + 1$. 
+            \begin{equation}
+                \begin{aligned}
+                    (-1)^{2i + 1} + a &= (-1)^{2j + 1} + b \\
+                    ((-1)^2)^i\cdot (-1)^1 + a &= 
+                    ((-1)^2)^j\cdot (-1)^1 + b \\
+                    -1 + a &= -1 + b \\
+                    a &= b \\
+                \end{aligned}
+            \end{equation}
+        
+            Thus, $f(n)$ is 1-1 for even $n$.
+        \end{adjustwidth}
+
+        \textbf{Case 2.} $f(a) = f(b)$ is odd.
+        \begin{adjustwidth}{0.5cm}{0.5cm}
+            By Lemma \ref{thm:evenlemma}, since this value is even, its addends have the same sign. Thus, $a$ and $b$ must be odd.
+            
+            By definition of odd, there exists some $i, j \in \mathbb{Z}$ such that $a = 2i$ and $b = 2j$. 
+            \begin{equation}
+                \begin{aligned}
+                    (-1)^{2i} + a &= (-1)^{2j} + b \\
+                    ((-1)^2)^i + a &= 
+                    ((-1)^2)^j + b \\
+                    1 + a &= 1 + b \\
+                    a &= b \\
+                \end{aligned}
+            \end{equation}
+        
+            Thus, $f(n)$ is 1-1 for even $n$.
+        \end{adjustwidth}
+
+        Since both cases are true, $f(n)$ is a 1-1 function.
+    \end{proof}
+    \begin{proof}[Proof of surjectivity.]
+        Suppose $y \in \mathbb{N}$. We will prove that there always exists some $n \in \mathbb{N}$ such that $f(n) = y$.
+
+        \textbf{Case 1.} $y$ is even.
+        \begin{adjustwidth}{0.5cm}{0.5cm}
+
+            By definition of even, for some $i \in \mathbb{N}$, $y = 2i$.
+
+            Consider $f(y + 1)$.
+            \begin{equation}
+                \begin{aligned}
+                    f(y + 1) &= (-1)^{y + 1} + (y + 1) \\
+                    &= (-1)^{2i + 1} + y + 1 \\
+                    &= ((-1)^2)^i \cdot (-1)^{1} + y + 1 \\
+                    &= 1\cdot(-1) + y + 1 \\
+                    &= y
+                \end{aligned}
+            \end{equation}
+
+            Thus, if $y$ is even, then $f(y + 1) = y$.
+        \end{adjustwidth}
+
+        \textbf{Case 2.} $y$ is odd.
+        \begin{adjustwidth}{0.5cm}{0.5cm}
+
+            By definition of odd, for some $i \in \mathbb{N}$, $y = 2i + 1$.
+
+            Consider $f(y - 1)$.
+            \begin{equation}
+                \begin{aligned}
+                    f(y - 1) &= (-1)^{y - 1} + (y - 1) \\
+                    &= (-1)^{(2i + 1) - 1} + y - 1 \\
+                    &= (-1)^{2i} + y - 1 \\
+                    &= ((-1)^2)^i + y - 1 \\
+                    &= 1 + y - 1 \\
+                    &= y
+                \end{aligned}
+            \end{equation}
+
+            Thus, if $y$ is odd, then $f(y - 1) = y$.
+        \end{adjustwidth}
+
+        Therefore, for all $y \in \mathbb{N}$, there exists a value $n \in \mathbb{N}$ such that $f(n) = y$. Thus, $f$ is onto.
+    \end{proof}
+
+    \1 
+        \2 $(f\circ g)(x) = (e^x)^2 + 1 = e^{2x} + 1$
+        \2 $(g\circ f)(x) = e^{x^2 + 1}$
+    \1 \begin{theorem}
+        Let $f: B \rightarrow C$ and $g: A \rightarrow B$. If $f$ and $g$ are onto, then $f \circ g$ is onto.
+    \end{theorem}
+    \begin{proof}
+        Suppose $c \in C$. By definition of $f$ as an onto function, there exists a $b \in B$ such that $f(b) = c$. It follows that there exists an $a \in A$ such that $g(a) = b$ by definition of $g$ as an onto function. Therefore, there always exists some $a \in A$ such that $(f \circ g)(a) = c$.
+
+        Thus, by definition of onto, if $f$ and $g$ are onto, then $f \circ g$ is onto.
+    \end{proof}
+    \1
+        \2 \begin{theorem}
+            Let $f: B \rightarrow C$ and $g: A \rightarrow B$. $f \circ g$ being onto does not imply that $g$ is onto.
+        \end{theorem}
+        \begin{proof}
+            Consider the case when $A = B = C = \mathbb{R}$, $f(x) = \ln x$, and $g(x) = x^2$. It follows that $(f \circ g)(x) = \ln(x^2)$.
+
+            \begin{claim}
+                $f$ is onto.
+                \begin{adjustwidth}{0.5cm}{0.5cm}
+                    \begin{proof}
+                        Let $y \in \mathbb{R}$. 
+                        Note that $y = \ln \left(e^y\right) = f(e^y)$. 
+                        Since $e^y \in \mathbb{R}$, $f(x)$ is onto by definition of onto.  
+                    \end{proof}
+                \end{adjustwidth}
+            \end{claim}
+
+            \begin{claim}
+                $g$ is not onto.
+                \begin{adjustwidth}{0.5cm}{0.5cm}
+                    \begin{proof}
+                        Consider $-1 \in \mathbb{R}$. 
+                        Note that $x = \sqrt{-1} \notin \mathbb{R}$. 
+                        Therefore, there is no such $x \in \mathbb{R}$ such that $g(x) = -1$. 
+                        Thus, $g$ is not onto.
+                    \end{proof}
+                \end{adjustwidth}
+            \end{claim}
+
+            \begin{claim}
+                $f \circ g$ is onto.
+                \begin{adjustwidth}{0.5cm}{0.5cm}
+                    \begin{proof}
+                        Let $y \in \mathbb{R}$. 
+                        Note that $y = \ln \left(\right(e^\frac{y}{2}\left)^2\right) 
+                        = f \left( e^\frac{y}{2}\right)$.
+                        Since $e^\frac{y}{2} \in \mathbb{R}$, $f(x)$ is onto by definition of onto.  
+                    \end{proof}
+                \end{adjustwidth}
+            \end{claim}
+
+            Notice that $f \circ g$ is onto, but $g$ is not onto. Therefore,  $f \circ g$ being onto does not imply that $g$ is onto.
+        \end{proof}
+        \2 \begin{theorem}
+            Let $f: B \rightarrow C$ and $g: A \rightarrow B$. $f \circ g$ being onto implies that $f$ is onto.
+        \end{theorem}
+        \begin{proof}
+            Suppose $c \in C$. By definition of $f \circ g$ as an onto function, there exists an $a \in A$ such that $(f \circ g)(a) = f(g(a)) = c$. Note that the existence of $f(g(a))$ requires $g(a) \in B$, so $g(a) \in B$.
+            
+            Let $b = g(a)$. Thus, $f(b) = c$. Therefore, if $f \circ g$ is onto then $f$ is onto.
+        \end{proof}
+\end{outline} 
+
+\section{Additional Lemmas with Proofs}
+
+\begin{lemma}
+    \label{thm:evenlemma}
+    Let $a, b \in \mathbb{Z}$. $a + b$ is even if and only if $a$ and $b$ have the same parity, and odd if and only if $a$ and $b$ have different parities. (Reproduced from homework 4).
+\end{lemma}
+    
+\begin{proof}
+    
+    \textbf{Case 1.} $a$ and $b$ are both even.
+
+    By definition of even:
+    \begin{equation}
+        \begin{aligned}
+            a &= 2k \\ 
+            b &= 2l
+        \end{aligned}
+    \end{equation}
+
+    Therefore,
+    \begin{equation}
+        \begin{aligned}
+            a + b &= 2k + 2l \\
+            &= 2(k + l) 
+        \end{aligned}
+    \end{equation}
+
+    Let $m = k + l$. Then
+    \begin{equation}
+        a + b = 2m
+    \end{equation}
+
+    By definition of even, $a + b$ is even.  
+   
+    \textbf{Case 2.} $a$ and $b$ are both odd.
+
+    By definition of odd:
+    \begin{equation}
+        \begin{aligned}
+            a &= 2k + 1 \\
+            b &= 2l + 1
+        \end{aligned}
+    \end{equation}
+
+    Therefore, 
+    \begin{equation}
+        \begin{aligned}
+            a + b &= 2k + 1 + 2l + 1 \\ 
+            &= 2(k + l + 1) 
+        \end{aligned}
+    \end{equation}
+
+    Let $m = k + l + 1$. Then,
+    \begin{equation}
+        a + b = 2m
+    \end{equation}
+
+    By definition of even, a + b is even.
+
+    \textbf{Case 3.} $a$ and $b$ have different parity. 
+    
+    WLOG let $a$ be even and $b$ be odd. By definition of even:
+    \begin{equation}
+        a = 2k
+    \end{equation}
+
+    By definition of odd:
+    \begin{equation}
+        b = 2l + 1
+    \end{equation}
+
+    Therefore,
+    \begin{equation}
+        \begin{aligned}
+            a + b &= 2k + 2l + 1 \\
+            &= 2(k + l) + 1
+        \end{aligned}
+    \end{equation}
+
+    Let $m = k + l$. Then,
+    \begin{equation}
+        a + b = 2m + 1
+    \end{equation}
+
+    By definition of odd, a + b is odd.
+
+    \textbf{In Summary:}
+
+    \begin{center}
+        \begin{tabular}{c c | c}
+            $a$ parity & $b$ parity & $a + b$ parity \\
+            \hline
+            even & even & even \\ 
+            even & odd & odd \\ 
+            odd & even & odd \\ 
+            odd & odd & even
+        \end{tabular}
+    \end{center}
+
+    Therefore, $a + b$ is only even when a's parity $=$ b's parity, and only odd when 
+    a's parity $\neq$ b's parity, concluding the lemma.
+\end{proof}
+
+
+\newgeometry{margin=2cm}
+\begin{landscape}
+    \section{Scratch Work}
+
+    \centering
+    \thispagestyle{empty}
+%    \includegraphics[width=0.95\linewidth]{1.jpg}
+
+\end{landscape}
+
+\restoregeometry
+    
+\end{document}

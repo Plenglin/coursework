@@ -1,0 +1,170 @@
+\documentclass[12pt]{article}
+
+\usepackage{ee143report}
+\usepackage{verbatim}
+\usepackage{graphicx, float}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage[bottom]{footmisc}
+\usepackage{bookmark}
+\usepackage{pdflscape}
+\usepackage{multirow}
+\usepackage{hyperref}
+
+\DeclareMathOperator{\V}{V}
+\DeclareMathOperator{\A}{A}
+\DeclareMathOperator{\F}{F}
+\DeclareMathOperator{\mA}{mA}
+\DeclareMathOperator{\mW}{mW}
+\DeclareMathOperator\bit{bit}
+\DeclareMathOperator\byte{byte}
+\DeclareMathOperator\word{word}
+
+\author{Astrid Yu}
+\title{Building and Testing a Practical Current Source to Use with a Sensor}
+\expNum{7a}
+\titlegraphic{
+    \includegraphics[width=0.6\linewidth]{opamp.jpeg}
+}
+
+\begin{document}
+\maketitle
+
+\section*{Introduction}
+
+In this experiment, an op-amp will be used to create a current source to increase the sensitivity of a circuit to changes in resistance. 
+
+\section*{Analysis}
+
+\begin{enumerate}
+    \item The circuit shown in Figure \ref{fig:is} was built. 
+    
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8\linewidth]{is.png}
+        \caption{Current source circuit.}
+        \label{fig:is}
+    \end{figure}
+    \item A $220\Omega$ resistor was selected as the base sensor.
+    \item The Arduino was powered connected to the circuit.
+    \item The current was measured. Due to a faulty multimeter, the current could only be indirectly measured through the resistance of the part and voltage drop across the part. Values are shown in Table \ref{tbl:nominal}.
+\begin{table}[ht]
+    \centering
+    \caption{Nominal current source values.}
+    \begin{tabular}{| l | r |}
+        \hline
+        $R_{sensor}$ & 214 \\
+        Measured value of $820\Omega$ & $798\Omega$ \\
+        $V_1$ & .397 \\
+        $V_p$ & .396 \\
+        \hline
+    \end{tabular}
+    \label{tbl:nominal}
+\end{table}
+
+    \item $R_{sensor}$ was swapped out for other resistance values and measured, indirectly again. The values are recorded in Table \ref{tbl:data}
+    \item A $0\Omega$ resistor (just a wire) was measured. 
+    \item A very large $10k\Omega$ resistor was measured.
+\end{enumerate}
+
+%\begin{landscape}
+\begin{table}
+    \centering
+    % {502.336, 498.483, 495.327, 123.795, 497.324, 346}
+    % {0.46729, -0.303337, -0.934579, -75.241, -0.535117, -30.8}
+    \caption{Current source output data.}
+    \begin{tabular}{|c | c | c || c | c|} 
+        \hline
+        Case & $R_{sensor}$ ($\Omega$) & Load Voltage Drop (V) & Load current ($\mu\A$) & \% Error in load current \\
+        \hline
+        1 & 214 & .1075 & 502 & .467 \\
+        2 & 989 & .493 & 498 & .303 \\
+        3 & 4280 & 2.12 & 495 & .935 \\ 
+        4 & 3320\footnotemark & 1.72 & 518 & 1.036 \\
+        5 & 2990\footnotemark & 1.487 & 497 & .535 \\
+        6 & 0 & 0 & .484\footnotemark & $\infty$ \\
+        7 & 10000 & 3.46 & 346 & 30.8 \\
+        \hline
+    \end{tabular}
+    \label{tbl:data}
+\end{table}
+\footnotetext{Composed of 3 10k's in parallel}
+\footnotetext{Composed of a 4.2k and 1k in parallel}
+\footnotetext{Derived from voltage across $820\Omega$, measured to be 0.397V.}
+%\end{landscape}
+
+\section*{Discussion Questions}
+\textbf{Consider the change in A/D count for the case of your circuit with the current source set at 0.5mA, versus using the voltage divider of Figure \ref{fig:vdiv}. Use Rs = 820 Ohms. Find the A/D count for the two cases below. Would the given change in resistance result in a change in count of approximately one for the approach with the current source? Would it result in a change in count of approximately one for the voltage source?}
+
+\begin{figure}[]
+    \centering
+    \includegraphics[width=0.5\linewidth]{vd.png}
+    \caption{Voltage divider circuit.}
+    \label{fig:vdiv}
+\end{figure}
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{| c | c | c |}
+        \hline 
+        \textbf{I Source A/D Count} & $R_{sensor}$ & \textbf{V Divider A/D Count} \\
+        \hline
+        $\frac{1024}{5} \cdot 0.397 \left(1 + \frac{4060}{820}\right) = \mathbf{484}$ & 
+        4060 & 
+        $\frac{1024}{5}\cdot 5\cdot \frac{4060}{4060 + 820} = \mathbf{852}$ \\
+        \hline
+
+        $\frac{1024}{5} \cdot 0.397 \left(1 + \frac{4870}{820}\right) = \mathbf{485}$ & 
+        4070 & 
+        $\frac{1024}{5}\cdot 5\cdot \frac{989}{989 + 820} = \mathbf{852}$ \\
+        
+        \hline 
+    \end{tabular}
+\end{table}
+
+As shown from the calculations in the table, with the voltage divider, there is no change shown, but with the current source, there is a change of one increment. 
+
+Suppose $f(r)$ is the current source measurement and $g(r)$ is the voltage divider measurement, both in terms of $r$, the load resistance. Thus, they are defined in the following way:
+\begin{equation}
+    f(r) = 1024 \cdot \left(1 + \frac{r}{820\Omega}\right)
+\end{equation}
+\begin{equation}
+    g(r) = 1024 \cdot \frac{r}{820\Omega + r}
+\end{equation}
+
+Taking their derivatives, we get 
+\begin{equation}
+    f'(r) = \frac{1024}{820\Omega}
+\end{equation}
+\begin{equation}
+    g'(r) = \frac{839680}{(820 + r)^2}
+\end{equation}
+
+Thus, the change in ohms that is required register on the ADC, or the reciprocal of the derivative, for each circuit is:
+\begin{equation}
+    \frac{1}{f'(r)} = \frac{820\Omega}{1024}
+\end{equation}
+\begin{equation}
+    \frac{1}{g'(r)} = \frac{(820 + r)^2}{839680}
+\end{equation}
+
+Notice that $\frac{1}{f'(r)}$ is a constant number, while $\frac{1}{g'(r)}$ increases quadratically as resistance increases. In other words, the second circuit's sensitivity decreases drastically as resistance increases. Our results in the table can be easily explained if we plug in 4060 and 4070 into the equations:
+
+\begin{equation}
+    \frac{1}{f'(4060)} = \frac{1}{f'(4070)} = 0.8 \frac{\Omega}{tick}
+\end{equation}
+
+\begin{equation}
+    \begin{aligned}
+        \frac{1}{f'(4060)} = 28.4\frac{\Omega}{tick} \\
+        \frac{1}{f'(4070)} = 28.5\frac{\Omega}{tick} \\
+    \end{aligned}
+\end{equation}
+
+Since a smaller change in $r$ is needed for an increase the ticks in the current source circuit as compared to the voltage divider circuit, the current source circuit is more sensitive.
+
+\section*{Conclusion}
+
+This experiment successfully demonstrated the applicability of a constant current source for measuring resistive sensors. The accuracy of the current source was verified by using successive test resistors, and the error never exceeded 2\%.
+
+\end{document}

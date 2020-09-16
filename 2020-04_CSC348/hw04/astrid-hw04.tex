@@ -1,0 +1,455 @@
+\documentclass{article}
+
+\usepackage{geometry}
+\usepackage{afterpage}
+\usepackage{graphicx}
+\usepackage{outlines}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{pdflscape}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{blindtext}
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 -- Homework \#2}
+\date{\today}
+
+\newcommand{\contradiction}{\texttt{;(}}
+\renewcommand\qedsymbol{\texttt{d(\textbf{\^{}\_\^{}})>}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{case}{Case}
+\newtheorem{subcase}{Case}
+\numberwithin{subcase}{case}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Questions}
+\begin{outline}[enumerate]
+    \1 
+        \2 $(v_3, v_0, v_1)$
+        \2 $(v_0, v_2, v_3, v_1, v_2, v_0)$
+        \2 $(v_0, v_1, v_2, v_3, v_0)$
+        \2 No. A path requires all vertices be unique except for the first 
+            and last in the case of a cycle. A cycle of length 5 would require that 
+            5 vertices exist, and a path of length 5 with strictly unique first 
+            and last vertices would require that 6 vertices exist. Since the graph 
+            only has 4 vertices, neither of these are possible.
+    \1 
+        \2 The highest degree vertex is $v_2$ with degree $4$.
+        \2 $(v_0, v_1, v_2, v_2, v_4, v_3, v_0)$
+        \2 Yes: $(v_0, v_1, v_2, v_4, v_3, v_0)$
+    \1 \begin{theorem}
+            Let $G = (V, E)$ be a graph. If $G$ contains an Eulerian circuit $C$, then 
+            $C$ passes through every vertex in $G$.
+        \end{theorem}
+        \begin{proof}
+            Suppose, by way of contradiction, that $v \in V$ is a vertex that $C$ does not pass through. 
+
+            By definition of a connected graph, there exists a $u \in V$ such that $(u, v) \in E$.
+
+            Additionally, by definition of Eulerian circuit, $C$ passes through the edge $(u, v)$.
+
+            However, this means $C$ passes through $v$. \contradiction
+
+            Thus, by way of contradiction, $C$ passes through all vertices of $G$.
+
+        \end{proof}
+    \1 \begin{theorem}
+            Let $m, n \in \mathbb{Z}$. If $nm$ is even, then $n$ or $m$ is even.
+        \end{theorem}
+        \begin{proof}
+            Suppose, by contraposition, that $n$ is odd and $m$ is odd. Therefore, there exists 
+            a $i, j \in \mathbb{Z}$ such that:
+            \begin{equation}
+                \begin{aligned}
+                    n &= 2i + 1 \\
+                    m &= 2j + 1
+                \end{aligned}
+            \end{equation}
+
+            It follows that 
+            \begin{equation}
+                \begin{aligned}
+                    nm &= (2i + 1)(2j+1) \\
+                    &= 4ij + 2i + 2j + 1 \\
+                    &= 2(2ij + i + j) + 1
+                \end{aligned}
+            \end{equation}
+
+            Suppose $k = 2ij + i + j$. Therefore,
+            \begin{equation}
+                nm = 2k + 1
+            \end{equation}
+
+            Therefore, $nm$ is odd.
+
+            Thus, by contraposition, $nm$ is even if $n$ is even or $m$ is even.
+        \end{proof}
+    \1 \begin{theorem}
+            Let $p, n \in \mathbb{Z}$. If $p$ is prime, then $\gcd(p, n) = 1$ or $\gcd(p, n) = p$.
+        \end{theorem}
+
+        \2 \begin{proof}
+                Let $g = gcd(p, n)$. By contraposition, suppose that the following are true:
+                \begin{equation}
+                    \begin{aligned}
+                        g &\neq 1 \\
+                        g &\neq p                        
+                    \end{aligned}
+                    \label{eqn:primecontraposassumption}
+                \end{equation}
+
+                By definition of gcd, it is known that $g | p$, and by definition of divides, for some $i \in \mathbb{Z}$:
+                \begin{equation}
+                    p = ig
+                    \label{eqn:pig1}
+                \end{equation}
+
+                Since $g$ is a factor of $p$, and $g \neq 1 \wedge g \neq p$ (see \ref{eqn:primecontraposassumption}), that means $p$ must be 
+                a composite number (not prime).
+                
+                Therefore, if there exists an integer $n$ such that $gcd(p, n)$ is neither $1$ nor $p$, then $p$ is not prime.
+
+                Thus, by proof by contraposition, if $p$ is prime, then $\gcd(p, n) = 1$ or $\gcd(p, n) = p$.
+            \end{proof}
+        \2 \begin{proof}
+                Let $g = gcd(p, n)$. Suppose that $p$ is prime, and seeking a contradiction, for all $n \in \mathbb{Z}$:
+                \begin{equation}
+                    \begin{aligned}
+                        g &\neq 1 \\
+                        g &\neq p                        
+                    \end{aligned}
+                    \label{eqn:primecontradictassumption}
+                \end{equation}
+
+                By definition of gcd, it is known that $g | p$, and by definition of divides, for some $i \in \mathbb{Z}$:
+                \begin{equation}
+                    p = ig
+                    \label{eqn:pig2}
+                \end{equation}
+
+                $i$ and $g$ are therefore factors of $p$, and by definition of prime, $i, g \in \{1, p\}$.
+
+                \textbf{Case 1.} Suppose that $i = 1$. Then by (\ref{eqn:pig2}), $g = p$. \contradiction
+
+                This is a contradiction because we assumed in (\ref{eqn:primecontradictassumption}) that $g \neq p$.
+
+                \textbf{Case 2.} Suppose that $i = p$. Then by (\ref{eqn:pig2}), $g = 1$. \contradiction
+
+                This is a contradiction because we assumed in (\ref{eqn:primecontradictassumption}) that $g \neq 1$.
+
+                Since all cases contain contradictions, the original assumption contains a contradiction. 
+                Thus, by proof by contradiction, if $p$ is prime, then $\gcd(p, n) = 1$ or $\gcd(p, n) = p$.
+            \end{proof}
+
+    \1 \begin{theorem}
+        Let $A$ be a set. $\emptyset \times A = \emptyset$.
+        \label{thm:cartesianemptyset}
+    \end{theorem}
+    \begin{proof}
+        \textbf{Base case.} Consider $A = \emptyset$ (a set of 0 elements). 
+        
+        $\emptyset \times A = \emptyset \times \emptyset = \{\} \times \{\}$, which by inspection, equals $\emptyset$.
+        Therefore theorem \ref{thm:cartesianemptyset} holds true for $A = \emptyset$.
+
+        \textbf{Inductive Hypothesis.} Let $B$, a set of $n$ elements, be a strict subset of the universe $U$.
+        Suppose that $\emptyset \times B = \emptyset$.
+
+        \textbf{Inductive Step.} Let $k \in U \setminus B$, and $A = B \cup \{k\}$, a set of $n+1$ elements. 
+        Consider the following:
+        \begin{equation}
+            \emptyset \times ( B \cup \{ k\} ) 
+        \end{equation}
+
+        Applying the distributive property for sets, this is equal to:
+        \begin{equation}
+            (\emptyset \times B) \cup (\emptyset \times \{ k \} )
+        \end{equation}
+    
+        By inspection, $\emptyset \times \{ k \} = \{\} \times \{ k \} = \emptyset$
+        \begin{equation}
+            (\emptyset \times B) \cup \emptyset
+        \end{equation}
+
+        By the inductive hypothesis, this equals:
+        \begin{equation}
+            \emptyset \cup \emptyset = \emptyset  
+        \end{equation}
+
+        Therefore, by proof by mathematical induction, $\emptyset \times A = \emptyset$
+        for all sets $A$.
+    \end{proof}
+
+    \1 The inductive hypothesis is loosely defined. It supposes that all the horses in some set 
+    have the same color, but does not specify which set exactly. Additionally, it is improperly 
+    applied due to this loose definition. 
+    \1 
+        \2 $1^2 = \frac{1(1 + 1)(2 + 1)}{6}$
+        \2 Left-hand side:
+        \begin{equation}
+            1^2 = 1
+        \end{equation}
+
+        Right-hand side:
+        \begin{equation}
+            \begin{aligned}
+                \frac{1(1+1)(2 + 1)}{6} &= \frac{1(2)(3)}{6}  \\
+                &= \frac{6}{6}  \\
+                &= 1
+            \end{aligned}
+        \end{equation}
+        \2 Suppose that the following is true:
+        \begin{equation}
+            \sum\limits^{k}_{i=1} i^2 = \frac{k(k + 1)(2k + 1)}{6}
+        \end{equation}
+        \2 Consider the case when $n = k + 1$:
+        \begin{equation}
+            \begin{aligned}
+                \sum\limits^{k+1}_{i=1} i^2 &= (k+1)^2 + \sum\limits^{k}_{i=1} i^2  \\
+            \end{aligned}
+        \end{equation}
+
+        By the inductive hypothesis, this equals
+        \begin{equation}
+            \begin{aligned}
+                &(k+1)^2 + \frac{k(k + 1)(2k + 1)}{6}  \\
+                =\ & \frac{6(k+1)^2 + k(k + 1)(2k + 1)}{6} \\
+                =\ & \frac{(k+1)\left[6(k+1) + k(2k+1)\right]}{6}  \\
+                =\ & \frac{(k+1)\left(6k + 6 + 2k^2 + k\right)}{6} \\
+                =\ & \frac{(k+1)\left(2k^2 + 7k + 6\right)}{6}  \\
+                =\ & \frac{(k+1)(k + 2)(2k+3)}{6}  \\
+                =\ & \frac{(k+1)\left[(k + 1)+1\right]\left[2(k+1)+1\right]}{6}  \\
+            \end{aligned}
+        \end{equation}
+
+        Therefore, by proof by mathematical induction,
+        \begin{equation}
+            \sum\limits^{n}_{i=1} i^2 = \frac{n(n + 1)(2n + 1)}{6}
+        \end{equation} 
+    
+    \1 \begin{theorem}
+        For all $n \in \mathbb{Z}^+$,
+        \begin{equation}
+            \sum\limits^{n}_{i=1} (i\cdot i!) = (n + 1)! - 1
+            \label{eqn:thmfactorial}
+        \end{equation}
+    \end{theorem}
+
+    \begin{proof}
+        \textbf{Base case.} Consider when $n = 1$.
+
+        \begin{equation}
+            \begin{aligned}
+                1\cdot 1! &= (1 + 1)! - 1 \\
+                1 * 1 &= 2! - 1 \\
+                1 &= 1
+            \end{aligned}
+        \end{equation}
+
+        Therefore, the theorem holds for $n = 1$.
+
+        \textbf{Inductive Hypothesis.} Suppose the following to be true for some $k \in \mathbb{N}$:
+        \begin{equation}
+            \sum\limits^{k}_{i=1} (i\cdot i!) = (k + 1)! - 1
+        \end{equation}
+
+        \textbf{Inductive Step.} Consider the case when $n = k + 1$.
+        \begin{equation}
+            \begin{aligned}
+                &\sum\limits^{k+1}_{i=1} (i\cdot i!) \\
+                = (k+1)(k+1)! + &\sum\limits^{k}_{i=1} (i\cdot i!)
+            \end{aligned}
+        \end{equation}
+
+        By the inductive hypothesis, this is equal to:
+        \begin{equation}
+            \begin{aligned}
+                &\ (k+1)(k+1)! + (k + 1)! - 1 \\ 
+                =&\ (k + 1 + 1)(k + 1)! - 1  \\
+                =&\ (k + 2)(k + 1)! - 1  \\
+                =&\ (k + 2)! - 1  \\
+                =&\ [(k + 1) + 1]! - 1  \\
+            \end{aligned}
+        \end{equation}
+
+        Therefore, by proof by mathematical induction, (\ref{eqn:thmfactorial}) is true.
+
+    \end{proof}
+
+    \1 \begin{theorem}
+        For all $n \in \mathbb{Z}^+$, $3\ |\ (n^3+2n)$.
+        \label{thm:3divs}
+    \end{theorem}
+
+    \begin{proof}
+        \textbf{Base case.} Consider when $n = 1$.
+        \begin{equation}
+            \begin{aligned}
+                3\ |\ (1^3 + 2*1) &\equiv 3\ |\ (1 + 2)  \\
+                &\equiv 3 \ | \ 3 \\
+                &\equiv T
+            \end{aligned}
+        \end{equation}
+        The theorem holds for $n = 1$.
+
+        \textbf{Inductive Hypothesis.} Suppose the following is true for some $k \in \mathbb{Z}^+$:
+        \begin{equation}
+            3 \ | \ (k^3 + 2k)
+        \end{equation}
+
+        By definition of divides, this implies that there exists some $i \in \mathbb{Z}$ such that:
+        \begin{equation}
+            3i = k^3 + 2k
+        \end{equation}
+
+        \textbf{Inductive Step.} Let $n = k + 1$. Consider the following:
+        \begin{equation}
+            \begin{aligned}
+                (k + 1)^3 + 2(k + 1) &= k^3 + 3k^2 + 3k + 1 + 2k + 2 \\
+                &= (k^3 + 2k) + (3k^2 + 3k + 3) \\
+                &= (k^3 + 2k) + 3(k^2 + k + 1) \\
+            \end{aligned}
+        \end{equation}
+
+        By the inductive hypothesis, this is equivalent to:
+        \begin{equation}
+            \begin{aligned}
+                &3i + 3(k^2 + k + 1) \\
+                =\ &3(i + k^2 + k + 3) 
+            \end{aligned}
+        \end{equation}
+
+        Let $m = i + k^2 + k + 3$. Thus:
+        \begin{equation}
+            (k + 1)^3 + 2(k + 1) = 3m
+        \end{equation}
+
+        By definition of divides:
+        \begin{equation}
+            3 \ | \left[(k + 1)^3 + 2(k + 1)\right]
+        \end{equation}
+
+        Therefore, by proof by mathematical induction, $3\ |\ (n^3+2n)$ for all positive integers $n$.
+
+    \end{proof}
+
+    \1 
+    \2 \begin{theorem}
+        Let $A, B_1, B_2, \dots, B_n$ be sets. The following is true:
+        \begin{equation}
+            A \cup \bigcap\limits^{n}_{i=1} B_i = \bigcap\limits^n_{i=1} (A \cup B_i)               
+        \end{equation}
+    \end{theorem}
+
+    \begin{proof}
+        \textbf{Base case.} Consider the case when $n = 1$.
+        \begin{equation}
+            \begin{aligned}
+                A \cup \bigcap\limits^{1}_{i=1} B_i &= A \cup B_i = \bigcap\limits^{1}_{i=1} (A \cup B_i)
+            \end{aligned}
+        \end{equation}
+
+        Thus, the theorem holds for $n = 1$.
+
+        \textbf{Inductive Hypothesis.} Suppose the following is true:
+        \begin{equation}
+            A \cup \bigcap\limits^{k}_{i=1} B_i = \bigcap\limits^k_{i=1} (A \cup B_i)               
+        \end{equation}
+
+        \textbf{Inductive Step.} Consider the case when $n = k + 1$:
+        \begin{equation}
+            A\cup \bigcap\limits^{k + 1}_{i=1} B_i
+            = A \cup \left( B_{k+1} \cap \bigcap\limits^{k}_{i=1} B_i \right) 
+        \end{equation}
+
+        By the distributive property of sets,
+        \begin{equation}
+            \left(A \cup B_{k+1}\right) \cap \left(A \cup \bigcap\limits^{k}_{i=1} B_i \right)
+        \end{equation}
+
+        By the inductive hypothesis, this is equal to
+        \begin{equation}
+            \begin{aligned}
+                \left(A \cup B_{k+1}\right) \cap \bigcap\limits^k_{i=1} (A \cup B_i) = \bigcap\limits^{k+1}_{i=1} (A \cup B_i) 
+            \end{aligned}
+        \end{equation}
+
+        Thus, by the principle of mathematical induction, 
+        \begin{equation}
+            A \cup \bigcap\limits^{n}_{i=1} B_i = \bigcap\limits^n_{i=1} (A \cup B_i)               
+        \end{equation}
+
+    \end{proof}
+
+    \2 \begin{theorem}
+        Let $A, B_1, B_2, \dots, B_n$ be sets. The following is true:
+        \begin{equation}
+            A \cap \bigcup\limits^{n}_{i=1} B_i = \bigcup\limits^n_{i=1} (A \cap B_i)               
+        \end{equation}
+    \end{theorem}
+
+    \begin{proof}
+        \textbf{Base case.} Consider the case when $n = 1$.
+        \begin{equation}
+            \begin{aligned}
+                A \cap \bigcup\limits^{1}_{i=1} B_i &= A \cap B_i = \bigcup\limits^{1}_{i=1} (A \cap B_i)
+            \end{aligned}
+        \end{equation}
+
+        Thus, the theorem holds for $n = 1$.
+
+        \textbf{Inductive Hypothesis.} Suppose the following is true:
+        \begin{equation}
+            A \cup \bigcap\limits^{k}_{i=1} B_i = \bigcap\limits^k_{i=1} (A \cup B_i)
+        \end{equation}
+
+        \textbf{Inductive Step.} Consider the case when $n = k + 1$:
+        \begin{equation}
+            A\cap \bigcup\limits^{k + 1}_{i=1} B_i
+            = A \cap \left( B_{k+1} \cup \bigcup\limits^{k}_{i=1} B_i \right) 
+        \end{equation}
+
+        By the distributive property of sets,
+        \begin{equation}
+            \left(A \cap B_{k+1}\right) \cup \left(A \cap \bigcup\limits^{k}_{i=1} B_i \right)
+        \end{equation}
+
+        By the inductive hypothesis, this is equal to
+        \begin{equation}
+            \begin{aligned}
+                \left(A \cap B_{k+1}\right) \cup \bigcup\limits^k_{i=1} (A \cap B_i) = \bigcup\limits^{k+1}_{i=1} (A \cap B_i) 
+            \end{aligned}
+        \end{equation}
+
+        Thus, by the principle of mathematical induction, 
+        \begin{equation}
+            A \cap \bigcup\limits^{n}_{i=1} B_i = \bigcup\limits^n_{i=1} (A \cap B_i)               
+        \end{equation}
+
+    \end{proof}
+
+\end{outline} 
+
+
+\newgeometry{margin=2cm}
+\begin{landscape}
+    \section{Scratch Work}
+
+    \centering
+    \thispagestyle{empty}
+    \includegraphics[width=0.95\linewidth]{sw1.jpg}
+
+    \pagebreak
+    
+    \thispagestyle{empty}
+    \includegraphics[width=0.95\linewidth]{sw2.jpg}
+\end{landscape}
+
+\restoregeometry
+    
+\end{document}

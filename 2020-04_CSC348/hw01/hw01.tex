@@ -1,0 +1,165 @@
+\documentclass{article}
+\usepackage{outlines}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{blindtext}
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 Homework \#1}
+\date{2020 April 16}
+
+\begin{document}
+\maketitle
+\begin{outline}[enumerate]
+    \1 
+        \2 It is a simple graph because there are no self-loops, and all edges only occur once.
+        \2 
+            $V = \{ v_0, v_1, v_2, v_3 \}$ \\
+            $E = \{ (v_0, v_1), (v_1, v_2), (v_2, v_3), (v_3, v_0), (v_0, v_2), (v_1, v_3)\}$
+    \1 
+        \2 No, it is not a simple graph. $v_2$ has a self-loop.
+        \2 
+            $V = \{ v_0, v_1, v_2, v_3, v_4, v_5, v_6, v_7, v_8 \}$ \\
+            $E = \{(v_0, v_1), (v_1, v_2), (v_1, v_4), (v_2, v_2), (v_2, v_4), (v_4, v_3), (v_3, v_0), \\ (v_5, v_7), (v_5, v_8), (v_7, v_8), (v_7, v_6) \}$
+    \1  
+        \2 $\{ 0, 5 \}$
+        \2 $\{ \emptyset \}$
+        \2 $\{ \emptyset, 3, 2, 9, `` m '' \}$
+        \2 $\emptyset$
+    \1 
+        \2 $T$ by definition
+        \2 $F$ because natural numbers cannot be negative by definition
+        \2 $-\frac{4}{2} = -2$, and $-2 \in \mathbb{Z}$ because $-(-2) \in \mathbb{N}$. Therefore, $-\frac{4}{2} \in \mathbb{N} \equiv T$.
+        \2 $-\frac{2}{4} = \frac{p}{q}$ for $p=-1, q=2$. $p$ and $q$ are both in $\mathbb{Z}$ and they share no common factors except 1. Therefore, $\frac{p}{q} = -\frac{2}{4} \in \mathbb{Q}$ and the statement is equivalent to $T$.
+        \2 $\pi \in \mathbb{R} \equiv T$ by definition.
+        \2 $-4i$ has an imaginary component, so $-4i \in \mathbb{R} \equiv F$ by definition.
+    \1
+        \2 Yes
+        \2 Yes
+        \2 No, because we don't know what x is.
+        \2 No, because it is a question.
+        \2 Yes
+        \2 Yes
+        \2 No, because it is a command.
+    \1 
+        \2 Logic is not important or proofs are not important.
+        \2 There are not 30 problems in this homework.
+        \2 There are quizzes in this class.
+        \2 6 is a prime number.
+    \1
+        \2 $p \wedge q$
+        \2 $p \wedge \neg q$
+        \2 $p \rightarrow q$
+        \2 $\neg p \vee q$
+    \1
+        \2 \begin{tabular}{c | c | c | c}
+            $p$ & $q$ & $\neg (p \wedge q)$ & $\neg p \vee \neg q$  \\
+            \hline
+            T & T & F & F \\
+            T & F & T & T \\
+            F & T & T & T \\
+            F & F & T & T \\
+        \end{tabular}
+        \2 \begin{tabular}{c | c | c | c}
+            $p$ & $q$ & $\neg (p \vee q)$ & $\neg p \wedge \neg q$  \\
+            \hline
+            T & T & F & F \\
+            T & F & F & F \\
+            F & T & F & F \\
+            F & F & T & T \\
+        \end{tabular}
+    \1
+        \2 \begin{tabular}{c | c | c | c | c}
+            $p$ & 
+            $q$ & 
+            $r$ & 
+            $p \wedge (q \vee r)$ & 
+            $(p \wedge q) \vee (p \wedge r)$ \\ 
+            \hline
+            T & T & T & T & T \\
+            T & T & F & T & T \\
+            T & F & T & T & T \\
+            T & F & F & F & F \\
+            F & T & T & F & F \\
+            F & T & F & F & F \\
+            F & F & T & F & F \\
+            F & F & F & F & F \\
+        \end{tabular}
+        \2 \begin{tabular}{c | c | c | c | c }
+            $p$ & 
+            $q$ & 
+            $r$ & 
+            $p \vee (q \wedge r)$ & 
+            $(p \vee q) \wedge (p \vee r)$ \\ 
+            \hline
+            T & T & T & T & T \\
+            T & T & F & T & T \\
+            T & F & T & T & T \\
+            T & F & F & T & T \\
+            F & T & T & T & T \\
+            F & T & F & F & F \\
+            F & F & T & F & F \\
+            F & F & F & F & F \\
+        \end{tabular}
+    \1
+        \2 The two columns differ at $(p, q, r) \equiv (F, T, F)$ and $(p, q, r) \equiv (F, F, F)$ \\
+        \begin{tabular}{c | c | c | c | c | c | c}
+            $p$ & 
+            $q$ & 
+            $r$ & 
+            $p \rightarrow q$ & 
+            $q \rightarrow r$ & 
+            $(p \rightarrow q) \rightarrow r$ & 
+            $p \rightarrow (q \rightarrow r)$ \\ 
+            \hline
+            T & T & T & T & T & T & T \\
+            T & T & F & T & F & F & F \\
+            T & F & T & F & T & T & T \\
+            T & F & F & F & T & T & T \\
+            F & T & T & T & T & T & T \\
+            F & T & F & T & F & F & T \\
+            F & F & T & T & T & T & T \\
+            F & F & F & T & T & F & T \\
+        \end{tabular}
+        \2 The proof is as follows:
+            \3 $(p \wedge q) \rightarrow r \equiv (p \rightarrow r) \wedge (q \rightarrow r)$ 
+            \3 $\neg (p \wedge q) \vee r \equiv (\neg p \vee r) \wedge (\neg q \vee r)$ (CDE) 
+            \3 $\neg (p \wedge q) \vee r \equiv (\neg p \wedge \neg q) \vee r$ (Distributive) 
+            \3 $\neg (p \wedge q) \vee r \vee \neg r) \equiv (\neg p \wedge \neg q) \vee r \vee \neg r$ (OR both sides with $\neg r$) 
+            \3 $\neg (p \wedge q) \equiv \neg p \wedge \neg q$ (Idempotence, $a \vee \neg a \equiv T$) 
+            \3 $\neg (p \wedge q) \equiv \neg (p \vee q)$ (DeMorgan's) 
+            \3 $\neg\neg (p \wedge q) \equiv \neg\neg (p \vee q)$ (Negate both sides) 
+            \3 $p \wedge q \equiv p \vee q$ (Double Negative)
+            \3 This statement is false by the following truth table. $r$ does not matter. \\
+            \begin{tabular}{c | c | c | c}
+            $p$ & $q$ & $p \wedge q$ & $p \vee q$  \\
+            \hline
+            T & T & T & T \\
+            T & F & F & T \\
+            F & T & F & T \\
+            F & F & F & F \\
+        \end{tabular}
+    \1
+        \2 
+            $p \leftrightarrow q$ \\
+            $\equiv (p \rightarrow q) \wedge (q \rightarrow p)$ (BDE) \\
+            $\equiv (\neg p \vee q) \wedge (\neg q \vee p)$ (CDE) \\
+            $\equiv (\neg p \vee q) \wedge (p \vee \neg q)$ (Associativity)
+        \2 
+            $\neg q \rightarrow \neg p$ \\
+            $\equiv \neg \neg q \vee \neg p$ (CDE) \\
+            $\equiv q \vee \neg p$ (Double Negative) \\
+            $\equiv \neg(\neg q \wedge \neg \neg p)$ (DeMorgan's) \\
+            $\equiv \neg(\neg q \wedge p)$ (Double Negative)
+        \2  
+            $p \rightarrow (q \wedge r)$ \\
+            $\equiv \neg p \vee (q \wedge r)$ (CDE)\\
+            $\equiv (\neg p \vee q) \wedge (\neg p \vee r)$ (Distributive)\\
+            $\equiv (p \rightarrow q) \wedge (p \rightarrow r)$ (CDE)
+
+
+    
+
+\end{outline}
+
+\end{document}

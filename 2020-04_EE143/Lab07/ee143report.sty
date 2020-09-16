@@ -1,0 +1,41 @@
+\ProvidesPackage{ee143report}[Title for EE 143 Lab Reports]
+\RequirePackage{graphicx}
+\usepackage{tgtermes} 
+\usepackage[margin=1in]{geometry}
+
+
+\newcommand*{\expNum}[1]{
+    \gdef\@expNum{#1}%
+}
+\newcommand*{\titlegraphic}[1]{
+    \gdef\@titlegraphic{#1}%
+}
+\newcommand*{\@titlegraphic}{
+    [\texttt{\string\titlegraphic} goes here]
+}
+
+\renewcommand*{\maketitle}{
+\begin{titlepage}
+    \centering
+    { \large
+    Instructor: Aiku Shintani \par
+    \vspace{.25cm}
+    EE 143 Section 08 \par 
+    \vspace{.2cm}\par
+    T 6:10-9PM    
+    } 
+    \vfill
+    
+    { \Huge Experiment \@expNum \par }
+    \vspace{.3cm}
+    { \Large \@title } 
+    \vfill
+
+    \@titlegraphic
+    
+    \vfill
+    {\large 
+    Written by Astrid Yu\par
+    \today}
+\end{titlepage}
+}

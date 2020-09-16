@@ -1,0 +1,194 @@
+\documentclass{article}
+\usepackage{outlines}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{blindtext}
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 -- Homework \#2}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{outline}[enumerate]
+
+    \1
+        \2 The entirety of $\mathbb{R}$ is not in the domain (for example, $f(-1) = \sqrt{-1}$ which is invalid).
+
+        \2 For some inputs, there are multiple outputs (for example, $f(1) = 1, -1$)
+
+        \2 $f(1) = \pm \sqrt{|1|} = \pm \sqrt{1} = \pm 1$ (multiple outputs, not a function)
+        
+        \2 $f(-1) = |\pm \sqrt{-1} |$ which has $\sqrt{-1}$, making it invalid
+
+        \2 $f(1) =\pm \sqrt{1^2} = \pm 1$ has multiple outputs
+    
+    \1
+        \2 $F(\text{Josephine}, \text{Tom})$
+        \2 $\exists x ``F(x, \text{Aiden})"$
+        \2 $\forall x ``\neg F(x, \text{Bethany})''$
+        \2 $\neg \forall x ``F(\text{Alejandro}, x)''$
+        \2 $\forall x \exists y ``F(x, y)''$
+        \2 $\neg \exists x \forall y ``F(x, y)''$
+    
+    \1
+        \2 True, $m = n^2 + 1$ will always work
+        \2 This is false for all $m < 0$ because $\forall n (n^2 > 0)$. 
+        
+        Let $n = \lceil \sqrt{m} + 1 \rceil$ for some $m \geq 0$. 
+        
+        By way of contradiction, assume $n^2 < m$.
+
+        Rearrange terms:
+
+        \centering
+        
+        $n^2 \geq m + 2 \sqrt{m} + 1$
+
+        $n^2 - m \geq 2 \sqrt{m} + 1$
+
+        \raggedright
+
+        $2 \sqrt{m} + 1 > 0$ therefore $n^2 - m > 0$
+
+        Therefore $n^2 > m$ contradicts the original proposition, so this statement is false.
+        \2 True. If $n = 1$ it holds true for all $m$.
+
+        \2 False. All squares are positive, and there are no two squares that add up to 3.
+
+    \1
+        \2 Let $x = -1$ and $y = 1$. 
+
+            \raggedright
+            The first half of the conditional is true:
+            
+            \centering 
+            $(-1)^2 = 1^2 = 1$
+
+            \raggedright
+            However, the second half of the conditional is false:
+            
+            \centering 
+            $-1 = 1$ 
+            
+            \raggedright
+            Therefore, the conditional is false.
+
+        \2 Let $x = 3$. 
+
+            \centering
+            $y^2 = x = 3$
+
+            $y = \sqrt{3} \notin \mathbb{Z}$
+
+            \raggedright
+            However, this contradicts $y \in \mathbb{Z}$. Therefore, the statement is false.
+        
+        \2 Let $x = 1$ and $y = -1$.
+
+            \centering
+            $(1) (-1) = 1$
+
+            $-1 = 1$
+
+            \raggedright 
+            However, this is false, therefore there is a contradiction.
+    \1
+        \2 $A \cup B = \{ a, b, c, d, e, f, g \}$
+        \2 $A \cap B = \{a, b, c, d, e\}$
+        \2 $A \setminus B = \emptyset$
+        \2 $B \setminus A = \{f, g\}$
+    
+    \1
+        \2 False
+        \2 False
+        \2 True
+        \2 False
+    \1
+        \2 \begin{equation*}
+            A \cup B = \{1, 2, 3, 5, 6, 7\}
+        \end{equation*} 
+        \begin{equation*}
+            \begin{split}
+            (A \cup B) \times C = \{ & (1, a), (1, e), (1, f), \\
+                & (2, a), (2, e), (2, f), \\
+                & (3, a), (3, e), (3, f), \\
+                & (5, a), (5, e), (5, f), \\
+                & (6, a), (6, e), (6, f), \\
+                & (7, a), (7, e), (7, f) \}
+            \end{split}
+        \end{equation*}
+
+        \2 \begin{equation*}
+            B \setminus A = \{6, 7\}
+        \end{equation*}
+        \begin{equation*} 
+            \begin{split}
+        (B \setminus A) \times C = \{ & (6, a), (6, e), (6, f), \\
+        & (7, a), (7, e), (7, f) \}
+            \end{split}
+        \end{equation*}
+
+        \2 \begin{equation*}
+            \begin{split}
+            A \times (C \setminus B) = \{& (1, a), (1, e), (1, f), \\
+                & (2, a), (2, e), (2, f), \\
+                & (3, a), (3, e), (3, f), \\
+                & (5, a), (5, e), (5, f), \\
+                & (6, a), (6, e), (6, f), \\
+                & (7, a), (7, e), (7, f) \}
+            \end{split}
+        \end{equation*}
+        
+        \2 \begin{equation*}
+            \begin{split}
+                A \times (B \times C) = \{ & (1, (1, a)), (1, (1, e)), (1, (1, f)), \\
+            & (1, (2, a)), (1, (2, e)), (1, (2, f)), \\
+            & (1, (6, a)), (1, (6, e)), (1, (6, f)), \\
+            & (1, (7, a)), (1, (7, e)), (1, (7, f)), \\
+            & \\
+            & (3, (1, a)), (3, (1, e)), (3, (1, f)), \\
+            & (3, (2, a)), (3, (2, e)), (3, (2, f)), \\
+            & (3, (6, a)), (3, (6, e)), (3, (6, f)), \\
+            & (3, (7, a)), (3, (7, e)), (3, (7, f)), \\
+            & \\
+            & (5, (1, a)), (5, (1, e)), (5, (1, f)), \\
+            & (5, (2, a)), (5, (2, e)), (5, (2, f)), \\
+            & (5, (6, a)), (5, (6, e)), (5, (6, f)), \\
+            & (5, (7, a)), (5, (7, e)), (5, (7, f)), \\
+            & \\
+            & (7, (1, a)), (7, (1, e)), (7, (1, f)), \\
+            & (7, (2, a)), (7, (2, e)), (7, (2, f)), \\
+            & (7, (6, a)), (7, (6, e)), (7, (6, f)), \\
+            & (7, (7, a)), (7, (7, e)), (7, (7, f)) \} 
+            \end{split}
+        \end{equation*}
+
+        this meme was made by the python gang
+
+    \1 No, this statement is false. $A \times C = \{(1, a), (3, f), ...\}$ while $C \times A = \{(e, 1), (a, 5), ...\}$. 
+    In the former, the numbers precede the letters, but in the latter, the letters precede the numbers.
+
+    \1 $C \times A$ is a set of (letters, numbers) while $(B \setminus A) \times C$ is a set of (numbers, letters). 
+
+    \1 By their values, $D \subseteq A$.
+
+    \begin{equation*}
+        \begin{aligned}
+            & (D \times C) \subseteq (A \times C) \\
+            \equiv & \forall (d,c) \in (D \times C) [(d, c) \in (A \times C)] && \text{Definiton of subset} \\
+            \equiv & \forall (d,c) \in (D \times C) [d \in A \wedge c \in C] && \text{Definition of cartesian product} \\
+            \equiv & \forall (d,c) \in (D \times C) [d \in A \wedge T] && \text{Definition of } c \\
+            \equiv & \forall (d,c) \in (D \times C) [d \in A] && \text{Absorption}  \\
+            \equiv & \forall (d,c) \in (D \times C) [T] && \text{Implied by }D \subseteq A  \\
+            \equiv & T && \text{Every sub-proposition is true}
+        \end{aligned}
+    \end{equation*}
+
+    Therefore, $(D \times C) \subseteq (A \times C)$ is true.
+
+    \1 $\emptyset$
+
+\end{outline} 
+\end{document}

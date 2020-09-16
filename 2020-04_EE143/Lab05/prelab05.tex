@@ -1,0 +1,58 @@
+\documentclass[12pt]{article}
+
+\usepackage{verbatim}
+\usepackage{graphicx, float}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{bookmark}
+\usepackage{geometry}[margin=1in]
+\usepackage{hyperref}
+
+
+\author{Astrid Yu}
+\title{Lab 5 Prelab}
+\DeclareMathOperator{\V}{V}
+\DeclareMathOperator{\A}{A}
+\DeclareMathOperator{\F}{F}
+\DeclareMathOperator{\mA}{mA}
+\DeclareMathOperator{\mW}{mW}
+\DeclareMathOperator\bit{bit}
+\DeclareMathOperator\byte{byte}
+\DeclareMathOperator\word{word}
+
+\begin{document}
+\maketitle
+
+\begin{enumerate}
+    \item The selected resistances were $R1 = 39\Omega, R2=10\Omega$.
+    
+        The SPICE output is $V_{R2} = 1.0204\V, I_{R2} = 102.0\mA$.
+        
+        The delivered power is $V_{R2}\cdot I_{R2} = 104.1\mW$.
+    
+        \includegraphics[width=1\linewidth]{lab5pre1.png}
+
+    \item \begin{equation}
+        \begin{aligned}
+            V &= \frac{R}{R + 2k\Omega}\cdot 5\V \\
+            V \cdot R + V \cdot 2k\Omega &= R\cdot 5\V \\
+            V \cdot 2k\Omega &= 5\V \cdot R - V \cdot R \\
+            V \cdot 2k\Omega &= (5\V - V) \cdot R \\
+            \frac{V \cdot 2k\Omega}{5\V - V} &= R
+        \end{aligned}
+    \end{equation}
+    \item \begin{equation}
+        \begin{aligned}
+            V = \frac{5\V}{2^{10}}\cdot X
+        \end{aligned}
+    \end{equation}
+    \item Let $T$ be the ambient temperature and $R$ be the resistance of the thermistor. Their relationship was found 
+        to be
+        \begin{equation}
+            T=(0.1056\frac{^\circ \F}{\Omega}) \cdot R -146.4 ^\circ\F
+        \end{equation}
+
+        \includegraphics[width=\linewidth]{prelab-chart.png}
+\end{enumerate}
+
+\end{document}

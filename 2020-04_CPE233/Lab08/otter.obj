@@ -1,0 +1,172 @@
+
+a.out:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <initialization>:
+   0:	00000b97          	auipc	s7,0x0
+   4:	000b8b93          	mv	s7,s7
+   8:	00300293          	li	t0,3
+   c:	005b8023          	sb	t0,0(s7) # 0 <initialization>
+  10:	09f00293          	li	t0,159
+  14:	005b80a3          	sb	t0,1(s7)
+  18:	02500293          	li	t0,37
+  1c:	005b8123          	sb	t0,2(s7)
+  20:	00d00293          	li	t0,13
+  24:	005b81a3          	sb	t0,3(s7)
+  28:	09900293          	li	t0,153
+  2c:	005b8223          	sb	t0,4(s7)
+  30:	04900293          	li	t0,73
+  34:	005b82a3          	sb	t0,5(s7)
+  38:	04100293          	li	t0,65
+  3c:	005b8323          	sb	t0,6(s7)
+  40:	01f00293          	li	t0,31
+  44:	005b83a3          	sb	t0,7(s7)
+  48:	00100293          	li	t0,1
+  4c:	005b8423          	sb	t0,8(s7)
+  50:	00900293          	li	t0,9
+  54:	005b84a3          	sb	t0,9(s7)
+  58:	00000513          	li	a0,0
+  5c:	00100493          	li	s1,1
+  60:	00000913          	li	s2,0
+  64:	00000993          	li	s3,0
+  68:	00000593          	li	a1,0
+  6c:	00300b13          	li	s6,3
+  70:	1100ccb7          	lui	s9,0x1100c
+  74:	008c8c9b          	addiw	s9,s9,8
+  78:	1100cd37          	lui	s10,0x1100c
+  7c:	004d0d1b          	addiw	s10,s10,4
+
+0000000000000080 <.L0 >:
+  80:	00000297          	auipc	t0,0x0
+  84:	00028293          	mv	t0,t0
+  88:	30529073          	csrw	mtvec,t0
+  8c:	30431073          	csrw	mie,t1
+
+0000000000000090 <doMainLoop>:
+  90:	00000a13          	li	s4,0
+  94:	00000a93          	li	s5,0
+
+0000000000000098 <isPressed>:
+  98:	00098a63          	beqz	s3,ac <extractDigit>
+
+000000000000009c <doCalcBCD>:
+  9c:	00000097          	auipc	ra,0x0
+  a0:	000080e7          	jalr	ra # 9c <doCalcBCD>
+  a4:	00000993          	li	s3,0
+  a8:	30449073          	csrw	mie,s1
+
+00000000000000ac <extractDigit>:
+  ac:	016b0333          	add	t1,s6,s6
+  b0:	00630333          	add	t1,t1,t1
+  b4:	0065dab3          	srl	s5,a1,t1
+  b8:	0ff2fa93          	andi	s5,t0,255
+
+00000000000000bc <isLastDigitIndex>:
+  bc:	000b0663          	beqz	s6,c8 <buildOutput>
+
+00000000000000c0 <isZeroDigitVal>:
+  c0:	000a9463          	bnez	s5,c8 <buildOutput>
+
+00000000000000c4 <isDigitEncountered>:
+  c4:	00090a63          	beqz	s2,d8 <doWrite7Seg>
+
+00000000000000c8 <buildOutput>:
+  c8:	00100913          	li	s2,1
+  cc:	0064dab3          	srl	s5,s1,t1
+  d0:	01728a33          	add	s4,t0,s7
+  d4:	000e4e03          	lbu	t3,0(t3)
+
+00000000000000d8 <doWrite7Seg>:
+  d8:	014d2023          	sw	s4,0(s10) # 1100c000 <end+0x1100be30>
+  dc:	015ca023          	sw	s5,0(s9) # 1100c000 <end+0x1100be30>
+
+00000000000000e0 <shouldLoopAround>:
+  e0:	000b0663          	beqz	s6,ec <doLooparound>
+
+00000000000000e4 <doDecrement>:
+  e4:	fffb0b13          	addi	s6,s6,-1
+  e8:	00c0006f          	j	f4 <delay>
+
+00000000000000ec <doLooparound>:
+  ec:	00300b13          	li	s6,3
+  f0:	00000913          	li	s2,0
+
+00000000000000f4 <delay>:
+  f4:	000182b7          	lui	t0,0x18
+  f8:	6a02829b          	addiw	t0,t0,1696
+
+00000000000000fc <delayLoop>:
+  fc:	fff28293          	addi	t0,t0,-1 # 17fff <end+0x17e2f>
+ 100:	fe028ae3          	beqz	t0,f4 <delay>
+ 104:	f8dff06f          	j	90 <doMainLoop>
+
+0000000000000108 <isr>:
+ 108:	00150513          	addi	a0,a0,1
+ 10c:	00100993          	li	s3,1
+ 110:	30200073          	mret
+
+0000000000000114 <bcd>:
+ 114:	ff410113          	addi	sp,sp,-12
+ 118:	00a12223          	sw	a0,4(sp)
+ 11c:	00c12423          	sw	a2,8(sp)
+ 120:	00112623          	sw	ra,12(sp)
+ 124:	00050593          	mv	a1,a0
+ 128:	3e800613          	li	a2,1000
+ 12c:	00000097          	auipc	ra,0x0
+ 130:	000080e7          	jalr	ra # 12c <bcd+0x18>
+ 134:	00050313          	mv	t1,a0
+ 138:	00431313          	slli	t1,t1,0x4
+ 13c:	06400613          	li	a2,100
+ 140:	00000097          	auipc	ra,0x0
+ 144:	000080e7          	jalr	ra # 140 <bcd+0x2c>
+ 148:	00a36333          	or	t1,t1,a0
+ 14c:	00431313          	slli	t1,t1,0x4
+ 150:	00a00613          	li	a2,10
+ 154:	00000097          	auipc	ra,0x0
+ 158:	000080e7          	jalr	ra # 154 <bcd+0x40>
+ 15c:	00a36333          	or	t1,t1,a0
+ 160:	00431313          	slli	t1,t1,0x4
+ 164:	00b36333          	or	t1,t1,a1
+ 168:	00030593          	mv	a1,t1
+ 16c:	00412503          	lw	a0,4(sp)
+ 170:	00812603          	lw	a2,8(sp)
+ 174:	00c12083          	lw	ra,12(sp)
+ 178:	00c10113          	addi	sp,sp,12
+ 17c:	00008067          	ret
+
+0000000000000180 <divide>:
+ 180:	04c5c463          	blt	a1,a2,1c8 <iszero>
+ 184:	ffc10113          	addi	sp,sp,-4
+ 188:	00c12223          	sw	a2,4(sp)
+ 18c:	00100293          	li	t0,1
+
+0000000000000190 <expand>:
+ 190:	00129293          	slli	t0,t0,0x1
+ 194:	00161613          	slli	a2,a2,0x1
+ 198:	feb64ce3          	blt	a2,a1,190 <expand>
+ 19c:	00000513          	li	a0,0
+
+00000000000001a0 <subtractloop>:
+ 1a0:	4012d293          	srai	t0,t0,0x1
+ 1a4:	fe501ee3          	bne	zero,t0,1a0 <subtractloop>
+ 1a8:	40165613          	srai	a2,a2,0x1
+ 1ac:	00c5c663          	blt	a1,a2,1b8 <nosub>
+
+00000000000001b0 <subtract>:
+ 1b0:	00556533          	or	a0,a0,t0
+ 1b4:	40c585b3          	sub	a1,a1,a2
+
+00000000000001b8 <nosub>:
+ 1b8:	fe9ff06f          	j	1a0 <subtractloop>
+ 1bc:	00412603          	lw	a2,4(sp)
+ 1c0:	00410113          	addi	sp,sp,4
+ 1c4:	00008067          	ret
+
+00000000000001c8 <iszero>:
+ 1c8:	00000513          	li	a0,0
+ 1cc:	00008067          	ret
+
+00000000000001d0 <end>:
+ 1d0:	0000006f          	j	1d0 <end>

@@ -1,0 +1,600 @@
+\documentclass{article}
+
+\usepackage{geometry}
+\usepackage{afterpage}
+\usepackage{graphicx}
+\usepackage{outlines}
+\usepackage{mathtools}
+\usepackage[ruled,linesnumbered,vlined]{algorithm2e}
+\usepackage{changepage}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{pdflscape}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{blindtext}
+\usepackage{hyperref}
+
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+\newcommand{\divides}{\ |\ }
+
+\author{Astrid Augusta Yu}
+\title{CSC 348 -- Homework \#7}
+\date{\today}
+
+\newcommand{\contradiction}{$\rightarrow\leftarrow$}
+\renewcommand\qedsymbol{\texttt{d(\textbf{\^{}\_\^{}})>}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{claim}{Claim}[theorem]
+\newtheorem{lemma}{Lemma}
+\newtheorem{lclaim}{Claim}[lemma]
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}[definition]
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Extra Algorithms and Theorems}
+
+\subsection{Foreach Linearity Theorem}
+\begin{definition}
+    A recursive algorithm $R$ is a \textbf{foreach algorithm}\footnotemark it can be associated with a $n_0 \in \mathbb{N}$ (the base case size) and the following conditions are met:
+    \footnotetext{a term I literally just came up with}
+
+    \begin{itemize}
+        \item Some finite sequence of values $A$ of size $n$ such that $n \geq n_0$ is a parameter of that $R$. It may take in more parameters than just $A$, as well.
+        \item At the beginning of $R$, it performs the check $n = n_0$. If this check passes, it terminates in $O(1)$ time. 
+        \item If the $R$ fails that check, then in all of its following branches, it will:
+        \begin{enumerate}
+            \item possibly perform an $O(1)$ operation
+            \item call $R$, but with a new $A$ such that $|A| = n - 1$
+            \item terminate
+        \end{enumerate}
+    \end{itemize}
+\end{definition}
+
+\begin{example}
+    The MaxElement algorithm is a foreach algorithm because:
+    \begin{itemize}
+        \item It uses $n_0 = 1$
+        \item It takes in a finite sequence $A = (a_1 \dots a_n)$ of integers of size $n$
+        \item It always returns $a_1$ when $n_0 = 1$
+        \item If $n \neq n_0$, it will call MaxElement on a $(a_2\dots a_n)$, a list of size $n - 1$.
+    \end{itemize}
+\end{example}
+
+\begin{theorem}[Foreach Linearity Theorem]
+    If $R$ is a foreach algorithm with base case $n_0$, $A$ is a sequence such that $n \geq n_0$, then $R(A)$ has a time complexity of $O(n)$.
+    \label{thm:foreachn}
+
+    \begin{proof}
+        By definition of a foreach algorithm, the base case when $n = n_0$ will immediately terminate in $O(1)$ time. Therefore, 
+        \begin{equation}
+            T(n_0) = O(1)
+            \label{eqn:foreachbase}
+        \end{equation}
+
+        Additionally, if it is not the base case, the foreach algorithm will undergo a $O(1)$ operation, then call itself on a $n - 1$ element sequence. Thus, for $n > n_0$,
+        \begin{equation}
+            T(n) = T(n - 1) + O(1)
+            \label{eqn:foreachstep}
+        \end{equation}
+
+        Now, we will prove by induction that $T(n) = (n - n_0 + 1) \cdot O(1)$.
+
+        \textbf{Base case.} Consider $n = n_0$. By (\ref{eqn:foreachbase}), $$T(n_0) = O(1)$$.
+
+        Note that $n_0 - n_0 + 1 = 1$. Therefore,
+        $$T(n_0) = (n_0 - n_0 + 1) \cdot O(1)$$
+
+        \textbf{Induction hypothesis.} Suppose that for some $k \geq n_0$, $T(k) = (k - n_0 + 1) \cdot O(1)$.
+
+        \textbf{Inductive step.} By (\ref{eqn:foreachstep}),
+        $$T(k+1) = T(k) + O(1)$$
+
+        Applying the induction hypothesis,
+        $$T(k+1) = (k - n_0 + 1) \cdot O(1) + O(1)$$
+
+        which can be rewritten as
+        $$T(k+1) = ((k + 1) - n_0 + 1) \cdot O(1)$$
+
+        Therefore, $T(n) = (n - n_0 + 1) \cdot O(1)$.
+
+        Note that the coefficient can be moved into the $O(1)$ like so:
+        $$T(n) = O(n - n_0 + 1)$$
+
+        Note that $-n_0 + 1$ is a constant. Therefore, $T(n) = O(n)$.
+
+    \end{proof}
+\end{theorem}
+
+\subsection{Map}
+
+\begin{algorithm}
+    \KwIn{A function $f: \mathbb{Z} \rightarrow \mathbb{Z}$ and a sequence of integers $A = \left(a_1 \dots a_n\right)$}
+    \KwOut{The sequence of integers $\left(f(a_1), f(a_2), \dots f(a_{n-1}), f(a_n)\right)$}
+
+    \eIf{$n = 0$}{
+        \Return{()}
+    }{
+        \Return{$Map(f, (a_1 \dots a_{n-1})) \circ (f(a_n))$}
+    }
+
+    \caption{Map($f$, $A$)}
+\end{algorithm}
+
+\subsubsection{Correctness}
+
+\begin{lemma}
+    If $A$ is a sequence of integers defined as $\left(a_1 \dots a_n\right)$, and there exists some $f: \mathbb{Z} \rightarrow \mathbb{Z}$, then $Map(f, A) = (f(a_i))^n_{i=1}$.
+    \label{lem:map}
+
+    \begin{proof} We will proceed by induction.
+
+        \textbf{Base case.} Suppose $n = 0$. The algorithm will start at line 1. Since $n = 0 = 0$, the check passes and we proceed to line 2. 
+        
+        At line 2, the algorithm returns $()$, the empty sequence. This is correct because it equals the expected value $(f(a_i))^0_{i=1} = ()$.
+
+        \textbf{Inductive hypothesis.} Suppose $Map(f, (a_1\dots a_k)) = (f(a_i))^k_{i=1}$.
+
+        \textbf{Inductive step.} Consider $n = k + 1$. At line 1, we check if $k + 1 = 0$. However, this can never happen, because if it were the case, then $k = -1$, which violates the fact that $k \in \mathbb{N}$.
+
+        Thus, the algorithm proceeds to line 4 via else and returns 
+        $$Map(f, (a_1 \dots a_{k})) \circ (f(a_{k+1}))$$
+        
+        By the inductive hypothesis, this is equivalent to the sequence 
+        $$(f(a_1))^k_{i=1} \circ (f(a_{k+1}))$$
+
+        which simplifies to 
+        $$(f(a_1))^{k+1}_{i=1}$$
+
+        Therefore, by the principle of mathematical induction, $Map(f, A) = (f(a_i))^n_{i=1}$.
+    \end{proof}
+\end{lemma}
+
+\begin{theorem}
+    Map is correct.
+    \begin{proof}
+        By Lemma \ref{lem:map}, Map is correct.
+    \end{proof}
+\end{theorem}
+
+\subsubsection{Time complexity}
+
+\begin{lemma}
+    Map is a foreach algorithm.
+    \label{lem:mapforeach}
+    \begin{proof}
+        Let $n_0 = 0$. The following are true about Map:
+        \begin{itemize}
+            \item It takes in a $n$-element sequence as its second parameter.
+            \item It performs a check for $n = n_0 = 0$ at line 1. If it passes, it immediately returns.
+            \item If the check fails, it calls Map on $(a_1 \dots a_{n-1})$, a $n-1$ element sequence, performs concatenation (a $O(1)$ operation), and immediately returns.
+        \end{itemize}
+        
+        Therefore, Map is a foreach algorithm.
+    \end{proof}
+\end{lemma}
+
+\begin{theorem}
+    Map is a $O(n)$ operation.
+    \label{thm:omap}
+    \begin{proof}
+        By Lemma \ref{lem:mapforeach}, Map is a foreach algorithm, so by the Foreach Linearity Theorem (Theorem \ref{thm:foreachn}), it has a time complexity of $O(n)$.
+    \end{proof}
+\end{theorem}
+
+\subsection{Sum}
+
+\begin{algorithm}
+    \KwIn{A sequence of integers $A = \left(a_1 \dots a_n\right)$}
+    \KwOut{The value $\sum^n_{i=1} a_i$}
+
+    \eIf{$n = 0$}{
+        \Return{0}
+    }{
+        \Return{$Sum((a_1\dots a_{n - 1})) + a_{n}$}
+    }
+    \caption{Sum($A$)}
+\end{algorithm}
+
+\subsubsection{Correctness}
+
+\begin{lemma}
+    If the integer sequence $A = (a_1\dots a_n) = (a_i)^n_{i=1}$ then $Sum(A) = \sum^n_{i=1} a_i$.
+    \label{lem:sum}
+    \begin{proof}
+        We will proceed by induction over the input size.
+
+        \textbf{Base case.} Suppose $n = 0$. The algorithm will start at line 1, and because $n = 0 = 0$, it will pass the check.
+
+        The algorithm proceeds to line 2 and returns 0. Note that $\sum^0_{i=1} a_i = 0$ because $0$ is the additive identity. 
+
+        \textbf{Inductive hypothesis.} Let $A = (a_1\dots a_k) = (a_i)^k_{i=1}$. Suppose $Sum(A) = \sum^k_{i=1} a_i$. 
+
+        \textbf{Induction step.} Let $B = (a_1\dots a_{k+1}) = (a_i)^{k+1}_{i=1}$. Consider $Sum(B)$.
+
+        The algorithm begins at line 1. If $n = k+1 = 0$, then $k = -1$, which is impossible, since $k \in \mathbb{N}$. Thus, the check at line 1 fails and the algorithm proceeds to line 4 due to else.
+
+        At line 4, the algorithm returns $Sum((a_1\dots a_{k})) + a_{k+1}$. By the inductive hypothesis, 
+        $$Sum((a_1\dots a_{k})) + a_{k+1} = \sum^k_{i=1} a_i + a_{k+1} = \sum^{k+1}_{i=1} a_i$$
+
+        This can be further reduced to 
+        $$\sum^k_{i=1} a_i + a_{k+1} = \sum^{k+1}_{i=1} a_i$$
+
+        Therefore, by the principle of mathematical induction, for all $n \in \mathbb{N}$, $Sum((a_i)^n_{i=1}) = \sum^{n}_{i=1} a_i$.
+    \end{proof}
+\end{lemma}
+
+\begin{theorem}
+    Sum is correct.
+    \begin{proof}
+        By Lemma \ref{lem:sum}, Sum is correct.
+    \end{proof}
+\end{theorem}
+
+\subsubsection{Time complexity}
+
+\begin{lemma}
+    Sum is a foreach algorithm.
+    \label{lem:sumforeach}
+    \begin{proof}
+        Let $n_0 = 0$. The following are true about Sum:
+        \begin{itemize}
+            \item It takes in a $n$-element sequence as its second parameter.
+            \item It performs a check for $n = n_0 = 0$ at line 1. If it passes, it immediately returns.
+            \item If the check fails, it calls Sum on $(a_1 \dots a_{n-1})$, a $n-1$ element sequence, performs addition (a $O(1)$ operation), and immediately returns.
+        \end{itemize}
+        
+        Therefore, Sum is a foreach algorithm.
+    \end{proof}
+\end{lemma}
+
+\begin{theorem}
+    Sum is a $O(n)$ operation.
+    \label{thm:omap}
+    \begin{proof}
+        By Lemma \ref{lem:sumforeach}, Sum is a foreach algorithm, so by the Foreach Linearity Theorem (Theorem \ref{thm:foreachn}), it has a time complexity of $O(n)$.
+    \end{proof}
+\end{theorem}
+
+\subsection{ZipConsecutive}
+\begin{algorithm}
+    \KwIn{A sequence of integers $A = \left(a_1 \dots a_n\right) = (a_i)^n_{i=1}$ where $n \geq 1$}
+    \KwOut{The sequence of ordered integer pairs $\left((a_i, a_{i+1})\right)^{n-1}_{i=1}$, where each pair contains two consecutive numbers from the original sequence}
+
+    \eIf{$n = 1$}{
+        \Return{()}
+    }{
+        \Return{$((a_1, a_2)) \circ ZipConsecutive((a_i)^n_{i=2})$}
+    }
+    \caption{ZipConsecutive($A$)}
+\end{algorithm}
+
+\subsubsection{Correctness}
+\begin{lemma}
+    If $A = (a_i)^n_{i+1}$ is an integer sequence and $n \in \mathbb{N}^+$, then 
+    $$ZipConsecutive(A) = \left((a_i, a_{i+1})\right)^{n-1}_{i=1}$$
+    \label{lem:zipcons}
+    \begin{proof}
+        We will proceed by induction over $n$, the size of $A$.
+        
+        \textbf{Base case.} Suppose $n = 1$. The algorithm starts at line 1, and because $n = 1 = 1$, it passes the check and proceeds to line 2.
+
+        At line 2, the empty list is returned. This is equivalent to $\left((a_i, a_{i+1})\right)^{-1}_{i=1} = ()$.
+
+        \textbf{Inductive hypothesis.} Suppose for some $k \in \mathbb{N}^+$, 
+        $$ZipConsecutive((a_i)^k_{i+1}) = \left((a_i, a_{i+1})\right)^{k-1}_{i=1}$$.
+
+        for all integer sequences sequences $(a_i)^k_{i+1}$.
+
+        \textbf{Inductive step.} Consider $ZipConsecutive((a_i)^{k+1}_{i+1})$. 
+        
+        The algorithm begins on line 1 and checks $k + 1 = 1$. However, if this were true, then $k = 0$, which can never happen because $k \in \mathbb{N}^+$. Thus, it fails and proceeds to line 4 via else.
+
+        At line 4, the algorithm returns 
+        $$((a_1, a_2)) \circ ZipConsecutive((a_i)^{k+1}_{i=2})$$
+
+        which, by the inductive hypothesis, is equivalent to 
+        $$((a_1, a_2)) \circ ((a_i, a_{i+1}))^{k}_{i=2}$$
+
+        We can include the first term in the sequence like so:
+        $$((a_i, a_{i+1}))^{k}_{i=1}$$
+
+        Thus,
+        $$ZipConsecutive(A) = \left((a_i, a_{i+1})\right)^{n-1}_{i=1}$$
+        for all $n \in \mathbb{N}^+$.
+    \end{proof}
+\end{lemma}
+
+\begin{theorem}
+    ZipConsecutive is correct.
+    \begin{proof}
+        By Lemma \ref{lem:zipcons}, ZipConsecutive is correct.
+    \end{proof}
+\end{theorem}
+
+\subsubsection{Time Complexity}
+
+\begin{lemma}
+    ZipConsecutive is a foreach algorithm.
+    \label{lem:zipconforeach}
+    \begin{proof}
+        Let $n_0 = 0$. The following are true about ZipConsecutive:
+        \begin{itemize}
+            \item It takes in a $n$-element sequence as its second parameter.
+            \item It performs a check for $n = n_0 = 0$ at line 1. If it passes, it immediately returns.
+            \item If the check fails, it calls ZipConsecutive on $(a_1 \dots a_{n-1})$, a $n-1$ element sequence, performs concatenation (a $O(1)$ operation), and immediately returns.
+        \end{itemize}
+        
+        Therefore, ZipConsecutive is a foreach algorithm.
+    \end{proof}
+\end{lemma}
+
+\begin{theorem}
+    ZipConsecutive is a $O(n)$ operation.
+    \label{thm:omap}
+    \begin{proof}
+        By Lemma \ref{lem:zipconforeach}, ZipConsecutive is a foreach algorithm, so by the Foreach Linearity Theorem (Theorem \ref{thm:foreachn}), it has a time complexity of $O(n)$.
+    \end{proof}
+\end{theorem}
+
+\section{Questions}
+
+\subsection{Q1.}
+\begin{algorithm}[H]
+    \KwIn{Some $n \in \mathbb{Z}^+$}
+    \KwOut{The value $\sum^n_{i=1} i$}
+
+    \Return{$Sum((i)^n_{i=1})$}
+
+    \caption{SumFirstN(n)}
+\end{algorithm}
+
+\subsection{Q2.}
+\begin{lemma}
+    If $n \in \mathbb{N}$, then $SumFirstN(n) = \sum^n_{i=1} i$.
+\end{lemma}
+
+\subsection{Q3.}
+\begin{proof}
+    At line 1, SumFirstN returns $Sum((i)^n_{i=1})$. This evaluates to $\sum^n_{i=1} i$ by definition of the Sum algorithm. Therefore, $SumFirstN(n) = \sum^n_{i=1} i$.
+\end{proof}
+
+\subsection{Q4.}
+Define $f: \mathbb{Z} \rightarrow \{0, 1\}$ as follows:
+$$f(x) = \begin{cases}
+    1 & if x < 0 \\
+    0 & if x \geq 0
+\end{cases}$$
+
+\begin{algorithm}[H]
+    \KwIn{An integer sequence $A = (a_i)^n_{i=1}$}
+    \KwOut{The number of negatives in $A$.}
+
+    \Return{$Sum(Map(f, A))$}
+
+    \caption{CountNegatives(A)}
+\end{algorithm} 
+
+\subsection{Q5.}
+
+\begin{lemma}
+    If some sequence $A = (a_1\dots a_n) = (a_n)^n_{i=1}$ has $k$ negatives in it, then $$CountNegatives(A) = k$$
+    \begin{proof}
+        The algorithm starts on line 1 and returns 
+        $$Sum(Map(f, A))$$
+
+        which is equivalent to, by definition of $A$,
+        $$Sum(Map(f, f(a_i))^n_{i=1}))$$
+        
+        By definition of Map, this is equivalent to 
+        $$Sum((f(a_i))^n_{i=1})$$
+
+        By definition of sum, this is equivalent to 
+        $$\sum^n_{i=1}f(a_i)$$
+
+        Suppose $B$ is a sequence that contains all the negative elemnts of $A$, and $C$ is a sequence that contains every element of $A$ not in $B$, and therefore, non-negative. This sum can be rewritten as 
+        $$\sum_{b \in B} f(b) + \sum_{c \in C} f(c)$$
+
+        Since all $b \in B$ are negative and all $c \in C$ are non-negative, by definition of $f$, this is equivalent to 
+        $$\sum_{b \in B} 1 + \sum_{c \in C} 0 = \sum_{b \in B} 1$$
+
+        Since there are $k$ negatives in $A$, $B$ has $k$ elements. Therefore,
+        $$\sum_{b \in B} 1 = k$$
+
+        Therefore, $CountNegatives(A) = k$.
+    \end{proof}
+\end{lemma}
+
+\subsection{Q6.}
+Let $f: \mathbb{Z}^2 \rightarrow \mathbb{Z}^+$ be defined as follows:
+
+$$f((a, b)) = |a - b|$$
+
+\begin{algorithm}[H]
+    \KwIn{An integer sequence $A = (a_i)^n_{i=1}$}
+    \KwOut{The largest difference between any two consecutive numbers.}
+
+    \Return{$MaxElement(Map(f, ZipConsecutive(A)))$}
+
+    \caption{LargestDiff(A)}
+\end{algorithm} 
+
+\subsection{Q7.}
+
+\begin{lemma}
+    Suppose the integer sequence $A = (a_i)^n_{i=1}$, and $p, q \in \mathbb{N}$ such that $1 \leq p < n$ and $1 \leq q < n$. If for some $p$, $|a_p - a_{p+1}| \geq |q_j - a_{q+1}|$ for all possible values of $q$, then $LargestDiff(A) = |a_p - a_{p+1}|$.
+    \begin{proof}
+        
+    \end{proof}
+\end{lemma}
+\subsection{Q8.}
+\subsubsection{Q8a.}
+Let $f: \mathbb{Z} \rightarrow \mathbb{Z}$ be defined as 
+$$f(x) = 2^x$$
+
+\begin{algorithm}[H]
+    \KwIn{Some $n \in \mathbb{N}$}
+    \KwOut{The sum of all powers of 2 from $0$ to $n$.}
+
+    \Return{$Sum(Map(f, (i)^n_{i=0}))$}
+
+    \caption{Power2Sum(n)}
+\end{algorithm} 
+
+\subsubsection{Q8b.}
+\begin{lemma}
+    If $n \in \mathbb{N}$, then
+    $$Power2Sum(n) = \sum^n_{i=0} 2^i$$
+    \begin{proof}
+        Power2Sum starts at line 1 and returns $Sum(Map(f, (i)^n_{i=0}))$.
+
+        By the definitions of Map and $f$, this is equivalent to 
+        $$Sum((2^i)^n_{i=1})$$
+
+        By definition of Sum, this is equivalent to 
+        $$\sum^n_{i=0} 2^i$$
+
+        Thus, $Power2Sum(n) = \sum^n_{i=0} 2^i$.
+    \end{proof}
+\end{lemma}
+
+\subsection{Q9.}
+
+\begin{algorithm}
+    \KwIn{Some $n \in \mathbb{N}$}
+    \KwOut{The sum of all powers of 2 from $0$ to $n$.}
+
+    \Return{$2^n - 1$}
+
+    \caption{ConstantPower2Sum(n)}
+\end{algorithm}
+
+\subsection{Q10.}
+
+\subsubsection{Q10a.}
+\begin{theorem}
+    SumFirstN runs in $O(n)$ time. 
+    \begin{proof}
+        At line 1, it generates a sequence of size $n$, which is $O(n)$, and executes Sum on it, a $O(n)$ algorithm, and finally it returns. Thus, its time complexity is 
+
+        $$O(n + n) = O(n)$$
+    \end{proof}
+\end{theorem}
+
+\subsubsection{Q10b.}
+\begin{theorem}
+    CountNegatives runs in $O(n)$ time. 
+    \begin{proof}
+        At line 1, it executes Map on a $n$-length sequence, which is a $O(n)$ operation. Then, it executes Sum on the resulting sequence, also $O(n)$. Finally, it returns. Thus, its time complexity is 
+
+        $$O(n + n) = O(n)$$
+    \end{proof}
+\end{theorem}
+\subsubsection{Q10c.}
+\begin{theorem}
+    LargestDiff runs in $O(n)$ time. 
+    \begin{proof}
+        At line 1, it executes ZipConsecutive on a $n$-length sequence, which is a $O(n)$ operation that outputs a $(n - 1)$-length sequence. Next, it executes Map on that sequence, which is $O(n - 1)$ and outputs a $n - 1$ length sequence. Then, it executes MaxElement on the result from that, and MaxElement is a $O(n - 1)$ sequence. Finally, it returns. Thus, its time complexity is 
+
+        $$O(n + (n - 1) + (n - 1)) = O(n)$$
+    \end{proof}
+\end{theorem}
+
+\subsubsection{Q10d.}
+\begin{theorem}
+    ConstantPower2 runs in $O(1)$ time. 
+    \begin{proof}
+        At line 1, it performs an exponentiation and a subtraction, which can each be considered $O(1)$ operations. Then, it returns. Therefore, it runs in 
+        $$O(1 + 1) = O(1)$$
+    \end{proof}
+\end{theorem}
+
+\subsection{Q11.}
+\subsubsection{Q11a.}
+$$T(n) = T\left(\frac{n}{2}\right) + O(n)$$
+
+\subsubsection*{Tree Method}
+$$\log_2(n)\text{ occurences} \begin{cases}
+    O(n)  \\
+    O(\frac{n}{2})  \\
+    O(\frac{n}{4})  \\
+    \vdots \\
+    O(4)  \\
+    O(2)  \\
+    O(1)  \\
+\end{cases}$$
+
+$$T(n) = O\left( \sum^{\log_2(n)}_{i=0} \left( \frac{1}{2} \right)^i \cdot n \right)$$
+
+Note that $\sum^{\log_2(n)}_{i=0} \left( \frac{1}{2} \right)^i$ converges to 1. Therefore, 
+$$T(n) = O(n)$$
+
+\subsubsection*{Master Theorem}
+
+Let $a = 1$, $b = 2$, and d = 1. We can rewrite $T(n)$ as
+$$T(n) = aT\left(\frac{n}{b}\right) + O(n^d)$$
+
+Note that $d = 1 > log_b(a) = 0$. Therefore, by the Master Theorem,
+$$T(n) = O(n)$$
+
+\subsubsection{Q11b.}
+
+$$T(n) = T\left(\frac{n}{2}\right) + O\left(n^2\right)$$
+
+\subsubsection*{Tree Method}
+$$\log_2(n)\text{ occurences} \begin{cases}
+    O(n^2)  \\
+    O(\frac{n^2}{4})  \\
+    O(\frac{n^2}{16})  \\
+    \vdots \\
+    O(16)  \\
+    O(4)  \\
+    O(1)  \\
+\end{cases}$$
+
+$$T(n) = O\left( \sum^{\log_2(n)}_{i=0} \left( \frac{1}{4} \right)^i \cdot n^2 \right)$$
+
+Note that $\displaystyle\sum^{\log_2(n)}_{i=0} \left( \frac{1}{4} \right)^i$ converges to a finite value. Therefore,
+
+$$T(n) = O(n^2)$$
+
+\subsubsection*{Master Theorem}
+
+Let $a = 1$, $b = 2$, and d = 2. We can rewrite $T(n)$ as
+$$T(n) = aT\left(\frac{n}{b}\right) + O(n^d)$$
+
+Note that $d = 2 > log_b(a) = 0$. Therefore, by the Master Theorem,
+$$T(n) = O(n^2)$$
+
+\subsubsection{Q11c.}
+
+$$T(n) = T(n - 2) + O(1)$$
+
+\subsubsection*{Tree Method}
+
+$$\frac{n}{2}\text{ occurences} \begin{cases}
+    O(1)  \\
+    O(1)  \\
+    \vdots \\
+    O(1)  \\
+    O(1)  \\
+\end{cases}$$
+
+Thus,
+$$T(n) = O(n)$$
+
+\subsubsection*{Master Theorem}
+$T$ cannot be written in the form of 
+
+$$T(n) = aT\left(\frac{n}{b}\right) + O(n^d)$$
+
+because what should be its $\frac{n}{b}$ term is of the form $n - 2$. Therefore, the Master Theorem is not applicable here.
+
+\end{document}

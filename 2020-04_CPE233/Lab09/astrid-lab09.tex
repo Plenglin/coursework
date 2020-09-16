@@ -1,0 +1,191 @@
+\documentclass{article}
+\usepackage{pdflscape}
+\usepackage[margin=1in]{geometry}
+\usepackage{verbatim}
+\usepackage{graphicx, float}
+\usepackage{makecell}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{siunitx}
+\usepackage{outlines}
+\usepackage{amssymb}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{pdfpages}
+\usepackage{listings}
+\usepackage{listings-ext}
+\usepackage{hyperref}
+
+
+\author{Astrid Augusta Yu}
+\title{CPE 233 Lab \#9 -- Timer-Counter}
+\date{\today}
+
+\DeclareMathOperator\ssdisplays{displays}
+\DeclareMathOperator\ssdisplay{display}
+\DeclareMathOperator\ssdigits{digits}
+\DeclareMathOperator\ssdigit{digit}
+
+\DeclareMathOperator\bit{bit}
+\DeclareMathOperator\byte{byte}
+\DeclareMathOperator\word{word}
+
+\lstset{basicstyle=\ttfamily,columns=fullflexible}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Questions}
+
+\begin{outline}[enumerate]
+    \1 \textbf{Briefly describe why it is “more efficient” to use a timer-counter peripheral to blink an LED than to use a dumb loop (delay loop) to blink an LED.   
+    }
+    
+    It is more efficient because the CPU could be doing other things instead of blinking the LED. Additionally, it would be more accurate because the counter is independent from the CPU's execution, which is not always predictable.
+
+    \1 \textbf{Examine the Verilog model for the timer-counter and briefly but completely describe how it operates. Be sure to mention both the counter portion as well as the pre-scaler. } 
+    
+        \2 Every clock cycle it increments its 4-bit prescaler counter, r\_ps\_count. 
+        \2 When that overflows, it starts incrementing its 32-bit counter, r\_counter32b. 
+        \2 When that reaches the target number stored in tc\_cnt\_in, it resets the counter and raises s\_pulse. 
+        \2 A shift register-based pulse extender, pos\_pulse\_reg is used to extend that single-cycle s\_pulse to 3 clock cycles. The result of that pulse extension is the output.
+
+    \1 \textbf{If you configured the timer-counter to generate an interrupt on the RISC-V MCU every 10ms, what is the highest frequency blink rate of an LED using that interrupt? Briefly explain your answer.}
+    
+    Assuming a 50\% duty cycle made by inverting the LED's on state every interrupt, a single blink period is 2 interrupt pulses. Thus, it is $2 \cdot 10 \si{\milli\second} = 20 \si{\milli\second}$. Therefore, the maximum frequency would be $f =  \frac{1}{20 \si{\milli\second}} = 50\si{Hz}$. 
+
+    \1 \textbf{Briefly but completely explain how using the “clock prescaler” will prevent the firmware programmer from blinking the LED at all possible frequencies lower than the system clock frequency. For this problem, assume the timer-counter module uses the system clock.  }
+    
+    The clock prescaler effectively acts like a clock divider for the system clock (we'll call the frequency $f$). If the prescaler is set to 2, then the new maximum clock frequency becomes $\frac{f}{2}$ and values above that are impossible to reach without readjusting the prescaler.
+
+    \1 \textbf{Changing frequencies of the timer-counter can possibly create a timing error for one clock period. Briefly describe what causes this one hiccup. }
+    
+    On the clock cycle that the TC is being written to, its internal counter gets reset to 0. Thus, the TC misses the pulse of the last frequency it was set to.
+
+    \1 \textbf{The timer-counter provided for this experiment provided a means to easily blink an LED with a 50\% duty cycle. Using the RISC-V MCU and the timer-counter, there is a programming ``overhead'' associated with blinking the LED at an exact frequency if the duty cycle is not 50\%. Briefly describe how and when this overhead can interfere with the frequency output of the blinking LED.}
+    
+    The overhead would basically be in calculating the state of the PWM output. Changing the frequency of the timer-counter causes a timing error, so the actual PWM frequency may be greater than the expected frequency.
+
+    \1 \textbf{Briefly describe how you would use the timer-counter module to “time” the length of time a given signal is asserted.  }
+    
+    The timer-counter/ISR needs to be enabled on or before the positive edge of the signal. Then, in the ISR, on every timer-counter interrupt:
+        \2 Check if the signal is asserted
+            \3 If it is, increment a counter that tracks about how long it's been
+            \3 Otherwise, a negative edge has been detected. Disable the ISR.
+    The value of the counter will be proportional to the width of the signal pulse.
+    
+    \1 \textbf{If you tied the output of the timer-counter to a debounce and the output of the debounce to the ISR input of the RISC-V MCU, would you be able to generate an interrupt? Briefly explain your answer. }
+
+    It would depend on the length of the pulse width that the timer-counter is configured to. However, in most cases, you cannot generate an interrupt this way because the debounce is a low-pass filter that removes short-width signals, while the timer-counter outputs a 2-tick signal that is too short, and gets filtered out by the debounce.
+
+\end{outline}
+
+\pagebreak
+
+\section{Programming Assignment}
+\textbf{Write an interrupt driven RISC-V MCU assembly language program that does the following. The program outputs the largest of the three most recent values that were on the switches when the RISC-V MCU received an interrupt to the LEDs. Assume there are eight LEDs and eight switches. Interpret the eight-bit switch values are an unsigned binary number.}
+
+\lstinputlisting{pg.asm}
+\pagebreak
+
+\section{Hardware Assignment}
+
+\textbf{You want to add the following instruction to the RISC-V OTTER MCU. This is a conditional return from subroutine problem when the instruction takes the return if the value in rs2 is non-zero; otherwise, the instruction has not affect other than to change the PC. }
+
+\begin{verbatim}
+    jalrc rs2,rs1,imm  # jump if rs2 is non-zero, rs1 & imm same as jalr
+\end{verbatim}
+
+\begin{enumerate}[label={\alph*.}]
+
+    \item I would reuse the opcode and format of JALR for this operation, but instead of func3 = 000, JALRC would have a unique func3 (I will use 001 here).
+    
+    Additionally, I would add a ``JALR condition generator'' module to differentiate between the behaviors of JALR and JALRC while preserving generally the same structure inside the FSM. 
+    
+    It has inputs \texttt{func3} and \texttt{rs2} as well as outputs \texttt{in\_jalr} (asserted only when we are executing JALR) and \texttt{jalr\_mask} (asserted only when we are executing JALR or when JALRC's condition is true). The following truth table describes its behavior:
+    \begin{table}[ht]
+        \centering
+        \begin{tabular}{c | c || c | c}
+            func3 & rs2 $\neq 0$ & in\_jalr & jalr\_mask \\ 
+            \hline
+            000 (jalr)  & T & T & T \\
+            000 (jalr)  & F & T & T \\
+            001 (jalrc) & T & F & T \\
+            001 (jalrc) & F & F & F \\
+        \end{tabular}
+    \end{table}
+
+    It can be implemented in Verilog like so:
+    \begin{verbatim}
+    in_jalr = func3 == 000;
+    jalr_mask = in_jalr | (rs2 != 0);
+    \end{verbatim}
+
+    The CU\_FSM will be modified to accept the new signals as follows:
+    \begin{verbatim}
+    case (PS)
+        st_EX: begin
+            pcWrite = 1;
+            case (OPCODE)
+                JALR: begin
+    >               regWrite = in_jalr; 
+        ...
+    \end{verbatim}
+
+    In addition, the decoder would need to be modified as follows:
+    \begin{verbatim}
+    case (opcode) 
+        ...
+        JALR: begin 
+            rf_wr_sel = 2'd0;   // next pc
+    >       pcSource = jalr_mask
+    >           ? 3'd1       // jalr
+    >           : 3'd0       // pc_inc
+        end 
+        ...
+    \end{verbatim}
+
+    \item The assembler would need to be modified to support jalrc and any pseudoinstructions using it, but fundamentally, not much else.
+    
+    \item There wouldn't be any additional memory requirements or registers associated with this modifciation.
+
+    \item This operation can be very useful because it effectively combines two instructions into one. Using the base instruction set, this instruction can be implemented by 
+    \begin{verbatim}
+        beq x0, [rs2], notZero    # Skip over the next instruction
+        jalr [rs1], [imm]
+    notZero:
+    \end{verbatim}
+
+    This kind of construct can be used in situations where the 
+
+\end{enumerate}
+
+\pagebreak
+
+\section{Assembly Code}
+
+\lstinputlisting{otter-e9.asm}
+
+\pagebreak
+
+\section{Timer-counter Calculations}
+
+We have the following assumptions:
+
+\begin{enumerate}
+    \item The timer-counter is running at 50 MHz.
+    \item Every interrupt will increment the digit counter. 
+    \item We want to draw at least 200 frames per second.
+    \item Due to a bug that is ``fixed'' by a workaround in the program, there are actually 5 virtual digits that the program iterates through. However, only digits 0-3 actually display stuff, and digit 4 does not.
+\end{enumerate}
+
+Thus, the value for the timer-counter should be less than:
+\begin{equation}
+    \begin{aligned}
+        \frac{50\times 10^6\ \text{clock}}{\si{\second}} \cdot \frac{\si{\second}}{200 \ssdisplays} \cdot \frac{\ssdisplay}{5 \ssdigits} = 50000\ \text{clock}
+    \end{aligned}
+\end{equation}
+
+\end{document}

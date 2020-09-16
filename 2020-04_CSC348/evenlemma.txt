@@ -1,0 +1,99 @@
+
+        First, let us additionally define the following lemma:
+
+        \begin{lemma}
+            \label{thm:evenlemma}
+            Let $a, b \in \mathbb{Z}$. $a + b$ is even if and only if $a$ and $b$ have 
+            the same parity.
+        \end{lemma}
+            
+        \begin{proof}
+            \begin{case}
+                $a$ and $b$ are both even.
+
+                By definition of even:
+                \begin{equation}
+                    \begin{aligned}
+                        a &= 2k \\ 
+                        b &= 2l
+                    \end{aligned}
+                \end{equation}
+
+                Therefore,
+                \begin{equation}
+                    a + b = 2k + 2l = 2(k + l)
+                \end{equation}
+
+                Let $m = k + l$. Then
+                \begin{equation}
+                    a + b = 2m
+                \end{equation}
+
+                By definition of even, $a + b$ is even.  
+            \end{case}
+            
+            \begin{case}
+                $a$ and $b$ are both odd.
+
+                By definition of odd:
+                \begin{equation}
+                    \begin{aligned}
+                        a &= 2k + 1 \\
+                        b &= 2l + 1
+                    \end{aligned}
+                \end{equation}
+
+                Therefore, 
+                \begin{equation}
+                    a + b = 2k + 1 + 2l + 1 = 2(k + l + 1)
+                \end{equation}
+
+                Let $m = k + l + 1$. Then,
+                \begin{equation}
+                    a + b = 2m
+                \end{equation}
+
+                By definition of even, a + b is even.
+            \end{case}
+
+            \begin{case}
+                $a$ and $b$ have different parity. WLOG let $a$ be even and $b$ be odd.
+
+                By definition of even:
+                \begin{equation}
+                    a = 2k
+                \end{equation}
+
+                By definition of odd:
+                \begin{equation}
+                    b = 2l + 1
+                \end{equation}
+
+                Therefore,
+                \begin{equation}
+                    a + b = 2k + 2l + 1 = 2(k + l) + 1
+                \end{equation}
+
+                Let $m = k + l$. Then,
+                \begin{equation}
+                    a + b = 2m + 1
+                \end{equation}
+
+                By definition of odd, a + b is odd.
+            \end{case}
+
+            In summary:
+
+            \begin{center}
+                \begin{tabular}{c c | c}
+                    $a$ parity & $b$ parity & $a + b$ parity \\
+                    \hline
+                    even & even & even \\ 
+                    even & odd & odd \\ 
+                    odd & even & odd \\ 
+                    odd & odd & even
+                \end{tabular}
+            \end{center}
+
+            Therefore, $a + b$ is only even when a's parity = b's parity, concluding the lemma.
+        \end{proof}

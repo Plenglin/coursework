@@ -1,0 +1,43 @@
+\documentclass[12pt]{article}
+
+\usepackage{verbatim}
+\usepackage{graphicx, float}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{bookmark}
+\usepackage{pdflscape}
+\usepackage{multirow}
+\usepackage{hyperref}
+
+\DeclareMathOperator{\V}{V}
+\DeclareMathOperator{\A}{A}
+\DeclareMathOperator{\F}{F}
+\DeclareMathOperator{\mA}{mA}
+\DeclareMathOperator{\mW}{mW}
+\DeclareMathOperator\bit{bit}
+\DeclareMathOperator\byte{byte}
+\DeclareMathOperator\word{word}
+
+\author{Astrid Yu}
+\title{Exp \#7 Prelab}
+
+\begin{document}
+\maketitle
+
+\begin{enumerate}
+    \item $V_p = V_1$ because the op-amp is in a feedback loop. 
+    
+    \item The current flowing through the $V_1$ node is given by the following expression:
+    $$\frac{-V_1}{820\Omega} + 0A + I_{load} = 0$$
+    Therefore, 
+    $$I_{load} = \frac{V_1}{820\Omega}$$
+    
+    \item The sensor voltage $V_s$ is expressed by
+    $$V_s = I_{load}\cdot R_{sensor} = V_1 \cdot \frac{R_{sensor}}{820\Omega}$$
+    
+    \item $$A_0 = V_1 \cdot \frac{R_{sensor}}{820\Omega} + V_1 = V_1 \cdot \left(1 + \frac{R_{sensor}}{820\Omega}\right)$$
+    $$R_{sensor} = 820\Omega\cdot\left(\frac{A_0}{V_1} - 1\right)$$
+
+\end{enumerate}
+
+\end{document}

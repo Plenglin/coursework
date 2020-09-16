@@ -1,0 +1,57 @@
+    % \begin{proof}
+    %     We can assume that on average, a single stack frame of Map runs in $d$ time. We will proceed by induction over $n$, the size of $A$.
+
+    %     \begin{claim}
+    %         For Map, $T(n) = d\cdot(n+1)$
+    %     \end{claim}
+
+    %     \textbf{Base case.} Suppose $n = 0$. The algorithm starts on line 1 and passes the check since $n = 0 = 0$. We proceed to line 2.
+
+    %     On line 2 we return a value. Thus, it took $d$ seconds, which is equal to $d \cdot (0 + 1)$.
+
+    %     \textbf{Inductive hypothesis.} For some value $k \in \mathbb{N}$, $T(k) = d\cdot(k+1)$.
+
+    %     \textbf{Inductive step.} Suppose $A$ is a size $k + 1$ list. Consider $Map(A)$. 
+
+    %     The algorithm starts on line 1 and checks $k + 1 = 0$. If this were true, then $k = -1$, which can never happen because $k \in \mathbb{N}$. Thus, we fail and continue to line 4 via else.
+
+    %     On line 4, we execute $Map(f, (a_1 \dots a_{k}))$, which by the induction hypothesis, runs in $T(k) = d \cdot (k + 1)$ time. Then, it appends to the list, an $O(1)$ operation, and returns. Thus, we just undergone another $d$-duration cycle of Map. So, 
+    %     $$T(k + 1) = d \cdot (k + 1) + d = d \cdot (k + 2)$$
+
+    %     Thus, $T(n)$ for Map is $T(n) = d \cdot (n + 1)$.
+
+    %     Note that $O(T(n)) = O(d \cdot (n + 1)) = O(n)$.
+    % \end{proof}
+
+\begin{lemma}
+    Suppose $R$ is a foreach algorithm with base case $n_0$. If $A$ is a $n$-element sequence such that $n \geq n_0$ and $d$ is the average execution time of a single frame of $R$, then the execution time of $R(A)$ executes in $O(n)$ time.
+    $$T(n) = d \cdot (n - n_0 + 1)$$
+    \label{lem:foreach}
+
+    \begin{proof}
+        We will proceed by induction over the size of $n$.
+
+        \textbf{Base case.} Suppose $n = n_0$. By definition of a foreach algorithm, it will pass its $n = n_0$ check and terminate. The execution time of this was $d$. This is equal to 
+        $$T(n_0) = d \cdot (n_0 - n_0 + 1) = d$$. 
+
+        \textbf{Inductive hypothesis.} Suppose that for all $k$-element sequences $A$, the execution time of $R(A)$ is $T(k) = d \cdot (k - n_0 + 1)$.
+
+        \textbf{Induction step.} Suppose $A$ is a size $k + 1$ sequence. Consider $R(A)$. 
+
+        By definition of a foreach algorithm, it will first check that $k + 1 = n_0$. If this were true, then $k = n_0 - 1$, which can never happen because $k \geq n_0$. Thus, we fail this check and continue to the rest of the branches.
+
+        By definition of a foreach algorithm, it will perform a O(1) operation and call $R$ on a $k$-element list, then terminate. Thus, we have just executed another $d$-duration frame of $R$. The execution time for a $k + 1$ element sequence is therefore 
+        $$T(k + 1) = T(k) + d$$
+
+        By the inductive hypothesis, 
+        \begin{equation*}
+            \begin{aligned}
+                T(k + 1) &= d \cdot (k - n_0 + 1) + d \\
+                \ &= d \cdot ((k + 1) - n_0 + 1)
+            \end{aligned}
+        \end{equation*}
+        
+        Therefore, $T(n) = d \cdot (n - n_0 + 1)$.
+    \end{proof}
+    
+\end{lemma}
