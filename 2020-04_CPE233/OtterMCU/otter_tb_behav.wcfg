@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="otter_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="otter_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="1000fs"></ZoomStartTime>
+      <ZoomEndTime time="14181001fs"></ZoomEndTime>
+      <Cursor1Time time="3881000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="166"></NameColumnWidth>
+      <ValueColumnWidth column_width="92"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="10" />
+   <wvobject type="group" fp_name="group171">
+      <obj_property name="label">Externals</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/buttons">
+         <obj_property name="ElementShortName">buttons[4:0]</obj_property>
+         <obj_property name="ObjectShortName">buttons[4:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/switches">
+         <obj_property name="ElementShortName">switches[15:0]</obj_property>
+         <obj_property name="ObjectShortName">switches[15:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/leds">
+         <obj_property name="ElementShortName">leds[15:0]</obj_property>
+         <obj_property name="ObjectShortName">leds[15:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/segs">
+         <obj_property name="ElementShortName">segs[7:0]</obj_property>
+         <obj_property name="ObjectShortName">segs[7:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/an">
+         <obj_property name="ElementShortName">an[3:0]</obj_property>
+         <obj_property name="ObjectShortName">an[3:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group84">
+      <obj_property name="label">IO Bus</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/iobus_addr">
+         <obj_property name="ElementShortName">iobus_addr[31:0]</obj_property>
+         <obj_property name="ObjectShortName">iobus_addr[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/iobus_in">
+         <obj_property name="ElementShortName">iobus_in[31:0]</obj_property>
+         <obj_property name="ObjectShortName">iobus_in[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/iobus_wr">
+         <obj_property name="ElementShortName">iobus_wr</obj_property>
+         <obj_property name="ObjectShortName">iobus_wr</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/iobus_out">
+         <obj_property name="ElementShortName">iobus_out[31:0]</obj_property>
+         <obj_property name="ObjectShortName">iobus_out[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group85">
+      <obj_property name="label">Memory</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/mem/MEM_ADDR2">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">MEM_ADDR2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">MEM_ADDR2[31:0]</obj_property>
+         <obj_property name="label">ADDR2</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/mem_we2">
+         <obj_property name="ElementShortName">mem_we2</obj_property>
+         <obj_property name="ObjectShortName">mem_we2</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/mem/weAddrValid">
+         <obj_property name="ElementShortName">weAddrValid</obj_property>
+         <obj_property name="ObjectShortName">weAddrValid</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/mem/MEM_DIN2">
+         <obj_property name="ElementShortName">MEM_DIN2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">MEM_DIN2[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/mem/MEM_DOUT2">
+         <obj_property name="ElementShortName">MEM_DOUT2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">MEM_DOUT2[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/mem_rden2">
+         <obj_property name="ElementShortName">mem_rden2</obj_property>
+         <obj_property name="ObjectShortName">mem_rden2</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/ir">
+         <obj_property name="ElementShortName">ir[31:0]</obj_property>
+         <obj_property name="ObjectShortName">ir[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group86">
+      <obj_property name="label">CU</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/fsm/PS">
+         <obj_property name="ElementShortName">PS[2:0]</obj_property>
+         <obj_property name="ObjectShortName">PS[2:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/cu_dcdr/opcode">
+         <obj_property name="ElementShortName">opcode[6:0]</obj_property>
+         <obj_property name="ObjectShortName">opcode[6:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/cu_dcdr/OPCODE">
+         <obj_property name="ElementShortName">OPCODE[6:0]</obj_property>
+         <obj_property name="ObjectShortName">OPCODE[6:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/cu_dcdr/FUNC3">
+         <obj_property name="ElementShortName">FUNC3[2:0]</obj_property>
+         <obj_property name="ObjectShortName">FUNC3[2:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/cu_dcdr/branch_cond">
+         <obj_property name="ElementShortName">branch_cond</obj_property>
+         <obj_property name="ObjectShortName">branch_cond</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/fsm/int_taken">
+         <obj_property name="ElementShortName">int_taken</obj_property>
+         <obj_property name="ObjectShortName">int_taken</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/cu_dcdr/func3">
+         <obj_property name="ElementShortName">func3[2:0]</obj_property>
+         <obj_property name="ObjectShortName">func3[2:0]</obj_property>
+         <obj_property name="Radix">BINARYRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu/alu_fun">
+         <obj_property name="ElementShortName">alu_fun[3:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_fun[3:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group95">
+      <obj_property name="label">PC</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/reg_file[1]">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[1][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][31:0]</obj_property>
+         <obj_property name="label">ra</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/pc_source">
+         <obj_property name="ElementShortName">pc_source[2:0]</obj_property>
+         <obj_property name="ObjectShortName">pc_source[2:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/pc_write">
+         <obj_property name="ElementShortName">pc_write</obj_property>
+         <obj_property name="ObjectShortName">pc_write</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/pc">
+         <obj_property name="ElementShortName">pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">pc[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/pc">
+         <obj_property name="ElementShortName">pc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">pc[31:0]</obj_property>
+         <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+         <obj_property name="CellHeight">100</obj_property>
+         <obj_property name="AnalogYRangeType">ANALOG_YRANGETYPE_FIXED</obj_property>
+         <obj_property name="AnalogYRangeMin">0.000000</obj_property>
+         <obj_property name="AnalogYRRangeMax">1000.000000</obj_property>
+         <obj_property name="AnalogInterpolation">ANALOG_INTERPOLATION_LINEAR</obj_property>
+         <obj_property name="AnalogOffscale">ANALOG_OFFSCALE_HIDE</obj_property>
+         <obj_property name="AnalogHorizLine">0.000000</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/pc_inc">
+         <obj_property name="ElementShortName">pc_inc[31:0]</obj_property>
+         <obj_property name="ObjectShortName">pc_inc[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/prog_counter/next">
+         <obj_property name="ElementShortName">next[31:0]</obj_property>
+         <obj_property name="ObjectShortName">next[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group42">
+      <obj_property name="label">BranchCondGen</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/bcg/rs1">
+         <obj_property name="ElementShortName">rs1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">rs1[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/bcg/rs2">
+         <obj_property name="ElementShortName">rs2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">rs2[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/bcg/br_eq">
+         <obj_property name="ElementShortName">br_eq</obj_property>
+         <obj_property name="ObjectShortName">br_eq</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/bcg/br_lt">
+         <obj_property name="ElementShortName">br_lt</obj_property>
+         <obj_property name="ObjectShortName">br_lt</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/bcg/br_ltu">
+         <obj_property name="ElementShortName">br_ltu</obj_property>
+         <obj_property name="ObjectShortName">br_ltu</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group226">
+      <obj_property name="label">Immediate</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/imd/b_type_imm">
+         <obj_property name="ElementShortName">b_type_imm[31:0]</obj_property>
+         <obj_property name="ObjectShortName">b_type_imm[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/imd/j_type_imm">
+         <obj_property name="ElementShortName">j_type_imm[31:0]</obj_property>
+         <obj_property name="ObjectShortName">j_type_imm[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/imd/i_type_imm">
+         <obj_property name="ElementShortName">i_type_imm[31:0]</obj_property>
+         <obj_property name="ObjectShortName">i_type_imm[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/imd/s_type_imm">
+         <obj_property name="ElementShortName">s_type_imm[31:0]</obj_property>
+         <obj_property name="ObjectShortName">s_type_imm[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/imd/u_type_imm">
+         <obj_property name="ElementShortName">u_type_imm[31:0]</obj_property>
+         <obj_property name="ObjectShortName">u_type_imm[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group135">
+      <obj_property name="label">Registers</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/fsm/regWrite">
+         <obj_property name="ElementShortName">regWrite</obj_property>
+         <obj_property name="ObjectShortName">regWrite</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/rf_wr_sel">
+         <obj_property name="ElementShortName">rf_wr_sel[1:0]</obj_property>
+         <obj_property name="ObjectShortName">rf_wr_sel[1:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/rs1">
+         <obj_property name="ElementShortName">rs1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">rs1[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/rs2">
+         <obj_property name="ElementShortName">rs2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">rs2[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/adr1">
+         <obj_property name="ElementShortName">adr1[4:0]</obj_property>
+         <obj_property name="ObjectShortName">adr1[4:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/adr2">
+         <obj_property name="ElementShortName">adr2[4:0]</obj_property>
+         <obj_property name="ObjectShortName">adr2[4:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/wa">
+         <obj_property name="ElementShortName">wa[4:0]</obj_property>
+         <obj_property name="ObjectShortName">wa[4:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/reg_wd">
+         <obj_property name="ElementShortName">reg_wd[31:0]</obj_property>
+         <obj_property name="ObjectShortName">reg_wd[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/reg_file[1]">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[1][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][31:0]</obj_property>
+         <obj_property name="label">ra</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/reg_file[2]">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][31:0]</obj_property>
+         <obj_property name="label">sp</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/regfile/reg_file">
+         <obj_property name="ElementShortName">reg_file[0:31][31:0]</obj_property>
+         <obj_property name="ObjectShortName">reg_file[0:31][31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group328">
+      <obj_property name="label">CSR</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/csr/CSR_MIE">
+         <obj_property name="ElementShortName">CSR_MIE</obj_property>
+         <obj_property name="ObjectShortName">CSR_MIE</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/csr/CSR_MEPC">
+         <obj_property name="ElementShortName">CSR_MEPC[31:0]</obj_property>
+         <obj_property name="ObjectShortName">CSR_MEPC[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/csr/CSR_MTVEC">
+         <obj_property name="ElementShortName">CSR_MTVEC[31:0]</obj_property>
+         <obj_property name="ObjectShortName">CSR_MTVEC[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group211">
+      <obj_property name="label">ALU</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_fun">
+         <obj_property name="ElementShortName">alu_fun[3:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_fun[3:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/otter_tb/my_otter/alu_src_a">
+         <obj_property name="ElementShortName">alu_src_a</obj_property>
+         <obj_property name="ObjectShortName">alu_src_a</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_src_a_data">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">alu_src_a_data[31:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_src_a_data[31:0]</obj_property>
+         <obj_property name="label">data1</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_src_b_data">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">alu_src_b_data[31:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_src_b_data[31:0]</obj_property>
+         <obj_property name="label">data2</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/otter_tb/my_otter/alu_result">
+         <obj_property name="ElementShortName">alu_result[31:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_result[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>
