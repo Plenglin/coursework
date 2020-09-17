@@ -1,64 +1,214 @@
-\chapter{Simple Harmonic Motion}
+\chapter{Week 1}
 
-Book chapter 17
+\section{9/14 -- Hour 1}
 
-\section{2020-09-15}
+\subsection{Writing Prompt: Define "technical communication" in your own words.}
 
-\subsection{Introduction}
+Technical means it's precise and descriptive, and communication means it's a way of getting ideas across. So, technical communication is essentially a broad term that describes various kinds of techniques used to communicate an idea in a field that requires it.
+  
+\subsection{Weekly Deliverables}
 
-\subsubsection{Every week}
-
-\begin{itemize}
-    \item Videos
-    \item Meet Tuesday to discuss videos (synchronous part)
-    \item Thursday is extended office hours
-    \item Lab due Friday
-    \item No midterms, but presentations
-\end{itemize}
-
-\subsubsection{Presentations}
+Everything due by 9pm Friday
 
 \begin{itemize}
-    \item Present in groups of 3 or 4, shuffled
+    \item Discussion posts and replies
+    \item Assignments via PDF uploads
+    \item Quizzes
 \end{itemize}
 
-\subsubsection{Environments to set up}
+Also, 3 projects.
 
-\begin{itemize}
-    \item OpenGL Libraries
-    \item Compute shaders not allowed on Mac?
-    \item Windows - Use Visual Studio
-    \item Linux - Ask Sydney
-\end{itemize}
-
-\subsection{Lecture}
-
-\subsubsection{3D Graphics}
+\subsection{Technical communication}
 
 \begin{outline}
-    \1 How to store 3D stuff?
-        \2 Things are completely hollow
-        \2 Surface is triangles. 3 points = a plane. 4 points = saddle
-        \2 The 3D modeler has given you the mesh already
-        \2 Easiest case: float triplets make a point, point triplets make a triangle
-    \1 Rendering a triangle?
-        \2 Screen has a fixed number of discrete pixels on a 2D screen
-        \2 2 coordinate systems: world (3D float) and screen (2D int). 
-        Matrix $\mathbf{M}$ such that $\mathbf{M}\vec{v_w} = \vec{v_s}$
-        \2 Triangle needs to get filled in
-    \1 Computation
-        \2 First 3D graphics were done on single-core CPUs and were slow and primitive. 
-        \2 Originally, CPU writes directly into VRAM that gets directly drawn to monitor, you see the image get drawn in front of you
-        \2 Double-buffering: 2 VRAM buffers, write to A, copy A to B when finished, render B
-        \2 Page-flipping: 2 VRAM buffers, write to A, render A and start writing to B, etc.
-        \2 The VRAM alone is the original "graphics card"
-        \2 Now, 150-250k triangles, offload them onto a highly parallel non-CPU processor (GPU), lots of tiny cores, bigger memory, store triangles and pictures on it
-        \2 VRAM closer to GPU = higher clock rates
-    \1 Shaders 
-        \2 Copy data from RAM into VRAM
-        \2 Write a shader to work on the memory (named so because it's often used for light calculations)
-        \2 Scientists and engineers write shaders for matrices. The course is graphics and simulations
-
+    \1 Exchange of information to accomplish some kind of technical goal
 \end{outline}
 
-\section{2020-09-16}
+\subsection{Nick Belling's video resume}
+
+\begin{itemize}
+    \item Entertaining and funny
+    \item Unique -- not many people use video resume
+    \item Special effects
+    \item Names the specific things he's done and what technology was used
+    \item Call to action at the end
+\end{itemize}
+
+Notes are writer-centric. We need to write in a reader-centric way.
+
+\begin{itemize}
+    \item Headings help organize
+    \item Indent B-level headings
+    \item Don't use dash as bullet point because of possible minus/negative impression
+\end{itemize}
+
+\subsection{Audience, Purpose, Context}
+
+Results of technical writers failing?
+
+\begin{itemize}
+    \item Death
+    \item Legal issues 
+    \item Sexual harrassment due to tone confusion
+    \item Financial cost
+\end{itemize}
+
+\section{9/14 -- Hour 2}
+
+\subsection{Writing prompt: ``The Importance of Writing in Tech-Related Fields.''}
+
+\subsubsection{How convinced are you that writing is as important as its proponents are saying?}
+
+I'm fairly convinced that writing is important from my own experience. My experience programming, both alone and on a team, has proven that to me. I've read tons and tons of poorly-documented libraries and code and I've had to piece together what it really means myself, and that's annoying. 
+
+At my internships, it's even more crucial. I've written lots and lots of reports of different sizes describing what I've done, what went wrong, etc.
+
+\subsubsection{What do you honestly believe you need to have or learn (i.e. what specific writing skills), if any, to succeed in this class and beyond as an engineer?}
+
+I feel like I could be a bit more concise with my language. In addition, I often ramble a bit too much, and my ideas can sometimes be a bit loosely organized.
+
+\begin{outline}
+    \1 Focus on the reader, not the writer 
+        \2 Think about children's picture books
+    \1 Document must be efficient and accessible
+        \2 No extraneous information
+        \2 Link to extra information
+    \1 Clear and relevant writing
+\end{outline}
+
+\subsubsection{Primary purposes of technical communication}
+
+\begin{outline}
+    \1 Informational
+        \2 Objective, static, convey information. 
+        \2 No subjectivity
+        \2 Example: Report cards
+        \2 Answer ``who,'' ``what,'' ``when,'' ``where''
+    \1 Instructional    
+        \2 How to enroll in a class 
+        \2 Typically in steps
+        \2 Dynamic
+        \2 Answer ``how''
+    \1 Persuasive
+        \2 Subjectivity
+        \2 All documents are at least in part persuasive
+        \2 Answer ``why''
+\end{outline}
+
+\subsubsection{Additional concepts}
+
+Technical communication is\dots
+
+\begin{outline}
+    \1 Global
+        \2 $\$41 = 41,000$ KRW
+        \2 Consider ettiquite, avoiding offending others. Good ideas can get shrouded in local customs
+    \1 Collaborative
+        \2 Good group work happens when people communicate well
+    \1 Digital
+        \2 Some places, paper is necessary
+        \2 Otherwise, PDFs are standard
+\end{outline}
+
+Audience, purpose, context
+
+\section{9/16 -- Hour 3}
+
+\subsection{Usable documents}
+
+\begin{outline}
+    \1 Locate the information they need easily
+    \1 Understand the information immediately
+    \1 Use the information safely and successfully
+        \2 Safety warnings at the right location
+\end{outline}
+
+Who matters most? The audience. We use audience analysis
+
+\subsection{Audience Analysis}
+
+\begin{outline}
+    \1 Who is the main audience for this document? (primary audience)
+    \1 Who else is likely to read it? (secondary audiences)
+    \1 What is the writer's relationship with the audience? Are there multiple types of relationships involved? (to be further discussed below; power connection, relationship connection, rational connection, something else?)
+        \2 Build a relationship with them
+        \2 Leverage existing relationships
+    \1 How familiar might the audience be with technical details? (demographics, features, skills, needs, etc.)
+    \1 What culture or cultures does your audience represent? (demographics, features, skills, needs, etc.)
+\end{outline}
+
+\subsection{Assignment 1}
+
+Take the technical instructions and do an analysis of it (\href{https://canvas.calpoly.edu/courses/26844/pages/class-1-dot-2-w-9-slash-16-hours-3-4?module_item_id=695646}{instructions})
+
+\begin{outline}
+    \1 Audience analysis 
+        \2 Secondary audiences
+            \3 the others who might be involved in this besides the user
+            \3 Legal departments, safety 
+        \2 Characteristics 
+            \3 Possible stereotyping, but ah well
+        \2 Skillset
+    \1 Purpose analysis, should be instructional
+    \1 Context analysis 
+        \2 What environment is it in? What external factors for the product?
+        \2 Big picture: current events? Season of the year?
+        \2 Scrutinized (i.e. Barbie)?
+        \2 Usability (i.e. e-books need clickability/hyperlinking)
+\end{outline}
+
+\subsection{Types of Audience Connections}
+
+\begin{outline}
+    \1 Power 
+        \2 ``Because I said so''
+        \2 Boss/employee, parent/child 
+        \2 Not nice for low-stakes stuff, rarely good
+        \2 First-responder connections are better for this (``get out immediately'')
+    \1 Relationship 
+        \2 ``Because I'd appreciate it'
+        \2 Family, friend, spouse, cross-cultural
+        \2 Favors
+    \1 Rational 
+        \2 ``Because it makes sense''
+        \2 Usually the best approach
+\end{outline}
+
+\section{9/16 -- Hour 4}
+
+\begin{enumerate}
+    \item Primary: The students. \st{Secondary: employers, people related to students?} Secondary: Prof. Green, possibly graders, his colleagues, his boss if he had one
+    \item Informational, some instructional
+    \item Remote classroom context, over Zoom, required, low-morale engineering students
+    \item Rational most of the time 
+    \item Mostly usable with bolded headings and such. Could be better with larger headlines. Async class: it's usable because it's there all the time
+\end{enumerate}
+
+\subsection{Consider your context}
+
+\begin{outline}
+    \1 Formal, semi-formal, informal 
+    \1 Based on the audience 
+    \1 What's going on in the world?
+        \2 BLM 
+        \2 \#MeToo (no longer used)
+        \2 People's gender (professor says trans rights)
+\end{outline}
+
+\subsection{CDC}
+\begin{outline}
+    \1 Different languages 
+    \1 Suggestion: dynamic visual
+    \1 Bullets not good for instructions. Numbers are.
+\end{outline}
+
+\subsection{Final thoughts}
+
+\begin{outline}
+    \1 Context
+        \2 Length should be approrpiate 
+        \2 Budget for the user and for the printer
+    \1 Purpose statement 
+        \2 Write for high-stakes things 
+\end{outline}
+

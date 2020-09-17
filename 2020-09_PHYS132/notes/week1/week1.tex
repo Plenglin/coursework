@@ -21,20 +21,19 @@ Book chapter 17
     \item If graph repeats, it's oscillatory motion. If position = sinusoidal, then it's SHM. 
 \end{itemize}
 
-\begin{figure}[]
+\begin{figure}
     \centering
     \includesvg{week1/spring.svg}
     \caption{Spring}
 \end{figure}
 
-\begin{figure}[]
+\begin{figure}
     \centering
     
     $$x(t) = Acos(\omega t + \phi_0)$$
     $$\omega = 2 \pi f$$
     
     \caption{Equations for SHM}
-    \label{}
 \end{figure}
 
 \begin{itemize}
@@ -45,6 +44,62 @@ Book chapter 17
 
 \begin{itemize}
     \item Drew (EE)
-    \item i forgot before the thing cut off (ME)
-    \item Me (CS)
+    \item Kishor (ME)
+    \item Astrid (CS)
 \end{itemize}
+
+\section{2020-09-16}
+
+\begin{itemize}
+    \item Object always goes around equilibrium point
+    \item Linear restoring force
+\end{itemize}
+
+2 main prototypes of SHM:
+\begin{outline}
+    \1 Mass on a spring without any friction. (With friction = damped oscillation)
+    \1 Pendulum
+        \2 Generally not SHM, but for small displacement angles, it is approximately linear and SHM
+\end{outline}
+
+$$\vv{F}_{spring} = -k\vv{x}$$
+
+where $\vv{x} = $ displacement, $\vv{F}_{spring} = $ spring force, and $\vv{k} = $ spring constant.
+
+\textbf{$\vv{F}_{spring}$ is a linear force.}
+
+Motion equations:
+
+$$x(t) = A\cos(\omega t)$$
+
+$$v(t) = \frac{d}{dt}x(t) = -\omega A \sin(\omega t)$$
+
+$$v_{max} = \omega A$$
+
+$\si{\radian}$ is not a physical unit. So, $\frac{\si{\radian}}{\si{\sec}} \cdot \si{\metre} = \frac{\si{\metre}}{\si{\sec}}$
+
+\begin{figure}
+    \centering
+    \includesvg{week1/shm-path.svg}
+    \caption{Position and velocity of a object experiencing SHM. They are $90^\circ$ out of phase. $|v| = v_{max}$ when $x = 0$, $v = 0$ when $|x| = A$}
+\end{figure}
+
+\subsubsection{Question}
+
+Mass on spring $20\si{\cm}$ right, released $t = 0\sec$, $15$ oscillations in $10\sec$
+
+\begin{enumerate}[a.]
+    \item $$T = \frac{10\sec}{15} = \frac{2}{3}\sec$$
+    \item $$\omega = \frac{2\pi}{T} = 3\pi$$
+    $$v_{max} = \omega \cdot A = 0.6\pi \si{\m\per\sec}$$
+    \item $$v(.8) = -1.78 \si{\cm\per\sec}$$
+    $$x(.8) = .0618\si{\m}$$
+\end{enumerate}
+
+\subsubsection{Pendulum}
+
+$$T = 2\pi \sqrt{\frac{L}{g}}$$
+
+$$T^2 = \left(\frac{4\pi^2}{g}\right)L$$
+
+$$T^2 \propto L$$
