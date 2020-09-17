@@ -12,9 +12,6 @@ void Body::add_satellite(Body *satellite) {
 void Body::update(float dt) {
     rotation_phase += rotation_velocity * dt;
     orbit_phase += orbit_velocity * dt;
-    for (auto s : satellites) {
-        s->update(dt);
-    }
 }
 
 Body::Body(float orbitVelocity, float orbitRadius, float rotationVelocity, float orbitPhase, float rotationPhase)
@@ -27,5 +24,12 @@ void Body::get_transform(glm::mat4 &mat) {
     glm::rotate(mat, rotation_phase, Z);
     glm::translate(mat, glm::vec3(orbit_radius, 0, 0));
     glm::rotate(mat, orbit_radius, Z);
+}
+
+void Body::foreach(const std::function<void(Body*)>& f) {
+    f(this);
+    for (auto s : satellites) {
+        s->foreach(f);
+    }
 }
 

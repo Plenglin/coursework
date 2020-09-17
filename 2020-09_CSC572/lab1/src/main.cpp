@@ -12,6 +12,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 
 #include "WindowManager.h"
 #include "Shape.h"
+#include "Body.h"
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -85,6 +86,18 @@ public:
 	//texture data
 	GLuint Texture;
 	GLuint Texture2,HeightTex;
+
+	Body sun;
+	Body earth;
+	Body moon;
+
+	Application()
+            : sun(0, 0, 0),
+            earth(0.5, 3, 20),
+            moon(10, 3, 10) {
+	    sun.add_satellite(&earth);
+	    earth.add_satellite(&moon);
+	}
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
@@ -392,6 +405,10 @@ public:
 		prog->bind();
 
 		V = mycam.process(frametime);
+
+		// Update the solar system. Only the root object needs to be updated.
+		sun.foreach([frametime](Body *b) { b->update((float) frametime); });
+
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
@@ -401,28 +418,14 @@ public:
 		glBindTexture(GL_TEXTURE_2D, Texture);
 		shape->draw(prog,false);
 
-		heightshader->bind();
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
 		M = TransY;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		
-		
+
 		vec3 offset = mycam.pos;
 		offset.y = 0;
 		offset.x = (int)offset.x;
 		offset.z = (int)offset.z;
-		glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
-		glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
-		glBindVertexArray(VertexArrayID);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, HeightTex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE*6, GL_UNSIGNED_SHORT, (void*)0);
 
 		heightshader->unbind();
 
