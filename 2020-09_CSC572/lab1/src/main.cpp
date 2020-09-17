@@ -93,8 +93,8 @@ public:
 
 	Application()
             : sun(0, 0, 0),
-            earth(40, 3, 0.1),
-            moon(50, 1, 1) {
+            earth(0.1, 7, 3),
+            moon(1, 2, 1) {
 	    sun.add_satellite(&earth);
 	    earth.add_satellite(&moon);
 	}
@@ -307,8 +307,7 @@ public:
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	}
+    }
 
 	//General OGL initialization - set OGL state here
 	void init(const std::string& resourceDirectory)
@@ -388,28 +387,23 @@ public:
 			}
 		// ...but we overwrite it (optional) with a perspective projection.
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
+        V = mycam.process(frametime);
 
+        // Set planet data
+        sun.texture = Texture;
+        sun.shape = shape;
+        earth.texture = Texture;
+        earth.shape = shape;
+        moon.texture = Texture;
+        moon.shape = shape;
 
         // Update the solar system. Only the root object needs to be updated.
         sun.update((float)frametime);
-        M = moon.transform;
 
-        // Draw the sphere using GLSL.
-		prog->bind();
-
-		V = mycam.process(frametime);
-
-		//send the matrices to the shaders
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		shape->draw(prog,false);
-
-		prog->unbind();
-
+        // Draw the planets!
+        sun.draw(prog, P, V, mycam.pos);
+        earth.draw(prog, P, V, mycam.pos);
+        moon.draw(prog, P, V, mycam.pos);
 	}
 
 };
