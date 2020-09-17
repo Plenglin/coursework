@@ -1,6 +1,4 @@
-\chapter{Simple Harmonic Motion}
-
-Book chapter 17
+\chapter{Week 1}
 
 \section{2020-09-15}
 
@@ -61,4 +59,95 @@ Book chapter 17
 
 \end{outline}
 
-\section{2020-09-16}
+\section{Video: Render Pipeline}
+
+\subsection{Render pipeline}
+
+Conceptually:
+
+\begin{enumerate}
+    \item Transform the original object
+    \item Convert 3D float to 2D int
+    \item Project to 2D
+\end{enumerate}
+
+On the GPU, this is:
+
+\begin{outline}[enumerate]
+    \1 Transform vertices (vertex processing)
+        \2 Take vertices (in triangles, sorted)
+        \2 Translated however you want
+    \1 Rasterization (automatic)
+        \2 Becomes 2D coordinates
+    \1 Pixel (fragment) processing
+        \2 For each triangle
+\end{outline}
+
+\subsection{How to the CPU tells the GPU to do it}
+
+\begin{outline}[enumerate]
+    \1 Initialize OpenGL
+    \1 Copy resources (models and textures) to VRAM
+        \2 Hard drive $\rightarrow$ CPU $\rightarrow$ VRAM $\rightarrow$ GPU
+    \1 Loop for every frame
+        \2 Clear background
+        \2 Select objects to display
+        \2 Activate vertex processing*
+        \2 Activate pixel (fragment) processing*
+        \2 Render it
+\end{outline}
+
+*shaders, written in GLSL
+
+The GPU cores are shader \textbf{units}. The programs are called \textbf{shaders}. They are executed on all cores, and tasks are automatically assigned.
+
+\section{Video: Windowed OS Programming}
+
+\begin{outline}
+    \1 Initialize 
+    \1 Loop
+        \2 Render/Update
+            \3 Try not to trap the program counter with a long loop! Put in another thread, or break up the function
+        \2 Event handling\footnote{These events come from some other process, and this process gets suspended due to preemptive multitasking}
+\end{outline}
+
+\section{Video: Program Structure}
+
+Most files are there for helpers (i.e. window manager)
+
+Functions of note:
+
+\begin{outline}
+    \1 \texttt{main}
+    \1 \texttt{Application::mouseCallback}, \texttt{Application::keyCallback}
+    \1 \texttt{Application::resizeCallback}
+\end{outline}
+
+OpenGL does all the communication with the GPU for us. Vulkan is \textit{supposed} to succeed it, Metal is for Apple
+
+\section{Video: Vertex Arrays and Buffers}
+
+\begin{outline}
+    \1 In OpenGL, we treat things on a scale of $[-1, 1]$
+    \1 Buffers
+        \2 Vertex Array Object (VAO)
+            \3 Our model, the idea of the object
+        \2 Vertex Buffer Object (VBO)
+            \2 Contained inside VAOs
+            \2 One VBO for positions, another for colors, another for texture coordinates, another for lighting normals...
+            \2 Same index for same vertex
+    \1 How to work with VRAM?
+        \2 \texttt{glGenVertexArrays} -- You get an int reference to a VAO. Like a pointer, except it's just a number, so it's more like a file descriptor
+        \2  \texttt{glBindVertexArray} -- Everything under this line works with this VAO now. \texttt{glBindVertexArray(0)} unbinds everything
+        \2 \texttt{glGenBuffers} -- same, but for VBOs
+        \2 \texttt{glBufferData} -- Copies memory from RAM to VBO
+\end{outline}
+
+\section{Video: Render function}
+
+\begin{outline}[enumerate]
+    \1 Get buffer size
+    \1 Clear display
+    \1 \texttt{glBindVertexArray} then \texttt{glDrawArrays}
+\end{outline}
+
