@@ -84,7 +84,7 @@ public:
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
 
 	//texture data
-	GLuint Texture;
+	GLuint sun_texture, earth_texture, moon_texture;
 	GLuint Texture2,HeightTex;
 
 	Body sun;
@@ -229,6 +229,25 @@ public:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*MESHSIZE * MESHSIZE * 6, elements, GL_STATIC_DRAW);
 		glBindVertexArray(0);
 	}
+
+	GLuint load_texture(const std::string& path) {
+        int width, height, channels;
+        char filepath[1000];
+        GLuint texture;
+        strcpy(filepath, path.c_str());
+        unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+        glGenTextures(1, &texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+	    return texture;
+	}
+
 	/*Note that any gl calls must always happen after a GL state is initialized */
 	void initGeom()
 	{
@@ -243,49 +262,10 @@ public:
 		shape->resize();
 		shape->init();
 
-		int width, height, channels;
-		char filepath[1000];
-
-		//texture 1
-		string str = resourceDirectory + "/grass.jpg";
-		strcpy(filepath, str.c_str());
-		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		//texture 2
-		str = resourceDirectory + "/sky.jpg";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &Texture2);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, Texture2);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		//texture 3
-		str = resourceDirectory + "/height.png";
-		strcpy(filepath, str.c_str());
-		data = stbi_load(filepath, &width, &height, &channels, 4);
-		glGenTextures(1, &HeightTex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, HeightTex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		// Load textures
+        sun_texture = load_texture(resourceDirectory + "/sun.jpg");
+        earth_texture = load_texture(resourceDirectory + "/earth.jpg");
+        moon_texture = load_texture(resourceDirectory + "/moon.jpg");
 
 
 		//[TWOTEXTURES]
@@ -390,11 +370,11 @@ public:
         V = mycam.process(frametime);
 
         // Set planet data
-        sun.texture = Texture;
+        sun.texture = sun_texture;
         sun.shape = shape;
-        earth.texture = Texture;
+        earth.texture = earth_texture;
         earth.shape = shape;
-        moon.texture = Texture;
+        moon.texture = moon_texture;
         moon.shape = shape;
 
         // Update the solar system. Only the root object needs to be updated.
