@@ -151,3 +151,17 @@ OpenGL does all the communication with the GPU for us. Vulkan is \textit{suppose
     \1 \texttt{glBindVertexArray} then \texttt{glDrawArrays}
 \end{outline}
 
+\section{Video: Shader Programming}
+
+\begin{outline}[]
+    \1 VAO now has triangles in it
+    \1 \texttt{layout(location = 0) in vec3 vertPos;} -- take in some data from the VBO
+    \1 \texttt{out vec3 color;} -- define the buffer location
+    \1 Colors are \texttt{vec3},  just like positions
+        \2 vec3.r = vec3.x = the very first element.
+    \1 You can pass data between shaders by giving them the same name?
+\end{outline}
+
+\section{Video: VBO Locations}
+
+

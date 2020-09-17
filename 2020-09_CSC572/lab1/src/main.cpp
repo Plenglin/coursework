@@ -93,8 +93,8 @@ public:
 
 	Application()
             : sun(0, 0, 0),
-            earth(0.5, 3, 20),
-            moon(10, 3, 10) {
+            earth(40, 3, 0.1),
+            moon(50, 1, 1) {
 	    sun.add_satellite(&earth);
 	    earth.add_satellite(&moon);
 	}
@@ -389,25 +389,15 @@ public:
 		// ...but we overwrite it (optional) with a perspective projection.
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
-		//animation with the model matrix:
-		static float w = 0.0;
-		w += 1.0 * frametime;//rotation angle
-		float trans = 0;// sin(t) * 2;
-		glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
-		float angle = -3.1415926/2.0;
-		glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3 + trans));
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.8f, 0.8f, 0.8f));
 
-		M =  TransZ * RotateY * RotateX * S;
+        // Update the solar system. Only the root object needs to be updated.
+        sun.update((float)frametime);
+        M = moon.transform;
 
-		// Draw the box using GLSL.
+        // Draw the sphere using GLSL.
 		prog->bind();
 
 		V = mycam.process(frametime);
-
-		// Update the solar system. Only the root object needs to be updated.
-		sun.foreach([frametime](Body *b) { b->update((float) frametime); });
 
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
@@ -418,16 +408,7 @@ public:
 		glBindTexture(GL_TEXTURE_2D, Texture);
 		shape->draw(prog,false);
 
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
-		M = TransY;
-
-		vec3 offset = mycam.pos;
-		offset.y = 0;
-		offset.x = (int)offset.x;
-		offset.z = (int)offset.z;
-
-		heightshader->unbind();
+		prog->unbind();
 
 	}
 

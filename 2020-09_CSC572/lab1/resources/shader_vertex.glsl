@@ -9,6 +9,7 @@ uniform mat4 M;
 out vec3 vertex_pos;
 out vec3 vertex_normal;
 out vec2 vertex_tex;
+
 void main()
 {
 	vertex_normal = vec4(M * vec4(vertNor,0.0)).xyz;
