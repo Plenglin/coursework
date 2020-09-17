@@ -18,7 +18,7 @@ void Body::update(float dt) {
 
     auto position_transform = glm::rotate(glm::mat4(1.0f), orbit_phase, BASIS_UP) *
                               glm::translate(glm::mat4(1.0f), glm::vec3(orbit_radius, 0, 0));
-    transform = position_transform * glm::rotate(glm::mat4(1.0f), rotation_phase, BASIS_UP);
+    transform = position_transform * glm::rotate(glm::mat4(1.0f), rotation_phase, BASIS_UP) * glm::scale(glm::mat4(1.0f), glm::vec3(scale));
 
     for (auto s : satellites) {
         s->update(dt);
@@ -26,7 +26,7 @@ void Body::update(float dt) {
     }
 }
 
-Body::Body(float orbitVelocity, float orbitRadius, float rotationVelocity, float orbitPhase, float rotationPhase)
+Body::Body(float orbitVelocity, float orbitRadius, float rotationVelocity, float scale, float orbitPhase, float rotationPhase)
         : orbit_velocity(orbitVelocity), orbit_phase(orbitPhase), orbit_radius(orbitRadius),
           rotation_velocity(rotationVelocity), rotation_phase(rotationPhase), scale(scale) {}
 

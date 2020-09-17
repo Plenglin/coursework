@@ -92,9 +92,9 @@ public:
 	Body moon;
 
 	Application()
-            : sun(0, 0, 0),
-            earth(0.1, 7, 3),
-            moon(1, 2, 1) {
+            : sun(0, 0, 0.2, 1),
+            earth(0.1, 7, 3, 0.2),
+            moon(1, 1, 1, 0.05) {
 	    sun.add_satellite(&earth);
 	    earth.add_satellite(&moon);
 	}
