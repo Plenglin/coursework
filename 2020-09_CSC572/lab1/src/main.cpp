@@ -381,9 +381,10 @@ public:
         sun.update((float)frametime);
 
         // Draw the planets!
-        sun.draw(prog, P, V, mycam.pos);
-        earth.draw(prog, P, V, mycam.pos);
-        moon.draw(prog, P, V, mycam.pos);
+        auto planet_m = V * glm::rotate(glm::mat4(1.0f), glm::pi<float>() / 2, glm::vec3(1, 0, 0));
+        sun.draw(prog, P, planet_m, mycam.pos);
+        earth.draw(prog, P, planet_m, mycam.pos);
+        moon.draw(prog, P, planet_m, mycam.pos);
 	}
 
 };

@@ -6,7 +6,7 @@
 #include "Body.h"
 #include "Program.h"
 
-#define BASIS_UP glm::vec3(0, 1, 0)
+#define BASIS_UP glm::vec3(0, 0, 1)
 
 void Body::add_satellite(Body *satellite) {
     satellites.push_back(satellite);
