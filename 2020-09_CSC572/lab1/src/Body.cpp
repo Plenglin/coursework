@@ -44,7 +44,6 @@ void Body::draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V
     glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
     glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
     glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &transform[0][0]);
-    glUniform3fv(prog->getUniform("campos"), 1, &campos[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     shape->draw(prog, false);

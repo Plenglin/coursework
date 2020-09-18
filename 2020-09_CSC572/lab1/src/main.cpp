@@ -302,7 +302,7 @@ public:
 		// Initialize the GLSL program.
 		prog = std::make_shared<Program>();
 		prog->setVerbose(true);
-		prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/shader_fragment.glsl");
+		prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/bright.glsl");
 		if (!prog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
