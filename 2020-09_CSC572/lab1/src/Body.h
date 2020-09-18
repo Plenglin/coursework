@@ -31,7 +31,7 @@ public:
     void add_satellite(Body *satellite);
     void update(float dt);
     void foreach(const std::function<void(Body*)>& f);
-    void draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V, glm::vec3 &campos);
+    void draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V, glm::vec3 &campos, glm::vec3 &sun_pos);
 };
 
 

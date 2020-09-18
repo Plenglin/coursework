@@ -37,7 +37,7 @@ void Body::foreach(const std::function<void(Body*)>& f) {
     }
 }
 
-void Body::draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V, glm::vec3 &campos) {
+void Body::draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V, glm::vec3 &campos, glm::vec3 &sun_pos) {
     prog->bind();
 
     //send the matrices to the shaders

@@ -75,7 +75,7 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program
-	std::shared_ptr<Program> prog, heightshader;
+	std::shared_ptr<Program> bright_prog, illuminated_prog, heightshader;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
@@ -270,12 +270,18 @@ public:
 
 		//[TWOTEXTURES]
 		//set the 2 textures to the correct samplers in the fragment shader:
-		GLuint Tex1Location = glGetUniformLocation(prog->pid, "tex");//tex, tex2... sampler in the fragment shader
-		GLuint Tex2Location = glGetUniformLocation(prog->pid, "tex2");
+		GLuint Tex1Location = glGetUniformLocation(bright_prog->pid, "tex");//tex, tex2... sampler in the fragment shader
+		GLuint Tex2Location = glGetUniformLocation(bright_prog->pid, "tex2");
 		// Then bind the uniform samplers to texture units:
-		glUseProgram(prog->pid);
-		glUniform1i(Tex1Location, 0);
-		glUniform1i(Tex2Location, 1);
+        glUseProgram(bright_prog->pid);
+        glUniform1i(Tex1Location, 0);
+        glUniform1i(Tex2Location, 1);
+
+        GLuint Tex1aLocation = glGetUniformLocation(illuminated_prog->pid, "tex");//tex, tex2... sampler in the fragment shader
+        GLuint Tex2aLocation = glGetUniformLocation(illuminated_prog->pid, "tex2");
+        glUseProgram(illuminated_prog->pid);
+        glUniform1i(Tex1aLocation, 0);
+        glUniform1i(Tex2aLocation, 1);
 
 		Tex1Location = glGetUniformLocation(heightshader->pid, "tex");//tex, tex2... sampler in the fragment shader
 		Tex2Location = glGetUniformLocation(heightshader->pid, "tex2");
@@ -300,38 +306,56 @@ public:
 		glEnable(GL_DEPTH_TEST);
 
 		// Initialize the GLSL program.
-		prog = std::make_shared<Program>();
-		prog->setVerbose(true);
-		prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/bright.glsl");
-		if (!prog->init())
+		bright_prog = std::make_shared<Program>();
+		bright_prog->setVerbose(true);
+		bright_prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/bright.glsl");
+		if (!bright_prog->init())
 		{
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
 			exit(1);
 		}
-		prog->addUniform("P");
-		prog->addUniform("V");
-		prog->addUniform("M");
-		prog->addUniform("campos");
-		prog->addAttribute("vertPos");
-		prog->addAttribute("vertNor");
-		prog->addAttribute("vertTex");
+		bright_prog->addUniform("P");
+		bright_prog->addUniform("V");
+		bright_prog->addUniform("M");
+		bright_prog->addUniform("campos");
+		bright_prog->addAttribute("vertPos");
+		bright_prog->addAttribute("vertNor");
+		bright_prog->addAttribute("vertTex");
 
-		// Initialize the GLSL program.
-		heightshader = std::make_shared<Program>();
-		heightshader->setVerbose(true);
-		heightshader->setShaderNames(resourceDirectory + "/height_vertex.glsl", resourceDirectory + "/height_frag.glsl");
-		if (!heightshader->init())
-		{
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		heightshader->addUniform("P");
-		heightshader->addUniform("V");
-		heightshader->addUniform("M");
-		heightshader->addUniform("camoff");
-		heightshader->addUniform("campos");
-		heightshader->addAttribute("vertPos");
-		heightshader->addAttribute("vertTex");
+        // Initialize the GLSL program.
+        heightshader = std::make_shared<Program>();
+        heightshader->setVerbose(true);
+        heightshader->setShaderNames(resourceDirectory + "/height_vertex.glsl", resourceDirectory + "/height_frag.glsl");
+        if (!heightshader->init())
+        {
+            std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+            exit(1);
+        }
+        heightshader->addUniform("P");
+        heightshader->addUniform("V");
+        heightshader->addUniform("M");
+        heightshader->addUniform("camoff");
+        heightshader->addUniform("campos");
+        heightshader->addAttribute("vertPos");
+        heightshader->addAttribute("vertTex");
+
+        // Initialize the GLSL program.
+        illuminated_prog = std::make_shared<Program>();
+        illuminated_prog->setVerbose(true);
+        illuminated_prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/illuminated.glsl");
+        if (!illuminated_prog->init())
+        {
+            std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+            exit(1);
+        }
+        illuminated_prog->addUniform("P");
+        illuminated_prog->addUniform("V");
+        illuminated_prog->addUniform("M");
+        illuminated_prog->addUniform("campos");
+        illuminated_prog->addUniform("source_pos");
+        illuminated_prog->addAttribute("vertPos");
+        illuminated_prog->addAttribute("vertNor");
+        illuminated_prog->addAttribute("vertTex");
 	}
 
 
@@ -381,10 +405,12 @@ public:
         sun.update((float)frametime);
 
         // Draw the planets!
-        auto planet_m = V * glm::rotate(glm::mat4(1.0f), glm::pi<float>() / 2, glm::vec3(1, 0, 0));
-        sun.draw(prog, P, planet_m, mycam.pos);
-        earth.draw(prog, P, planet_m, mycam.pos);
-        moon.draw(prog, P, planet_m, mycam.pos);
+        auto planet_m = V * glm::rotate(glm::mat4(1.0f), glm::pi<float>() / 2, glm::vec3(1, 0, 0)) * glm::scale(glm::mat4(1.0f), glm::vec3(-1, 1, 1));
+        auto sun_pos = glm::vec3(sun.transform[3][0], sun.transform[3][1], sun.transform[3][2]);
+
+        sun.draw(bright_prog, P, planet_m, mycam.pos, sun_pos);
+        earth.draw(bright_prog, P, planet_m, mycam.pos, sun_pos);
+        moon.draw(bright_prog, P, planet_m, mycam.pos, sun_pos);
 	}
 
 };

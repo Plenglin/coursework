@@ -2,18 +2,16 @@
 out vec4 color;
 in vec3 vertex_normal;
 in vec3 vertex_pos;
-in vec3 source_pos;
 in vec2 vertex_tex;
 uniform vec3 campos;
-
+uniform vec3 source_pos;
 uniform sampler2D tex;
 uniform sampler2D tex2;
 
 void main()
 {
     vec3 n = normalize(vertex_normal);
-    vec3 lp = source_pos - vertex_pos;
-    vec3 ld = normalize(vertex_pos - lp);
+    vec3 ld = -normalize(vertex_pos - source_pos);
     float diffuse = dot(n,ld);
 
     color.rgb = texture(tex, vertex_tex).rgb;
