@@ -6,7 +6,7 @@
 #include "Body.h"
 #include "Program.h"
 
-#define BASIS_UP glm::vec3(0, 1, 0)
+#define BASIS_UP glm::vec3(0, 0, 1)
 
 void Body::add_satellite(Body *satellite) {
     satellites.push_back(satellite);
@@ -37,14 +37,13 @@ void Body::foreach(const std::function<void(Body*)>& f) {
     }
 }
 
-void Body::draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V, glm::vec3 &campos) {
+void Body::draw(const std::shared_ptr<Program>& prog, glm::mat4 &P, glm::mat4 &V, glm::vec3 &campos, glm::vec3 &sun_pos) {
     prog->bind();
 
     //send the matrices to the shaders
     glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
     glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
     glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &transform[0][0]);
-    glUniform3fv(prog->getUniform("campos"), 1, &campos[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     shape->draw(prog, false);
