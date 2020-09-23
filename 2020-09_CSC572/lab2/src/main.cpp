@@ -25,12 +25,28 @@ using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
-#define BUFFERSIZE 1024
+#define STARCOUNT 1024
 class ssbo_data
 	{
 	public:
-		vec4 dataA[BUFFERSIZE];
+		vec4 dataA[STARCOUNT];
+		ivec4 dataB[STARCOUNT];
+	
 	};
+float frand()
+	{
+	return (float)rand() / (float)RAND_MAX;
+	}
+
+double get_last_elapsed_time()
+{
+	static double lasttime = glfwGetTime();
+	double actualtime =glfwGetTime();
+	double difference = actualtime- lasttime;
+	lasttime = actualtime;
+	return difference;
+}
+
 
 
 class Application : public EventCallbacks
@@ -40,29 +56,85 @@ public:
 
 	WindowManager * windowManager = nullptr;
 	//texture data
-
+	GLuint Texture;
 	
 	ssbo_data ssbo_CPUMEM;
 	GLuint ssbo_GPU_id;
 	GLuint computeProgram;
-
+	GLuint atomicsBuffer;
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {}
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods) {}
 	void resizeCallback(GLFWwindow *window, int in_width, int in_height) {}
 
-	
+	/*Note that any gl calls must always happen after a GL state is initialized */
+	void init_atomic()
+	{
+		glGenBuffers(1, &atomicsBuffer);
+		// bind the buffer and define its initial storage capacity
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
+		glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, NULL, GL_DYNAMIC_DRAW);
+		// unbind the buffer 
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	}
+	void reset_atomic()
+	{
+		GLuint *userCounters;
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
+		// map the buffer, userCounters will point to the buffers data
+		userCounters = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER,
+			0,
+			sizeof(GLuint),
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+		);
+		// set the memory to zeros, resetting the values in the buffer
+		memset(userCounters, 0, sizeof(GLuint));
+		// unmap the buffer
+		glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+	}
+	void read_atomic()
+	{
+		GLuint *userCounters;
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
+		// again we map the buffer to userCounters, but this time for read-only access
+		userCounters = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER,
+			0,
+			sizeof(GLuint),
+			GL_MAP_READ_BIT
+		);
+		// copy the values to other variables because...
+		cout << endl << *userCounters << endl;
+		// ... as soon as we unmap the buffer
+		// the pointer userCounters becomes invalid.
+		glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+	}
 	void initGeom()
-	{	
-
-	
+	{
+		
+		string resourceDirectory = "../resources";			
+		int width, height, channels;
+		char filepath[1000];
+		//texture 1
+		string str = resourceDirectory + "/Blue_Giant.jpg";
+		strcpy(filepath, str.c_str());
+		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+		glGenTextures(1, &Texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glBindImageTexture(0, Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+		glGenerateMipmap(GL_TEXTURE_2D);		
+		
 		//make an SSBO
-		for (int ii = 0; ii < BUFFERSIZE; ii++)
+		for (int ii = 0; ii < STARCOUNT; ii++)
 			{
 			ssbo_CPUMEM.dataA[ii] = vec4(ii, 0.0, 0.0, 0.0);
+			ssbo_CPUMEM.dataB[ii] = vec4(0.0, 0.0, 0.0, 0.0);
 			}
-
-
 		glGenBuffers(1, &ssbo_GPU_id);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo_CPUMEM, GL_DYNAMIC_COPY);
@@ -97,7 +169,7 @@ public:
 		glLinkProgram(computeProgram);
 		glUseProgram(computeProgram);
 		
-		GLuint block_index;
+		GLuint block_index = 0;
 		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
 		GLuint ssbo_binding_point_index = 2;
 		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
@@ -107,8 +179,8 @@ public:
 		{
 		//print data before compute shader
 		cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;		
-		for (int i = 0; i < 10; i++)
-			cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << endl;// ", " << ssbo_CPUMEM.dataA[i].y << ", " << ssbo_CPUMEM.dataA[i].z << ", " << ssbo_CPUMEM.dataA[i].w << "   dataB: " << ssbo_CPUMEM.dataB[i].x << ", " << ssbo_CPUMEM.dataB[i].y << ", " << ssbo_CPUMEM.dataB[i].z << ssbo_CPUMEM.dataB[i].w << endl;
+		//for (int i = 0; i < STARCOUNT; i++)
+			//cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << ", " << ssbo_CPUMEM.dataA[i].y << ", " << ssbo_CPUMEM.dataA[i].z << ", " << ssbo_CPUMEM.dataA[i].w << "   dataB: "<<ssbo_CPUMEM.dataB[i].x << ", " << ssbo_CPUMEM.dataB[i].y << ", " << ssbo_CPUMEM.dataB[i].z << ssbo_CPUMEM.dataB[i].w << endl;
 
 		
 		GLuint block_index = 0;
@@ -117,12 +189,12 @@ public:
 		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
 		glUseProgram(computeProgram);
-		
+		//activate atomic counter
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
+		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
 				
-
-		glDispatchCompute((GLuint)1, (GLuint)1, 1);				//start compute shader
+		glDispatchCompute((GLuint)2, (GLuint)1, 1);				//start compute shader
 		//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 		
 		//copy data back to CPU MEM
@@ -135,14 +207,14 @@ public:
 
 		//print data after compute shader
 		cout << endl << endl << "BUFFER AFTER COMPUTE SHADER" << endl << endl;
-		for (int i = 0; i < 10; i++)
-			cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << endl;
+		//for (int i = 0; i < STARCOUNT; i++)
+		cout << "dataB: " << ssbo_CPUMEM.dataB[0].y << endl;
 		}
 };
 //******************************************************************************************
 int main(int argc, char **argv)
 {
-	Application *application = new Application();
+		Application *application = new Application();
 	srand(time(0));
 
 	glfwInit();
@@ -161,10 +233,13 @@ int main(int argc, char **argv)
 
 
 	application->init();
-	application->initGeom();	
+	application->initGeom();
+
+	application->init_atomic();
 	
 	application->compute();
 
+	application->read_atomic();
 	
 	system("pause");
 	return 0;
