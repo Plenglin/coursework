@@ -1,0 +1,32 @@
+\chapter{Week 2}
+
+\section{2020-09-22 Lecture}
+
+\subsection{Compute shader}
+
+layout: Seems to declare the grouping of it?
+
+one shader per file 
+
+Local Invocation: finds inside the 
+
+Global Invocation: 
+
+GPUs are in groups of 64. 
+\begin{itemize}
+    \item 64 ALUs
+    \item 64 registers
+    \item 1 common L1 cache 
+\end{itemize}
+
+For peak performance with atomics, dispatch $< 64$
+
+$$\text{index} = \text{localIndex} \cdot \text{globalIndex} \cdot \text{groupSize}$$
+
+Portability? Manually edit the text of the shader.
+
+How to do independent sequential work?
+\begin{itemize}
+    \item On CPU: use glMemoryBarrier
+    \item On GPU: barrier();
+\end{itemize} 
