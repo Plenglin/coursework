@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.7)
 
 # Name of the project
-project(lab3)
+project(lab2)
 
 # Use glob to get the list of all source files.
 file(GLOB_RECURSE SOURCES "src/*.cpp" "ext/glad/src/*.c")
@@ -85,6 +85,6 @@ else()
     target_link_libraries(${CMAKE_PROJECT_NAME} "-framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo")
   else()
     #Link the Linux OpenGL library
-    target_link_libraries(${CMAKE_PROJECT_NAME} "GL" "dl")
+    target_link_libraries(${CMAKE_PROJECT_NAME} "GL" "dl" "X11" "pthread")
   endif()
 endif()
