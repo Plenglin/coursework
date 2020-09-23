@@ -25,13 +25,12 @@ using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
-#define STARCOUNT 1024
+#define SORT_COUNT 12
 class ssbo_data
 	{
 	public:
-		vec4 dataA[STARCOUNT];
-		ivec4 dataB[STARCOUNT];
-	
+		vec4 dataA[SORT_COUNT];
+		ivec4 info[1];
 	};
 float frand()
 	{
@@ -130,12 +129,10 @@ public:
 		glGenerateMipmap(GL_TEXTURE_2D);		
 		
 		//make an SSBO
-		for (int ii = 0; ii < STARCOUNT; ii++)
-			{
-			ssbo_CPUMEM.dataA[ii] = vec4(ii, 0.0, 0.0, 0.0);
-			ssbo_CPUMEM.dataB[ii] = vec4(0.0, 0.0, 0.0, 0.0);
-			}
-		glGenBuffers(1, &ssbo_GPU_id);
+		for (int ii = 0; ii < SORT_COUNT; ii++) {
+			ssbo_CPUMEM.dataA[ii] = vec4(frand(), 0.0, 0.0, 0.0);
+        }
+        glGenBuffers(1, &ssbo_GPU_id);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo_CPUMEM, GL_DYNAMIC_COPY);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
@@ -175,14 +172,15 @@ public:
 		glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
 
 	}
-	void compute()
-		{
-		//print data before compute shader
-		cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;		
-		//for (int i = 0; i < STARCOUNT; i++)
-			//cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << ", " << ssbo_CPUMEM.dataA[i].y << ", " << ssbo_CPUMEM.dataA[i].z << ", " << ssbo_CPUMEM.dataA[i].w << "   dataB: "<<ssbo_CPUMEM.dataB[i].x << ", " << ssbo_CPUMEM.dataB[i].y << ", " << ssbo_CPUMEM.dataB[i].z << ssbo_CPUMEM.dataB[i].w << endl;
+	void compute() {
+		// print data before compute shader
+        const int oddSortCount = (SORT_COUNT + 1) / 2 - 1;
+        const int evenSortCount = SORT_COUNT / 2;
+        cout << "Dispatch counts: " << evenSortCount << "e " << oddSortCount << "o" << endl;
+        cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;
+        for (int i = 0; i < SORT_COUNT; i++)
+			cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << endl;// << ", " << ssbo_CPUMEM.dataA[i].y << ", " << ssbo_CPUMEM.dataA[i].z << ", " << ssbo_CPUMEM.dataA[i].w << "   dataB: "<<ssbo_CPUMEM.dataB[i].x << ", " << ssbo_CPUMEM.dataB[i].y << ", " << ssbo_CPUMEM.dataB[i].z << ssbo_CPUMEM.dataB[i].w << endl;
 
-		
 		GLuint block_index = 0;
 		block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
 		GLuint ssbo_binding_point_index = 0;
@@ -192,8 +190,8 @@ public:
 		//activate atomic counter
 		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
 		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
-				
-		glDispatchCompute((GLuint)2, (GLuint)1, 1);				//start compute shader
+
+		glDispatchCompute((GLuint)evenSortCount, (GLuint)1, 1);				//start compute shader
 		//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 		
@@ -207,9 +205,9 @@ public:
 
 		//print data after compute shader
 		cout << endl << endl << "BUFFER AFTER COMPUTE SHADER" << endl << endl;
-		//for (int i = 0; i < STARCOUNT; i++)
-		cout << "dataB: " << ssbo_CPUMEM.dataB[0].y << endl;
-		}
+		for (int i = 0; i < SORT_COUNT; i++)
+		    cout << "dataA: " << ssbo_CPUMEM.dataA[i].x << endl;
+    }
 };
 //******************************************************************************************
 int main(int argc, char **argv)

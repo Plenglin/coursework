@@ -12,16 +12,26 @@ layout(rgba8, binding = 0) uniform image2D img;		//input/output image
 //local group of shaders
 layout (std430, binding=0) volatile buffer shader_data
 { 
-  vec4 dataA[1024];
-  ivec4 dataB[1024];
+	vec4 dataA[1024];
+	ivec4 info[1];
 };
 uniform int sizeofbuffer;
-void main() 
-	{
-	uint index = gl_LocalInvocationID.x;		
-	vec3 data = dataA[index].xyz;
-	dataB[index].x = int(data.x)*3;
-	atomicAdd(dataB[0].y,1);
-	//barrier();
-	//
+
+void main() {
+	// Get the index to operate on
+	uint ai = gl_LocalInvocationID.x * 2;
+	ai += info[0].z;  // used to select even/odd
+	uint bi = ai + 1;
+
+	// Comparison
+	float a = dataA[ai].x;
+	float b = dataA[bi].x;
+	if (b < a) {
+		// Incorrectly sorted
+		dataA[ai].x = b;
+		dataA[bi].x = a;
+	} else {
+		// Correctly sorted, do an increment
+		atomicAdd(info[0].y, 1);
 	}
+}
