@@ -26,7 +26,7 @@ using namespace glm;
 shared_ptr<Shape> shape;
 
 // Note: One workgroup works on a contiguous chunk of 2 * WORKGROUP_SIZE items.
-#define WORKGROUP_SIZE 8
+#define WORKGROUP_SIZE 128
 
 struct sort_data {
     ivec4 global_sorted;
@@ -228,7 +228,7 @@ public:
 	WindowManager * windowManager = nullptr;
 	//texture data
 	GLuint Texture;
-	gpu_eosorter sort = gpu_eosorter(64);
+	gpu_eosorter sort = gpu_eosorter(4096);
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {}
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods) {}

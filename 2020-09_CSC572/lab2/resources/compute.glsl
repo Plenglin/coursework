@@ -1,6 +1,6 @@
 #version 450 
 #extension GL_ARB_shader_storage_buffer_object : require
-#define WORKGROUP_SIZE 8
+#define WORKGROUP_SIZE 128
 
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
@@ -77,6 +77,6 @@ void main() {
 
 	// This group did not start out sorted.
 	if (gl_LocalInvocationID.x == 0 && was_toggled) {
-		global_sorted.x = 1;
+		global_sorted.x = 0;
 	}
 }
