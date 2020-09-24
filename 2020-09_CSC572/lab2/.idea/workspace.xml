@@ -62,9 +62,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="622e4380-be83-4a11-820e-ca9fba6e5c83" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/compute.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/resources/compute.glsl" afterDir="false" />
+    <list default="true" id="a9d7a783-28c1-4c8e-89c5-92288a10b750" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -92,7 +90,6 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
   </component>
   <component name="RunManager">
     <configuration default="true" type="BIBTEX_RUN_CONFIGURATION" factoryName="LaTeX configuration factory">
@@ -132,12 +129,12 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="622e4380-be83-4a11-820e-ca9fba6e5c83" name="Default Changelist" comment="" />
-      <created>1600841374285</created>
+      <changelist id="a9d7a783-28c1-4c8e-89c5-92288a10b750" name="Default Changelist" comment="" />
+      <created>1600914899767</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1600841374285</updated>
-      <workItem from="1600841375587" duration="2759000" />
+      <updated>1600914899767</updated>
+      <workItem from="1600914910245" duration="642000" />
     </task>
     <servers />
   </component>
