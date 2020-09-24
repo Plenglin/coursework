@@ -4,12 +4,12 @@ layout(local_size_x = 512, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 
 //local group of shaders
-layout (std430, binding=0) volatile buffer shader_data
-{
-	ivec4 info[2];
+layout (std430, binding=0) volatile buffer shader_data {
+	ivec4 size;
 	vec4 dataA[4096];
 };
 uniform int sizeofbuffer;
+shared bool group_sorted;
 
 void compare(uint ai, uint bi) {
 	float a = dataA[ai].x;
@@ -20,7 +20,7 @@ void compare(uint ai, uint bi) {
 		dataA[ai].x = b;
 		// Clear the valid flag. Note that no atomicity is needed here, since the only operation being done
 		// before the checking barrier is writing, and all we care is that ANY of them are invalid.
-		info[1].x = 0;
+		group_sorted = false;
 	}
 	// Correctly sorted, do nothing
 }
@@ -29,7 +29,7 @@ void main() {
 	// Get the index of this unit
 	uint index = gl_LocalInvocationID.x;
 
-	uint count = info[0].x;
+	uint count = size.x;
 	uint bi = index * 2;
 	if (bi >= count) return;
 
@@ -41,7 +41,7 @@ void main() {
 	for (int i = 0; i < count * count * 4; i++) {  // Loop limit so I don't freeze my computer
 		// Set the global valid flag.
 		if (index == 0) {
-			info[1].x = 1;
+			group_sorted = true;
 		}
 		barrier();
 
@@ -58,7 +58,7 @@ void main() {
 		barrier();
 
 		// Break if valid.
-		if (info[1].x != 0) {
+		if (group_sorted) {
 			break;
 		}
 	}

@@ -26,7 +26,7 @@ using namespace glm;
 shared_ptr<Shape> shape;
 
 struct sort_data {
-    ivec4 info[2];
+    ivec4 size;
     vec4 dataA[4096];
 };
 
@@ -128,7 +128,7 @@ public:
         for (auto i = 0; i < sort_count; i++) {
             ssbo_cpu.dataA[i] = vec4(frand(), 0.0, 0.0, 0.0);
         }
-        ssbo_cpu.info[0].x = sort_count;  // Correct count
+        ssbo_cpu.size.x = sort_count;  // Correct count
         glGenBuffers(1, &ssbo_gpu);
     }
 
@@ -162,7 +162,6 @@ public:
         memcpy(&ssbo_cpu, p, sizeof(sort_data));
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-        return ssbo_cpu.info[0].x;
     }
 
     void run() {
