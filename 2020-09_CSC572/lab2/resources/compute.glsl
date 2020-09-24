@@ -3,12 +3,6 @@
 layout(local_size_x = 1024, local_size_y = 1) in;	
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 
-//	for texture handling
-layout(rgba8, binding = 0) uniform image2D img;		//input/output image
-//		vec4 col=imageLoad(img_input, pixel_coords);
-//		imageStore(img_output, pixel_coords, col);
-
-
 //local group of shaders
 layout (std430, binding=0) volatile buffer shader_data
 { 
@@ -17,21 +11,43 @@ layout (std430, binding=0) volatile buffer shader_data
 };
 uniform int sizeofbuffer;
 
-void main() {
-	// Get the index to operate on
-	uint ai = gl_LocalInvocationID.x * 2;
-	ai += info[0].z;  // used to select even/odd
-	uint bi = ai + 1;
+uint count = 0;
 
-	// Comparison
+void compare(uint ai, uint bi) {
 	float a = dataA[ai].x;
 	float b = dataA[bi].x;
 	if (b < a) {
 		// Incorrectly sorted
-		dataA[ai].x = b;
 		dataA[bi].x = a;
+		dataA[ai].x = b;
 	} else {
 		// Correctly sorted, do an increment
-		atomicAdd(info[0].y, 1);
+		count++;
 	}
+}
+
+void main() {
+	// Get the index of this unit
+	uint index = gl_GlobalInvocationID.x;
+
+	uint total = info[0].x;
+	uint bi = index * 2;
+	uint ai = bi - 1;
+	uint ci = bi + 1;
+
+	for (int i = 0; i < 10; i++) {
+		count = 0;
+		// Odd
+		if (bi < total) {
+			compare(bi, ci);
+		}
+		barrier();
+
+		// Even
+		if (index != 0) {
+			compare(ai, bi);
+		}
+		barrier();
+	}
+
 }

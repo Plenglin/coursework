@@ -27,13 +27,13 @@ shared_ptr<Shape> shape;
 
 #define SORT_COUNT 12
 struct ssbo_data {
-    vec4 dataA[SORT_COUNT];
+    vec4 dataA[1024];
     ivec4 info[1];
 };
-float frand()
-	{
+
+float frand() {
 	return (float)rand() / (float)RAND_MAX;
-	}
+}
 
 double get_last_elapsed_time()
 {
@@ -47,11 +47,10 @@ double get_last_elapsed_time()
 class gpu_eosorter {
 public:
     ssbo_data ssbo_cpu;
-    GLuint ssbo_GPU_id;
+    GLuint ssbo_gpu;
     GLuint computeProgram;
     GLuint atomicsBuffer;
-    const int oddSortCount = (SORT_COUNT + 1) / 2 - 1;
-    const int evenSortCount = SORT_COUNT / 2;
+    const int invocations = (SORT_COUNT + 1) / 2 - 1;
 
     void init_atomic()
     {
@@ -115,51 +114,56 @@ public:
         glLinkProgram(computeProgram);
         glUseProgram(computeProgram);
 
-        GLuint block_index = 0;
-        block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-        GLuint ssbo_binding_point_index = 2;
-        glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
+        GLuint block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
+        glShaderStorageBlockBinding(computeProgram, block_index, 2);
     }
 
     void init_ssbo() {
-        for (int ii = 0; ii < SORT_COUNT; ii++) {
+        for (auto ii = 0; ii < SORT_COUNT; ii++) {
             ssbo_cpu.dataA[ii] = vec4(frand(), 0.0, 0.0, 0.0);
         }
-        glGenBuffers(1, &ssbo_GPU_id);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo_cpu, GL_DYNAMIC_COPY);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+        ssbo_cpu.info[0].x = SORT_COUNT;  // Correct count
+        glGenBuffers(1, &ssbo_gpu);
     }
 
     void print() {
-        for (int i = 0; i < SORT_COUNT; i++)
-            cout << "dataA: " << ssbo_cpu.dataA[i].x << endl;
+        for (auto i = 0; i < SORT_COUNT; i++)
+            cout << i << ": " << ssbo_cpu.dataA[i].x << endl;
     }
 
-    void run() {
+    int run_cycle(int invocations, int offset) {
 
-        GLuint block_index = 0;
-        block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-        GLuint ssbo_binding_point_index = 0;
-        glShaderStorageBlockBinding(computeProgram, block_index, ssbo_binding_point_index);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_GPU_id);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo_cpu, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+        GLuint block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
+        glShaderStorageBlockBinding(computeProgram, block_index, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
+
         glUseProgram(computeProgram);
         //activate atomic counter
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
-
-        glDispatchCompute((GLuint)evenSortCount, (GLuint)1, 1);				//start compute shader
-        //glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
-        //copy data back to CPU MEM
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-        int siz = sizeof(ssbo_data);
-        memcpy(&ssbo_cpu, p, siz);
+        memcpy(&ssbo_cpu, p, sizeof(ssbo_data));
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+        return ssbo_cpu.info[0].x;
+    }
+
+    void run() {
+        int sorted_pairs = 0;
+        run_cycle(invocations, 0);
+    }
+
+    void cleanup() {
     }
 };
 
@@ -194,7 +198,7 @@ public:
 
 	void compute() {
         // print data before compute shader
-        cout << "Dispatch counts: " << sort.evenSortCount << "e " << sort.oddSortCount << "o" << endl;
+        cout << "Dispatch counts: " << sort.invocations << endl;
         cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;
         sort.print();
 
