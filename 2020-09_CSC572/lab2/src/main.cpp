@@ -25,10 +25,9 @@ using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
-#define SORT_COUNT 512
-struct ssbo_data {
-    vec4 dataA[1024];
+struct sort_data {
     ivec4 info[2];
+    vec4 dataA[4096];
 };
 
 float frand() {
@@ -46,14 +45,18 @@ double get_last_elapsed_time()
 
 class gpu_eosorter {
 public:
-    ssbo_data ssbo_cpu;
+    sort_data ssbo_cpu;
     GLuint ssbo_gpu;
     GLuint computeProgram;
     GLuint atomicsBuffer;
-    const int invocations = (SORT_COUNT + 1) / 2 - 1;
+    const int invocations;
+    const int sort_count;
 
-    void init_atomic()
-    {
+    gpu_eosorter(int sort_count) : sort_count(sort_count), invocations((sort_count + 1) / 2 - 1) {
+
+    }
+
+    void init_atomic() {
         glGenBuffers(1, &atomicsBuffer);
         // bind the buffer and define its initial storage capacity
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
@@ -61,8 +64,8 @@ public:
         // unbind the buffer
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
     }
-    void reset_atomic()
-    {
+
+    void reset_atomic() {
         GLuint *userCounters;
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         // map the buffer, userCounters will point to the buffers data
@@ -76,8 +79,8 @@ public:
         // unmap the buffer
         glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     }
-    void read_atomic()
-    {
+
+    void read_atomic() {
         GLuint *userCounters;
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         // again we map the buffer to userCounters, but this time for read-only access
@@ -119,25 +122,25 @@ public:
     }
 
     void init_ssbo() {
-        for (auto i = 0; i < 1024; i++) {
+        for (auto i = 0; i < sort_count; i++) {
             ssbo_cpu.dataA[i] = vec4(-1, 0, 0, 0);
         }
-        for (auto i = 0; i < SORT_COUNT; i++) {
+        for (auto i = 0; i < sort_count; i++) {
             ssbo_cpu.dataA[i] = vec4(frand(), 0.0, 0.0, 0.0);
         }
-        ssbo_cpu.info[0].x = SORT_COUNT;  // Correct count
+        ssbo_cpu.info[0].x = sort_count;  // Correct count
         glGenBuffers(1, &ssbo_gpu);
     }
 
     void print() {
-        for (auto i = 0; i < SORT_COUNT; i++)
+        for (auto i = 0; i < sort_count; i++)
             cout << i << ": " << ssbo_cpu.dataA[i].x << endl;
     }
 
     int run_cycle(int invocations, int offset) {
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo_cpu, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sort_data), &ssbo_cpu, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
@@ -156,7 +159,7 @@ public:
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-        memcpy(&ssbo_cpu, p, sizeof(ssbo_data));
+        memcpy(&ssbo_cpu, p, sizeof(sort_data));
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
         return ssbo_cpu.info[0].x;
@@ -172,15 +175,14 @@ public:
 };
 
 
-class Application : public EventCallbacks
-{
+class Application : public EventCallbacks {
 
 public:
 
 	WindowManager * windowManager = nullptr;
 	//texture data
 	GLuint Texture;
-	gpu_eosorter sort;
+	gpu_eosorter sort = gpu_eosorter(512);
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {}
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods) {}
@@ -206,10 +208,13 @@ public:
         cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;
         sort.print();
 
+        auto start = clock();
         sort.run();
+        auto duration = clock() - start;
 
         cout << endl << endl << "BUFFER AFTER COMPUTE SHADER" << endl << endl;
         sort.print();
+        cout << "Completed in " << duration << endl;
     }
 };
 //******************************************************************************************

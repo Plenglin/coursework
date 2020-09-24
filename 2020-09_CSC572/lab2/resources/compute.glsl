@@ -5,9 +5,9 @@ layout (binding = 0, offset = 0) uniform atomic_uint ac;
 
 //local group of shaders
 layout (std430, binding=0) volatile buffer shader_data
-{ 
-	vec4 dataA[1024];
+{
 	ivec4 info[2];
+	vec4 dataA[4096];
 };
 uniform int sizeofbuffer;
 
