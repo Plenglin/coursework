@@ -38,7 +38,7 @@ void main() {
 	bool non_first = ai < bi;
 	bool non_last = ci < count;
 
-	for (int i = 0; i < count * count * 4; i++) {
+	for (int i = 0; i < count * count * 4; i++) {  // Loop limit so I don't freeze my computer
 		// Set the global valid flag.
 		if (index == 0) {
 			info[1].x = 1;

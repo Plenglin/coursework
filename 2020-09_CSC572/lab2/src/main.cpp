@@ -25,7 +25,7 @@ using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
-#define SORT_COUNT 11
+#define SORT_COUNT 512
 struct ssbo_data {
     vec4 dataA[1024];
     ivec4 info[2];
@@ -149,7 +149,8 @@ public:
         //activate atomic counter
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
-        glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
+        //glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
+        glDispatchCompute(1, 1, 1);				//start compute shader
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
