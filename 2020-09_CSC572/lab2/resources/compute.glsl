@@ -1,6 +1,6 @@
 #version 450 
 #extension GL_ARB_shader_storage_buffer_object : require
-#define WORKGROUP_SIZE 128
+#define WORKGROUP_SIZE 64
 
 layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
@@ -38,14 +38,20 @@ void main() {
 	uint index = gl_GlobalInvocationID.x;
 	uint count = data_count.x;
 
+	uint group_start = gl_WorkGroupID.x * WORKGROUP_SIZE * 2;
+	uint group_end = min((gl_WorkGroupID.x + 1) * WORKGROUP_SIZE * 2, count);
+
 	// The index that this unit is centered around
 	uint bi = index * 2;
+	if (even.x == 0) {
+		bi += WORKGROUP_SIZE;
+	}
 	if (bi >= count) return;
 
 	uint ai = bi - 1;
 	uint ci = bi + 1;
-	bool non_first = ai < bi;
-	bool non_last = ci < count;
+	bool run_even = index != 0 && group_start <= ai;
+	bool run_odd = ci < group_end;
 
 	was_toggled = false;
 	barrier();
@@ -57,15 +63,15 @@ void main() {
 		}
 		barrier();
 
-		// Odd
-		if (non_last) {
-			compare(bi, ci);
+		// Even
+		if (run_even) {
+			compare(ai, bi);
 		}
 		barrier();
 
-		// Even
-		if (non_first) {
-			compare(ai, bi);
+		// Odd
+		if (run_odd) {
+			compare(bi, ci);
 		}
 		barrier();
 

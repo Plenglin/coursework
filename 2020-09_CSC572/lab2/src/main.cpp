@@ -26,7 +26,7 @@ using namespace glm;
 shared_ptr<Shape> shape;
 
 // Note: One workgroup works on a contiguous chunk of 2 * WORKGROUP_SIZE items.
-#define WORKGROUP_SIZE 128
+#define WORKGROUP_SIZE 64
 
 struct sort_data {
     ivec4 global_sorted;
@@ -137,10 +137,7 @@ public:
 
     void init_ssbo() {
         for (auto i = 0; i < sort_count; i++) {
-            ssbo_cpu.dataA[i] = vec4(-1, 0, 0, 0);
-        }
-        for (auto i = 0; i < sort_count; i++) {
-            ssbo_cpu.dataA[i] = vec4(frand(), 0.0, 0.0, 0.0);
+            ssbo_cpu.dataA[i] = vec4(4095 - i, 0.0, 0.0, 0.0);
         }
         ssbo_cpu.size.x = sort_count;
         glGenBuffers(1, &ssbo_gpu);
