@@ -49,7 +49,7 @@ double get_last_elapsed_time()
 
 class gpu_eosorter {
 public:
-    sort_data ssbo_cpu;
+    sort_data* ssbo_cpu;
     GLuint ssbo_gpu;
     GLuint computeProgram;
     GLuint atomicsBuffer;
@@ -65,7 +65,11 @@ public:
             odd_groups((size + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE - 1),  // ceil(size / workgroupsize) - 1
             even_groups(size / WORKGROUP_SIZE)  // floor(size / workgroupsize)
     {
+        ssbo_cpu = new sort_data();
+    }
 
+    ~gpu_eosorter() {
+        delete ssbo_cpu;
     }
 
     void init_atomic() {
@@ -136,19 +140,19 @@ public:
 
     void init_ssbo() {
         for (auto i = 0; i < sort_count; i++) {
-            ssbo_cpu.dataA[i] = vec4(4095 - i, 0.0, 0.0, 0.0);
+            ssbo_cpu->dataA[i] = vec4(4095 - i, 0.0, 0.0, 0.0);
         }
         glGenBuffers(1, &ssbo_gpu);
     }
 
     void print() {
         for (auto i = 0; i < sort_count; i++)
-            cout << i << ": " << ssbo_cpu.dataA[i].x << endl;
+            cout << i << ": " << ssbo_cpu->dataA[i].x << endl;
     }
 
     void upload() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sort_data), &ssbo_cpu, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sort_data), ssbo_cpu, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
@@ -207,7 +211,7 @@ public:
             }
         }
         auto* ref = mmap_ssbo(GL_READ_ONLY);
-        memcpy(&ssbo_cpu, ref, sizeof(sort_data));
+        memcpy(ssbo_cpu, ref, sizeof(sort_data));
         munmap_ssbo();
     }
 
