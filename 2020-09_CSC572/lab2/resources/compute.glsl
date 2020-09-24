@@ -7,13 +7,11 @@ layout (binding = 0, offset = 0) uniform atomic_uint ac;
 
 //local group of shaders
 layout (std430, binding=0) volatile buffer shader_data {
-	ivec4 data_count;
-	vec4 dataA[4096];
-};
-
-layout (std430, binding=1) volatile buffer global_info {
 	ivec4 global_sorted;
 	ivec4 even;
+
+	ivec4 data_count;
+	vec4 dataA[4096];
 };
 
 uniform int sizeofbuffer;
@@ -50,8 +48,10 @@ void main() {
 	bool non_last = ci < count;
 
 	was_toggled = false;
+	if (gl_LocalInvocationID.x == 0) {
+		global_sorted.x = 24378;
+	}
 	barrier();
-	global_sorted.x = 3;
 
 	for (int i = 0; i < count * count * 4; i++) {  // Loop limit so I don't freeze my computer
 		// Set the global valid flag.
@@ -79,7 +79,6 @@ void main() {
 	}
 
 	// This group did not start out sorted.
-	global_sorted.x = 3;
 	if (gl_LocalInvocationID.x == 0 && was_toggled) {
 		//global_sorted = 3;
 	}
