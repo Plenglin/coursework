@@ -12,8 +12,8 @@ layout (std430, binding=0) volatile buffer shader_data {
 };
 
 layout (std430, binding=1) volatile buffer global_info {
-	int global_sorted;
-	int even;
+	ivec4 global_sorted;
+	ivec4 even;
 };
 
 uniform int sizeofbuffer;
@@ -38,8 +38,6 @@ void compare(uint ai, uint bi) {
 void main() {
 	// Get the global index of this unit
 	uint index = gl_GlobalInvocationID.x;
-	//uint index = gl_LocalInvocationID.x;
-
 	uint count = data_count.x;
 
 	// The index that this unit is centered around
@@ -50,6 +48,10 @@ void main() {
 	uint ci = bi + 1;
 	bool non_first = ai < bi;
 	bool non_last = ci < count;
+
+	was_toggled = false;
+	barrier();
+	global_sorted.x = 3;
 
 	for (int i = 0; i < count * count * 4; i++) {  // Loop limit so I don't freeze my computer
 		// Set the global valid flag.
@@ -76,8 +78,9 @@ void main() {
 		}
 	}
 
-	// This section did not start out sorted.
+	// This group did not start out sorted.
+	global_sorted.x = 3;
 	if (gl_LocalInvocationID.x == 0 && was_toggled) {
-		global_sorted = 0;
+		//global_sorted = 3;
 	}
 }

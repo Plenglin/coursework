@@ -36,8 +36,8 @@ struct sort_data {
 // Stored separate from the data so there's less memory to copy.
 struct global_info {
     // true if sorted, false otherwise
-    int global_sorted;
-    int even;
+    ivec4 global_sorted;
+    ivec4 even;
 };
 
 float frand() {
@@ -142,7 +142,7 @@ public:
         global_info_block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "global_info");
 
         glShaderStorageBlockBinding(computeProgram, shader_data_block_index, 2);
-        glShaderStorageBlockBinding(computeProgram, global_info_block_index, 3);
+        glShaderStorageBlockBinding(computeProgram, global_info_block_index, 2);
     }
 
     void init_ssbo() {
@@ -181,6 +181,7 @@ public:
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
         memcpy(&ssbo_cpu, p, sizeof(sort_data));
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
     void download_global() {
@@ -188,12 +189,13 @@ public:
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
         memcpy(&global_cpu, p, sizeof(global_info));
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
     int run_cycle(bool even) {
         auto invocations = even ? even_groups : odd_groups;
-        global_cpu.even = even;
-        global_cpu.global_sorted = 1;
+        global_cpu.even.x = even;
+        global_cpu.global_sorted.x = 1;
         upload_global();
 
         glShaderStorageBlockBinding(computeProgram, shader_data_block_index, 0);
@@ -207,18 +209,21 @@ public:
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
 
-        glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
+        //glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
+        glDispatchCompute((GLuint)1, 1, 1);				//start compute shader
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
         download_global();
-        return global_cpu.global_sorted;
+        return global_cpu.global_sorted.x;
     }
 
     // Run a cascaded odd-even sort. The outer cascade is managed by the CPU, while the inner cascade is run on the GPU.
     void run() {
         upload_ssbo();
-        int result = run_cycle(true);
+        int result;
+        for (int i = 0; i < 50; i++)
+            result = run_cycle(true);
         download_ssbo();
     }
 
