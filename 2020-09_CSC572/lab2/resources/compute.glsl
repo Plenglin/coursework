@@ -1,21 +1,24 @@
 #version 450 
 #extension GL_ARB_shader_storage_buffer_object : require
-layout(local_size_x = 8, local_size_y = 1) in;
+#define WORKGROUP_SIZE 8
+
+layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 
 //local group of shaders
 layout (std430, binding=0) volatile buffer shader_data {
-	ivec4 size;
+	ivec4 data_count;
 	vec4 dataA[4096];
 };
 
-layout (std430, binding=1) volatile buffer global_info
-{
-	int sorted;
+layout (std430, binding=1) volatile buffer global_info {
+	int global_sorted;
+	int even;
 };
 
 uniform int sizeofbuffer;
 shared bool group_sorted;
+shared bool was_toggled;
 
 void compare(uint ai, uint bi) {
 	float a = dataA[ai].x;
@@ -27,15 +30,19 @@ void compare(uint ai, uint bi) {
 		// Clear the valid flag. Note that no atomicity is needed here, since the only operation being done
 		// before the checking barrier is writing, and all we care is that ANY of them are invalid.
 		group_sorted = false;
+		was_toggled = true;
 	}
 	// Correctly sorted, do nothing
 }
 
 void main() {
-	// Get the index of this unit
-	uint index = gl_LocalInvocationID.x;
+	// Get the global index of this unit
+	uint index = gl_GlobalInvocationID.x;
+	//uint index = gl_LocalInvocationID.x;
 
-	uint count = size.x;
+	uint count = data_count.x;
+
+	// The index that this unit is centered around
 	uint bi = index * 2;
 	if (bi >= count) return;
 
@@ -46,7 +53,7 @@ void main() {
 
 	for (int i = 0; i < count * count * 4; i++) {  // Loop limit so I don't freeze my computer
 		// Set the global valid flag.
-		if (index == 0) {
+		if (gl_LocalInvocationID.x == 0) {
 			group_sorted = true;
 		}
 		barrier();
@@ -63,10 +70,14 @@ void main() {
 		}
 		barrier();
 
-		// Break if valid.
+		// End the loop if valid.
 		if (group_sorted) {
 			break;
 		}
 	}
 
+	// This section did not start out sorted.
+	if (gl_LocalInvocationID.x == 0 && was_toggled) {
+		global_sorted = 0;
+	}
 }

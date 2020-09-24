@@ -24,6 +24,8 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
+
+// Note: One workgroup works on a contiguous chunk of 2 * WORKGROUP_SIZE items.
 #define WORKGROUP_SIZE 8
 
 struct sort_data {
@@ -33,8 +35,9 @@ struct sort_data {
 
 // Stored separate from the data so there's less memory to copy.
 struct global_info {
-    // Flag. 1 if sorted, 0 otherwise.
-    int sorted;
+    // true if sorted, false otherwise
+    int global_sorted;
+    int even;
 };
 
 float frand() {
@@ -173,7 +176,26 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
-    int run_cycle() {
+    void download_ssbo() {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
+        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+        memcpy(&ssbo_cpu, p, sizeof(sort_data));
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    }
+
+    void download_global() {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, global_gpu);
+        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+        memcpy(&global_cpu, p, sizeof(global_info));
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    }
+
+    int run_cycle(bool even) {
+        auto invocations = even ? even_groups : odd_groups;
+        global_cpu.even = even;
+        global_cpu.global_sorted = 1;
+        upload_global();
+
         glShaderStorageBlockBinding(computeProgram, shader_data_block_index, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
 
@@ -184,22 +206,20 @@ public:
         //activate atomic counter
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
-        //glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
-        glDispatchCompute(1, 1, 1);				//start compute shader
+
+        glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
-        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-        memcpy(&ssbo_cpu, p, sizeof(sort_data));
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
+        download_global();
+        return global_cpu.global_sorted;
     }
 
+    // Run a cascaded odd-even sort. The outer cascade is managed by the CPU, while the inner cascade is run on the GPU.
     void run() {
         upload_ssbo();
-        upload_global();
-        run_cycle();
+        int result = run_cycle(true);
+        download_ssbo();
     }
 
     void cleanup() {
@@ -214,7 +234,7 @@ public:
 	WindowManager * windowManager = nullptr;
 	//texture data
 	GLuint Texture;
-	gpu_eosorter sort = gpu_eosorter(512);
+	gpu_eosorter sort = gpu_eosorter(64);
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {}
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods) {}
