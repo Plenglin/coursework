@@ -31,7 +31,7 @@ shared_ptr<Shape> shape;
 struct sort_data {
     ivec4 global_sorted;
     ivec4 even;
-    vec4 dataA[4096];
+    vec4 dataA[];
 };
 
 float frand() {
@@ -59,13 +59,15 @@ public:
 
     const int odd_groups;
     const int even_groups;
+    const std::size_t buffer_size;
 
     gpu_eosorter(int size) :
             sort_count(size),
             odd_groups((size + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE - 1),  // ceil(size / workgroupsize) - 1
-            even_groups(size / WORKGROUP_SIZE)  // floor(size / workgroupsize)
+            even_groups(size / WORKGROUP_SIZE),  // floor(size / workgroupsize)
+            buffer_size(sizeof(sort_data) + size * sizeof(vec4))
     {
-        ssbo_cpu = new sort_data();
+        ssbo_cpu = static_cast<sort_data *>(malloc(buffer_size));
     }
 
     ~gpu_eosorter() {
@@ -140,7 +142,7 @@ public:
 
     void init_ssbo() {
         for (auto i = 0; i < sort_count; i++) {
-            ssbo_cpu->dataA[i] = vec4(4095 - i, 0.0, 0.0, 0.0);
+            ssbo_cpu->dataA[i] = vec4(frand(), 0.0, 0.0, 0.0);
         }
         glGenBuffers(1, &ssbo_gpu);
     }
@@ -152,7 +154,7 @@ public:
 
     void upload() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sort_data), ssbo_cpu, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, buffer_size, ssbo_cpu, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
@@ -211,7 +213,7 @@ public:
             }
         }
         auto* ref = mmap_ssbo(GL_READ_ONLY);
-        memcpy(ssbo_cpu, ref, sizeof(sort_data));
+        memcpy(ssbo_cpu, ref, buffer_size);
         munmap_ssbo();
     }
 
@@ -227,7 +229,7 @@ public:
 	WindowManager * windowManager = nullptr;
 	//texture data
 	GLuint Texture;
-	gpu_eosorter sort = gpu_eosorter(4096);
+	gpu_eosorter sort = gpu_eosorter(12345);
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {}
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods) {}
