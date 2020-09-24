@@ -25,7 +25,7 @@ using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
 
-#define SORT_COUNT 12
+#define SORT_COUNT 11
 struct ssbo_data {
     vec4 dataA[1024];
     ivec4 info[2];

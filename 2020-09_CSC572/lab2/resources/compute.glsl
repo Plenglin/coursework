@@ -29,30 +29,31 @@ void main() {
 	// Get the index of this unit
 	uint index = gl_LocalInvocationID.x;
 
-	uint limit = info[0].x;
-	if (index >= limit) return;
-
+	uint count = info[0].x;
 	uint bi = index * 2;
+	if (bi >= count) return;
+
 	uint ai = bi - 1;
 	uint ci = bi + 1;
-	bool non_last = ci < limit - 1;
+	bool non_first = ai < bi;
+	bool non_last = ci < count;
 
-	for (int i = 0; i < limit * limit * 4; i++) {
+	for (int i = 0; i < count * count * 4; i++) {
 		// Set the global valid flag.
 		if (index == 0) {
 			info[1].x = 1;
 		}
 		barrier();
 
-		// Even
-		if (index != 0) {
-			compare(ai, bi);
-		}
-		barrier();
-
 		// Odd
 		if (non_last) {
 			compare(bi, ci);
+		}
+		barrier();
+
+		// Even
+		if (non_first) {
+			compare(ai, bi);
 		}
 		barrier();
 
