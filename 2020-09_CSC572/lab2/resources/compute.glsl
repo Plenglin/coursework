@@ -9,22 +9,19 @@ layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
 	ivec4 global_sorted;
 	ivec4 even;
-
-	ivec4 data_count;
-	vec4 dataA[4096];
+	vec4 items[];
 };
 
-uniform int sizeofbuffer;
 shared bool group_sorted;
 shared bool was_toggled;
 
 void compare(uint ai, uint bi) {
-	float a = dataA[ai].x;
-	float b = dataA[bi].x;
+	float a = items[ai].x;
+	float b = items[bi].x;
 	if (b < a) {
 		// Incorrectly sorted
-		dataA[bi].x = a;
-		dataA[ai].x = b;
+		items[bi].x = a;
+		items[ai].x = b;
 		// Clear the valid flag. Note that no atomicity is needed here, since the only operation being done
 		// before the checking barrier is writing, and all we care is that ANY of them are invalid.
 		group_sorted = false;
@@ -36,7 +33,7 @@ void compare(uint ai, uint bi) {
 void main() {
 	// Get the global index of this unit
 	uint index = gl_GlobalInvocationID.x;
-	uint count = data_count.x;
+	uint count = items.length();
 
 	uint group_start = gl_WorkGroupID.x * WORKGROUP_SIZE * 2;
 	uint group_end = min((gl_WorkGroupID.x + 1) * WORKGROUP_SIZE * 2, count);

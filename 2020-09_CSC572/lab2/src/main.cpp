@@ -31,7 +31,6 @@ shared_ptr<Shape> shape;
 struct sort_data {
     ivec4 global_sorted;
     ivec4 even;
-    ivec4 size;
     vec4 dataA[4096];
 };
 
@@ -139,7 +138,6 @@ public:
         for (auto i = 0; i < sort_count; i++) {
             ssbo_cpu.dataA[i] = vec4(4095 - i, 0.0, 0.0, 0.0);
         }
-        ssbo_cpu.size.x = sort_count;
         glGenBuffers(1, &ssbo_gpu);
     }
 
