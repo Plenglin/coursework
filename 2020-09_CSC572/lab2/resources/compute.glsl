@@ -1,6 +1,6 @@
 #version 450 
 #extension GL_ARB_shader_storage_buffer_object : require
-layout(local_size_x = 512, local_size_y = 1) in;
+layout(local_size_x = 8, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 
 //local group of shaders
@@ -8,6 +8,12 @@ layout (std430, binding=0) volatile buffer shader_data {
 	ivec4 size;
 	vec4 dataA[4096];
 };
+
+layout (std430, binding=1) volatile buffer global_info
+{
+	int sorted;
+};
+
 uniform int sizeofbuffer;
 shared bool group_sorted;
 

@@ -24,10 +24,17 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 using namespace std;
 using namespace glm;
 shared_ptr<Shape> shape;
+#define WORKGROUP_SIZE 8
 
 struct sort_data {
     ivec4 size;
     vec4 dataA[4096];
+};
+
+// Stored separate from the data so there's less memory to copy.
+struct global_info {
+    // Flag. 1 if sorted, 0 otherwise.
+    int sorted;
 };
 
 float frand() {
@@ -46,13 +53,24 @@ double get_last_elapsed_time()
 class gpu_eosorter {
 public:
     sort_data ssbo_cpu;
+    global_info global_cpu;
     GLuint ssbo_gpu;
+    GLuint global_gpu;
     GLuint computeProgram;
     GLuint atomicsBuffer;
-    const int invocations;
+    GLuint shader_data_block_index;
+    GLuint global_info_block_index;
+
     const int sort_count;
 
-    gpu_eosorter(int sort_count) : sort_count(sort_count), invocations((sort_count + 1) / 2 - 1) {
+    const int odd_groups;
+    const int even_groups;
+
+    gpu_eosorter(int size) :
+            sort_count(size),
+            odd_groups((size + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE - 1),  // ceil(size / workgroupsize) - 1
+            even_groups(size / WORKGROUP_SIZE)  // floor(size / workgroupsize)
+    {
 
     }
 
@@ -117,8 +135,11 @@ public:
         glLinkProgram(computeProgram);
         glUseProgram(computeProgram);
 
-        GLuint block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-        glShaderStorageBlockBinding(computeProgram, block_index, 2);
+        shader_data_block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
+        global_info_block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "global_info");
+
+        glShaderStorageBlockBinding(computeProgram, shader_data_block_index, 2);
+        glShaderStorageBlockBinding(computeProgram, global_info_block_index, 3);
     }
 
     void init_ssbo() {
@@ -130,6 +151,7 @@ public:
         }
         ssbo_cpu.size.x = sort_count;  // Correct count
         glGenBuffers(1, &ssbo_gpu);
+        glGenBuffers(1, &global_gpu);
     }
 
     void print() {
@@ -137,16 +159,26 @@ public:
             cout << i << ": " << ssbo_cpu.dataA[i].x << endl;
     }
 
-    int run_cycle(int invocations, int offset) {
-
+    void upload_ssbo() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_gpu);
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sort_data), &ssbo_cpu, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    }
 
-        GLuint block_index = glGetProgramResourceIndex(computeProgram, GL_SHADER_STORAGE_BLOCK, "shader_data");
-        glShaderStorageBlockBinding(computeProgram, block_index, 0);
+    void upload_global() {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, global_gpu);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(global_info), &global_gpu, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, global_gpu);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    }
+
+    int run_cycle() {
+        glShaderStorageBlockBinding(computeProgram, shader_data_block_index, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_gpu);
+
+        glShaderStorageBlockBinding(computeProgram, global_info_block_index, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, global_gpu);
 
         glUseProgram(computeProgram);
         //activate atomic counter
@@ -165,8 +197,9 @@ public:
     }
 
     void run() {
-        int sorted_pairs = 0;
-        run_cycle(invocations, 0);
+        upload_ssbo();
+        upload_global();
+        run_cycle();
     }
 
     void cleanup() {
@@ -203,7 +236,7 @@ public:
 
 	void compute() {
         // print data before compute shader
-        cout << "Dispatch counts: " << sort.invocations << endl;
+        cout << "Dispatch counts: " << sort.even_groups << endl;
         cout << endl << endl << "BUFFER BEFORE COMPUTE SHADER" << endl << endl;
         sort.print();
 
