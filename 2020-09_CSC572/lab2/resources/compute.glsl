@@ -48,9 +48,6 @@ void main() {
 	bool non_last = ci < count;
 
 	was_toggled = false;
-	if (gl_LocalInvocationID.x == 0) {
-		global_sorted.x = 24378;
-	}
 	barrier();
 
 	for (int i = 0; i < count * count * 4; i++) {  // Loop limit so I don't freeze my computer
@@ -80,6 +77,6 @@ void main() {
 
 	// This group did not start out sorted.
 	if (gl_LocalInvocationID.x == 0 && was_toggled) {
-		//global_sorted = 3;
+		global_sorted.x = 1;
 	}
 }

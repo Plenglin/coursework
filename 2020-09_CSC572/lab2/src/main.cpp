@@ -189,8 +189,7 @@ public:
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicsBuffer);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicsBuffer);
 
-        //glDispatchCompute((GLuint)invocations, 1, 1);				//start compute shader
-        glDispatchCompute((GLuint)1, 1, 1);				//start compute shader
+        glDispatchCompute(invocations, 1, 1);				//start compute shader
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
@@ -205,10 +204,12 @@ public:
     // Run a cascaded odd-even sort. The outer cascade is managed by the CPU, while the inner cascade is run on the GPU.
     void run() {
         upload();
-        int result;
-        for (int i = 0; i < 50; i++) {
-            result = run_cycle(true);
-            munmap_ssbo();
+        while (true) {
+            int sorted = run_cycle(true);
+            sorted &= run_cycle(false);
+            if (sorted) {
+                break;
+            }
         }
         auto* ref = mmap_ssbo(GL_READ_ONLY);
         memcpy(&ssbo_cpu, ref, sizeof(sort_data));
