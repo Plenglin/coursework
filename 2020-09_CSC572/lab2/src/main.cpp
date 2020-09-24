@@ -28,7 +28,7 @@ shared_ptr<Shape> shape;
 #define SORT_COUNT 12
 struct ssbo_data {
     vec4 dataA[1024];
-    ivec4 info[1];
+    ivec4 info[2];
 };
 
 float frand() {
@@ -119,8 +119,11 @@ public:
     }
 
     void init_ssbo() {
-        for (auto ii = 0; ii < SORT_COUNT; ii++) {
-            ssbo_cpu.dataA[ii] = vec4(frand(), 0.0, 0.0, 0.0);
+        for (auto i = 0; i < 1024; i++) {
+            ssbo_cpu.dataA[i] = vec4(-1, 0, 0, 0);
+        }
+        for (auto i = 0; i < SORT_COUNT; i++) {
+            ssbo_cpu.dataA[i] = vec4(frand(), 0.0, 0.0, 0.0);
         }
         ssbo_cpu.info[0].x = SORT_COUNT;  // Correct count
         glGenBuffers(1, &ssbo_gpu);
