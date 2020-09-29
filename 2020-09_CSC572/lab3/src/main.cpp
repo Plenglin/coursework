@@ -3,7 +3,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 */
 
 #include <iostream>
-#include <glad/glad.h>
+#include <glad/glad2.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "GLSL.h"
@@ -87,6 +87,105 @@ class object
 			}
 	};
 
+class physics_world {
+    object objects[100];
+    GLuint objects_gpu;
+    GLuint program;
+    GLuint atomic_buf;
+    GLuint object_block_index;
+    GLuint uniform_dt, uniform_acc;
+
+    void init_shader() {
+        std::string shader_string = readFileAsString("../resources/compute.glsl");
+        const char *cstr = shader_string.c_str();
+        GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(shader, 1, &cstr, nullptr);
+
+        GLint rc;
+        CHECKED_GL_CALL(glCompileShader(shader));
+        CHECKED_GL_CALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &rc));
+        if (!rc)	//error compiling the shader file
+        {
+            GLSL::printShaderInfoLog(shader);
+            std::cout << "Error compiling fragment shader " << std::endl;
+            exit(1);
+        }
+
+        program = glCreateProgram();
+        glAttachShader(program, shader);
+        glLinkProgram(program);
+        glUseProgram(program);
+
+        object_block_index = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "items_block");
+        glShaderStorageBlockBinding(program, object_block_index, 2);
+
+        uniform_dt = glGetUniformLocation(program, "dt");
+        uniform_acc = glGetUniformLocation(program, "acceleration");
+        const vec3 acc = ACC;
+        glUniform3fv(uniform_acc, 1, &acc[0]);
+    }
+
+    void init_ssbo() {
+        glGenBuffers(1, &objects_gpu);
+    }
+
+    void init_atomic() {
+        glGenBuffers(1, &atomic_buf);
+        // bind the buffer and define its initial storage capacity
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, NULL, GL_DYNAMIC_DRAW);
+        // unbind the buffer
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    }
+    
+    void init() {
+        init_shader();
+        init_ssbo();
+        init_atomic();
+    }
+
+    void upload() {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(object) * 100, objects, GL_DYNAMIC_COPY);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    }
+
+    object* mmap_ssbo(GLenum flags) {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
+        GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, flags);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+        return (object*)p;
+    }
+
+    void munmap_ssbo() {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    }
+
+    void download() {
+        auto* ref = mmap_ssbo(GL_READ_ONLY);
+        memcpy(objects, ref, 100 * sizeof(object));
+        munmap_ssbo();
+    }
+
+    void step(float dt) {
+        glad_glUniform1f(uniform_dt, dt);
+
+        glShaderStorageBlockBinding(program, object_block_index, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
+
+        glUseProgram(program);
+        //activate atomic counter
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
+        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
+
+        glDispatchCompute(1, 1, 1);				//start compute shader
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+    }
+};
 
 float randf()
 	{	

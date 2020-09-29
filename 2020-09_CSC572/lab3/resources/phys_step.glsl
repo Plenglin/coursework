@@ -5,17 +5,18 @@ struct sphere {
     vec3 velocity;
     float mass;
     float radius;
-    float _0;
-    float _1;
 };
 
 layout(local_size_x = 100, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
-layout (std430, binding=0) volatile buffer shader_data {
+layout (std430, binding=0) volatile buffer items_block {
     sphere items[100];
 };
 
 sphere self;
+
+uniform float dt;
+uniform vec3 acceleration;
 
 // Projects v onto the unit vector onto.
 float project_unit(vec3 v, vec3 onto) {
@@ -50,6 +51,21 @@ vec3 collide(sphere other) {
     return new_velocity - self.velocity;
 }
 
+void bounds_check() {
+    if ((self.position.y-self.radius) < -5.0)
+    self.velocity.y *= -1.0;
+
+    if ((self.position.x - self.radius) < -5.0)
+    self.velocity.x *= -1.0;
+    if ((self.position.x + self.radius) > 5.0)
+    self.velocity.x *= -1.0;
+
+    if ((self.position.z - self.radius) < -5.0)
+    self.velocity.z *= -1.0;
+    if ((self.position.z + self.radius) < +5.0)
+    self.velocity.z *= -1.0;
+}
+
 void main() {
     uint index = gl_GlobalInvocationID.x;
 
@@ -65,8 +81,11 @@ void main() {
         barrier();
     }
 
-    // Position step
-    self.position += self.velocity * 0.01;
+    // Integration
+    self.velocity += acceleration * dt;
+    self.position += self.velocity * dt;
+
+    bounds_check();
 
     // Store
     items[index].position = self.position;
