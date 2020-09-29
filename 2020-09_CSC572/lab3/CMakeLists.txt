@@ -75,7 +75,7 @@ if(WIN32)
   # c++0x is enabled by default.
   # -Wall produces way too many warnings.
   # -pedantic is not supported.
-  target_link_libraries(${CMAKE_PROJECT_NAME} opengl32.lib)
+  target_link_libraries(${CMAKE_PROJECT_NAME} opengl45.lib)
 else()
   # Enable all pedantic warnings.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -pedantic")

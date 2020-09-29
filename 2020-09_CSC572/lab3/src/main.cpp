@@ -3,7 +3,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 */
 
 #include <iostream>
-#include <glad/glad2.h>
+#include <glad/glad.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "GLSL.h"
@@ -29,6 +29,11 @@ double get_last_elapsed_time()
 	lasttime = actualtime;
 	return difference;
 }
+
+float randf() {
+    return (float)(rand() / (float)RAND_MAX);
+}
+
 class camera
 {
 public:
@@ -88,6 +93,7 @@ class object
 	};
 
 class physics_world {
+public:
     object objects[100];
     GLuint objects_gpu;
     GLuint program;
@@ -126,6 +132,10 @@ class physics_world {
     }
 
     void init_ssbo() {
+        for (int i = 0; i < 100; i++) {
+            objects[i].pos = vec3(0,0,-20);
+            objects[i].v = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+        }
         glGenBuffers(1, &objects_gpu);
     }
 
@@ -171,12 +181,11 @@ class physics_world {
     }
 
     void step(float dt) {
-        glad_glUniform1f(uniform_dt, dt);
-
         glShaderStorageBlockBinding(program, object_block_index, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
 
         glUseProgram(program);
+        glUniform1f(uniform_dt, dt);
         //activate atomic counter
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
@@ -187,17 +196,13 @@ class physics_world {
     }
 };
 
-float randf()
-	{	
-	return (float)(rand() / (float)RAND_MAX);
-	}
-
 class Application : public EventCallbacks
 {
 
 public:
 
 	object pluto;
+	physics_world world;
 
 	WindowManager * windowManager = nullptr;
 
@@ -460,6 +465,8 @@ public:
 		
 		//compute stuff
 		pluto.update(dt);
+
+        world.step(dt);
 
 		if ((pluto.pos.y-pluto.r) < -5.0)
 			pluto.v.y *= -1.0;
