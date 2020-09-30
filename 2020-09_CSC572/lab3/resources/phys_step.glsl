@@ -56,7 +56,7 @@ vec3 collide_sphere_plane(sphere s, plane p) {
     if (distance < s.radius) {   // Inside the plane
         // it's a spring!
         float k = 1000;
-        return -k * distance * p.normal;
+        return -k * (distance - s.radius) * p.normal;
     }
     return vec3(0, 0, 0);
 }

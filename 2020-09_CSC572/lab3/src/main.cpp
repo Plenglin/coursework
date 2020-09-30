@@ -7,6 +7,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "GLSL.h"
+#include <cmath>
 #include "Program.h"
 #include <time.h>
 #include "MatrixStack.h"
@@ -137,10 +138,9 @@ public:
     void init_ssbo() {
         for (int i = 0; i < SPHERES_N; i++) {
             objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            //objects[i].position *= ;
+            objects[i].position *= 8;
 
             objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            objects[i].velocity *= 2;
 
             //objects[i].velocity = vec3(0, -1, 0);
             objects[i].m = 1;
@@ -298,10 +298,10 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, MeshPosID);
 		vec3 vertices[MESHSIZE];
 		
-		vertices[0] = vec3(1.0, 0.0, 0.0);
-		vertices[1] = vec3(0.0, 0.0, 0.0);
-		vertices[2] = vec3(0.0, 0.0, 1.0);
-		vertices[3] = vec3(1.0, 0.0, 1.0);
+		vertices[0] = vec3(1.0, 0.0, 1.0);
+		vertices[1] = vec3(-1.0, 0.0, 1.0);
+		vertices[2] = vec3(-1.0, 0.0, -1.0);
+		vertices[3] = vec3(1.0, 0.0, -1.0);
 		
 
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) *MESHSIZE, vertices, GL_DYNAMIC_DRAW);
@@ -464,12 +464,14 @@ public:
 		heightshader->addAttribute("vertTex");
 
 		world.init_shader();
+		mycam.pos = vec3(0, 0, -20);
 	}
-    
+
 	void update(float dt) {
-        // Update the physics world. Use fixed timesteps to ensure stability.
+        // Update the physics world. Limit timesteps to ensure stability.
+        float fixed_dt = std::min(dt, 0.02f);
         for (int i = 0; i < 5; i++) {
-            world.step(0.001);
+            world.step(fixed_dt / 5);
         }
         world.download();
 
@@ -548,13 +550,12 @@ public:
     }
 
     void render_walls(const mat4 &V, const mat4 &P) {// Wall
-        mat4 RotateX, S, M;
         float angle = 3.14159265 / 2;
         heightshader->bind();
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        S = scale(mat4(1.0f), vec3(10.0f, 10.0f, 10.0f));
-        mat4 TransY = translate(mat4(1.0f), vec3(-5.0f, -5.0f, -25));
-        M = TransY * S;
+        mat4 S = scale(mat4(1.0f), vec3(5, 5, 5));
+        mat4 TransY = translate(mat4(1.0f), vec3(0, -1, 0));
+        mat4 M = S * TransY;
         glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
         glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
         glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
@@ -565,18 +566,18 @@ public:
         glBindTexture(GL_TEXTURE_2D, Texture);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-        M = TransY * S * RotateX;
-        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
-
+        auto RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
         auto RotateY = glm::rotate(mat4(1.0f), angle, vec3(0.0f, 1.0f, 0.0f));
-        M = TransY * S * RotateY*RotateX;
+
+        M = RotateX * M;
         glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-        RotateY = glm::rotate(mat4(1.0f), -angle, vec3(0.0f, 1.0f, 0.0f));
-        TransY = translate(mat4(1.0f), vec3(5.0f, -5.0f, -15));
-        M = TransY * S * RotateY * RotateX;
+        M = RotateY * M;
+        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
+
+        M = RotateY * M;
         glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
         heightshader->unbind();
