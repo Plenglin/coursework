@@ -3,7 +3,7 @@
 
 #define SPHERES_N 100
 
-// Assume all objects act like ideal springs.
+// Assume all objects are rubbery and act like ideal springs.
 
 struct sphere {
     vec3 position;
@@ -70,9 +70,9 @@ vec3 collide_sphere_sphere(sphere a, sphere b) {
 
     // Inside each other
     float d = sqrt(d2);
-    float penetration = d - radius_sum;
+    float penetration = radius_sum - d;
     vec3 normal = dpos / d;
-    float k = 100;
+    float k = 1000;
     return k * normal * penetration;
 }
 
@@ -82,7 +82,7 @@ vec3 collide_sphere_plane(sphere s, plane p) {
     float distance = dot(s.position - p.position, p.normal);
     if (distance < s.radius) {   // Inside the plane
         // it's a spring!
-        float k = 100;
+        float k = 1000;
         return -k * distance * p.normal;
     }
     return vec3(0, 0, 0);

@@ -472,7 +472,9 @@ public:
 
 	void update(float dt) {
         // Update the physics world
-        world.step(0.01);
+        for (int i = 0; i < 5; i++) {
+            world.step(0.001);
+        }
         world.download();
         // for (int i = 0; i < SPHERES_N; i++) {
         //     auto &s = world.objects[i];
