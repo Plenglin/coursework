@@ -5,12 +5,11 @@
 
 struct sphere {
     vec3 position;
-    vec3 velocity;
-    vec3 impulse;
     float mass;
+    vec3 velocity;
     float radius;
-    bool f0, f1, turn; // mutex
-    bool _[2]; // padding
+    vec3 impulse;
+    float _0;  // padding
 };
 
 struct plane {
@@ -120,7 +119,7 @@ void bounds_check(sphere self) {
 void main() {
     index = gl_GlobalInvocationID.x;
 
-    //items[index].impulse = vec3(0, 0, 0);
+    items[index].impulse = vec3(0, 0, 0);
     //sphere self = items[index];
 
     // Calculate collisions. Note that we skip over 0.

@@ -77,12 +77,11 @@ camera mycam;
 
 struct sphere {
     vec3 position;
-    vec3 velocity;
-    vec3 impulse;
     float m;
+    vec3 velocity;
     float r;
-    uint f0, f1, turn;  // mutex
-    uint _[2];  // padding
+    vec3 impulse;
+    float _0;
 };
 
 struct world_gpu_data {
@@ -170,7 +169,9 @@ public:
 
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
-        memcpy(objects, ref, SPHERES_N * sizeof(sphere));
+        for (int i = 0; i < SPHERES_N; i++) {
+            objects[i].position = ref[i].position;
+        }
         munmap_ssbo();
     }
 
