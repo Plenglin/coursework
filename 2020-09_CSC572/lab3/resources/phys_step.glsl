@@ -1,19 +1,30 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
+#define SPHERES_N 100
+
 struct sphere {
     vec3 position;
     vec3 velocity;
+    vec3 impulse;
     float mass;
     float radius;
+    bool f0, f1, turn; // mutex
+    bool _[2]; // padding
 };
 
-layout(local_size_x = 100, local_size_y = 1) in;
+struct plane {
+    vec3 position;
+    vec3 normal;
+};
+
+layout(local_size_x = SPHERES_N, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
-    sphere items[100];
+    sphere items[SPHERES_N];
 };
 
+uint index;
 sphere self;
 
 uniform float dt;
@@ -30,6 +41,27 @@ vec3 reflect(vec3 v, vec3 over) {
     vec3 step = proj - v;
     return v + 2 * step;
 }
+
+// Given two objects colliding with masses ma, mb; velocities va, vb; and collision unit normal N, returns the impulse applied to object a.
+vec3 get_reflection_force(float ma, vec3 va, float mb, vec3 pb, vec3 N) {
+    vec3 va_dir = reflect(va, N);
+
+    if (isinf(mb)) {  // second object is static
+        return va_dir;  // Pure reflection
+    }
+
+    // For now, assume ma = mb.
+
+    //float lva = length(va);
+    float lpb = length(pb);
+
+    //vec3 other_v2_dir = reflect(other.velocity, normal);
+
+    vec3 expected_va2 = normalize(va_dir) * lpb;
+    return ma * (expected_va2 - va);
+}
+
+// Let's just blatantly copy box2d's modeling of this whole situation! https://www.iforce2d.net/b2dtut/collision-anatomy
 
 // Returns the impulse on self caused by other.
 vec3 collide(sphere other) {
@@ -54,12 +86,23 @@ vec3 collide(sphere other) {
 
 float wall_dist = 3;
 
-void bounds_check() {
-    if ((self.position.y - self.radius) < -wall_dist) {
-        self.velocity.y = abs(self.velocity.y);
+vec3 collide_circle_plane(sphere s, plane p) {
+    float distance = dot(s.position - p.position, p.normal);
+    if (distance < s.radius) {
+        //return get_reflection_force(s.mass, s.velocity, 1 / 0, vec3(0, 0, 0), p.normal);
     }
+    return vec3(0, 0, 0);
+}
 
-    if ((self.position.x - self.radius) < -wall_dist){
+plane bottom = {
+    vec3(0, 0, 0),
+    vec3(0, 1, 0)
+};
+
+void bounds_check(sphere self) {
+    self.impulse += collide_circle_plane(self, bottom);
+
+    /*if ((self.position.x - self.radius) < -wall_dist){
         self.velocity.x = abs(self.velocity.x);
     }
     if ((self.position.x + self.radius) > wall_dist){
@@ -71,32 +114,31 @@ void bounds_check() {
     }
     if ((self.position.z + self.radius) < +wall_dist) {
         self.velocity.z = -abs(self.velocity.z);
-    }
+    }*/
 }
 
 void main() {
-    uint index = gl_GlobalInvocationID.x;
+    index = gl_GlobalInvocationID.x;
 
-    // Load from memory
-    self = items[index];
+    //items[index].impulse = vec3(0, 0, 0);
+    //sphere self = items[index];
 
-    /*
     // Calculate collisions. Note that we skip over 0.
-    for (int i = 1; i < 100; i++) {
-        uint other_index = (index + i) % 100;
+    /*for (int i = 1; i < SPHERES_N; i++) {
+        uint other_index = (index + i) % SPHERES_N;
         sphere other = items[other_index];
         vec3 impulse = collide(other);
         self.velocity += impulse;
         barrier();
     }*/
 
-    // Integration
-    self.velocity += acceleration * dt;
-    self.position += self.velocity * dt;
+    //bounds_check(self);
 
-    bounds_check();
+    // Integration
+    //self.velocity += (self.impulse / self.mass) * dt;
+    //self.position += self.velocity * dt;
 
     // Store
-    items[index].position = self.position;
-    items[index].velocity = self.velocity;
+    //items[index].position = self.position;
+    //items[index].velocity = self.velocity;
 }

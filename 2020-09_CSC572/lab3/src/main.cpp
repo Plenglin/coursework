@@ -73,22 +73,26 @@ public:
 camera mycam;
 
 #define ACC vec3(0,-9.81,0)
-class object {
-	public:
-		vec3 pos, v;
-		float m;
-		float r;
-		object() {
-			pos = vec3(0);
-			v = vec3(0);
-			m = 1;
-			r = 1;
-        }
+#define SPHERES_N 100
+
+struct sphere {
+    vec3 position;
+    vec3 velocity;
+    vec3 impulse;
+    float m;
+    float r;
+    uint f0, f1, turn;  // mutex
+    uint _[2];  // padding
+};
+
+struct world_gpu_data {
+    sphere objects[SPHERES_N];
+
 };
 
 class physics_world {
 public:
-    object objects[100];
+    sphere objects[SPHERES_N];
     GLuint objects_gpu;
     GLuint program;
     GLuint atomic_buf;
@@ -125,9 +129,11 @@ public:
     }
 
     void init_ssbo() {
-        for (int i = 0; i < 100; i++) {
-            objects[i].pos = vec3(0,0,-20);
-            objects[i].v = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+        for (int i = 0; i < SPHERES_N; i++) {
+            objects[i].position = vec3(0, 0, -20);
+            objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            objects[i].m = 1;
+            objects[i].r = 1;
         }
         glGenBuffers(1, &objects_gpu);
         upload();
@@ -144,16 +150,16 @@ public:
 
     void upload() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(object) * 100, objects, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sphere) * SPHERES_N, objects, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
-    object* mmap_ssbo(GLenum flags) {
+    sphere* mmap_ssbo(GLenum flags) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, flags);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-        return (object*)p;
+        return (sphere*)p;
     }
 
     void munmap_ssbo() {
@@ -164,7 +170,7 @@ public:
 
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
-        memcpy(objects, ref, 100 * sizeof(object));
+        memcpy(objects, ref, SPHERES_N * sizeof(sphere));
         munmap_ssbo();
     }
 
@@ -446,10 +452,21 @@ public:
 		world.init_shader();
 	}
 
+	void printvec(vec3 v) {
+        cout << "(" << v.x << "," << v.z << "," << v.z << ")";
+    }
 
 	void update(float dt) {
         // Update the physics world
-        world.step(0.01);
+        for (int i = 0; i < SPHERES_N; i++) {
+            auto &s = world.objects[i];
+            cout << i << ": ";
+            printvec(s.position);
+            cout << " ";
+            printvec(s.velocity);
+            cout << " " << s.m << " " << s.r << endl;
+        }
+        world.step(0.1);
         world.download();
     }
 
@@ -492,7 +509,7 @@ public:
         glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
         glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 
-        for (auto i = 0; i < 100; i++) {
+        for (auto i = 0; i < SPHERES_N; i++) {
             auto &obj = world.objects[i];
             static float w = 0.0;
             w += 1.0 * frametime;//rotation angle
@@ -500,7 +517,7 @@ public:
             glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
             float angle = -3.1415926/2.0;
             glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-            glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), obj.pos);
+            glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), obj.position);
             glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(obj.r));
 
             M =  TransZ * S;
