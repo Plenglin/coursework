@@ -102,7 +102,7 @@ public:
     GLuint uniform_dt, uniform_acc;
 
     void init_shader() {
-        std::string shader_string = readFileAsString("../resources/compute.glsl");
+        std::string shader_string = readFileAsString("../resources/phys_step.glsl");
         const char *cstr = shader_string.c_str();
         GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
         glShaderSource(shader, 1, &cstr, nullptr);
@@ -110,8 +110,7 @@ public:
         GLint rc;
         CHECKED_GL_CALL(glCompileShader(shader));
         CHECKED_GL_CALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &rc));
-        if (!rc)	//error compiling the shader file
-        {
+        if (!rc) {      //error compiling the shader file
             GLSL::printShaderInfoLog(shader);
             std::cout << "Error compiling fragment shader " << std::endl;
             exit(1);
@@ -122,7 +121,7 @@ public:
         glLinkProgram(program);
         glUseProgram(program);
 
-        object_block_index = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "items_block");
+        object_block_index = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "shader_data");
         glShaderStorageBlockBinding(program, object_block_index, 2);
 
         uniform_dt = glGetUniformLocation(program, "dt");
@@ -146,12 +145,6 @@ public:
         glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, NULL, GL_DYNAMIC_DRAW);
         // unbind the buffer
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-    }
-    
-    void init() {
-        init_shader();
-        init_ssbo();
-        init_atomic();
     }
 
     void upload() {
@@ -414,6 +407,8 @@ public:
 		pluto.pos = vec3(0,0,-20);
 		pluto.v = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 
+		world.init_ssbo();
+		world.init_atomic();
 	}
 
 	//General OGL initialization - set OGL state here
@@ -457,6 +452,8 @@ public:
 		heightshader->addUniform("M");
 		heightshader->addAttribute("vertPos");
 		heightshader->addAttribute("vertTex");
+
+		world.init_shader();
 	}
 
 
@@ -542,20 +539,7 @@ public:
 		glBindTexture(GL_TEXTURE_2D, HeightTex);
 		shape->draw(prog,false);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        world.step(0.01);
 
 		heightshader->bind();
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

@@ -1,4 +1,5 @@
-#version 330 core
+#version 450
+#extension GL_ARB_shader_storage_buffer_object : require
 
 struct sphere {
     vec3 position;
@@ -9,7 +10,7 @@ struct sphere {
 
 layout(local_size_x = 100, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
-layout (std430, binding=0) volatile buffer items_block {
+layout (std430, binding=0) volatile buffer shader_data {
     sphere items[100];
 };
 
@@ -17,7 +18,7 @@ sphere self;
 
 uniform float dt;
 uniform vec3 acceleration;
-
+/*
 // Projects v onto the unit vector onto.
 float project_unit(vec3 v, vec3 onto) {
     return dot(onto, v);
@@ -25,7 +26,7 @@ float project_unit(vec3 v, vec3 onto) {
 
 // Reflects v over the unit vector over.
 vec3 reflect(vec3 v, vec3 over) {
-    vec3 proj = norm(v) * project_unit(v, over);
+    vec3 proj = normalize(v) * project_unit(v, over);
     vec3 step = proj - v;
     return v + 2 * step;
 }
@@ -39,7 +40,7 @@ vec3 collide(sphere other) {
         return vec3(0, 0, 0);
     }
 
-    vec3 normal = norm(dpos);
+    vec3 normal = normalize(dpos);
 
     float self_v1 = length(self.velocity);
     float other_v1 = length(other.velocity);
@@ -47,7 +48,7 @@ vec3 collide(sphere other) {
     vec3 self_v2_dir = reflect(self.velocity, normal);
     //vec3 other_v2_dir = reflect(other.velocity, normal);
 
-    vec3 new_velocity = norm(self_v2_dir) * other_v1;
+    vec3 new_velocity = normalize(self_v2_dir) * other_v1;
     return new_velocity - self.velocity;
 }
 
@@ -90,4 +91,8 @@ void main() {
     // Store
     items[index].position = self.position;
     items[index].velocity = self.velocity;
+}*/
+
+void main() {
+
 }
