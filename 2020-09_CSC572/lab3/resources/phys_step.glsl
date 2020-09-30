@@ -58,14 +58,14 @@ vec3 get_reflection_impulse(float ma, vec3 va, float mb, vec3 pb, vec3 N) {
 
 // Returns the impulse on self caused by other.
 vec3 collide(sphere a, sphere b) {
-    vec3 dpos = b.position - self.position;
+    vec3 dpos = a.position - b.position;
     float d2 = dot(dpos, dpos);
-    float radius_sum = self.radius + b.radius;
-    if (d2 > radius_sum * radius_sum) {
-        return vec3(0, 0, 0);
-    }
+    float radius_sum = a.radius + b.radius;
 
-    return get_reflection_impulse(a.mass, a.velocity, b.mass, b.velocity, dpos / sqrt(d2));
+    if (d2 < radius_sum * radius_sum) {
+        return get_reflection_impulse(a.mass, a.velocity, b.mass, b.velocity, normalize(dpos));
+    }
+    return vec3(0, 0, 0);
 }
 
 float wall_dist = 5;
@@ -97,14 +97,15 @@ vec3 bounds_check(sphere self) {
 void main() {
     index = gl_GlobalInvocationID.x;
 
-    items[index].impulse = vec3(0, 0, 0);
     sphere self = items[index];
+    self.impulse = vec3(0, 0, 0);
 
     // Calculate collisions. Note that we skip over 0.
     for (int i = 1; i < SPHERES_N; i++) {
         uint other_index = (index + i) % SPHERES_N;
         sphere other = items[other_index];
         vec3 impulse = collide(self, other);
+
         self.impulse += impulse;
 
         barrier();
