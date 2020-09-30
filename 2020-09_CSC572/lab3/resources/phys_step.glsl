@@ -57,24 +57,15 @@ vec3 get_reflection_impulse(float ma, vec3 va, float mb, vec3 pb, vec3 N) {
 // Let's just blatantly copy box2d's modeling of this whole situation! https://www.iforce2d.net/b2dtut/collision-anatomy
 
 // Returns the impulse on self caused by other.
-vec3 collide(sphere other) {
-    vec3 dpos = other.position - self.position;
+vec3 collide(sphere a, sphere b) {
+    vec3 dpos = b.position - self.position;
     float d2 = dot(dpos, dpos);
-    float radius_sum = self.radius + other.radius;
+    float radius_sum = self.radius + b.radius;
     if (d2 > radius_sum * radius_sum) {
         return vec3(0, 0, 0);
     }
 
-    vec3 normal = normalize(dpos);
-
-    float self_v1 = length(self.velocity);
-    float other_v1 = length(other.velocity);
-
-    vec3 self_v2_dir = reflect(self.velocity, normal);
-    //vec3 other_v2_dir = reflect(other.velocity, normal);
-
-    vec3 new_velocity = normalize(self_v2_dir) * other_v1;
-    return new_velocity - self.velocity;
+    return get_reflection_impulse(a.mass, a.velocity, b.mass, b.velocity, dpos / sqrt(d2));
 }
 
 float wall_dist = 5;
@@ -110,13 +101,14 @@ void main() {
     sphere self = items[index];
 
     // Calculate collisions. Note that we skip over 0.
-    /*for (int i = 1; i < SPHERES_N; i++) {
+    for (int i = 1; i < SPHERES_N; i++) {
         uint other_index = (index + i) % SPHERES_N;
         sphere other = items[other_index];
-        vec3 impulse = collide(other);
-        self.velocity += impulse;
+        vec3 impulse = collide(self, other);
+        self.impulse += impulse;
+
         barrier();
-    }*/
+    }
 
     self.impulse += bounds_check(self);
     self.impulse += self.mass * acceleration * dt;

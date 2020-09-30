@@ -129,12 +129,15 @@ public:
 
     void init_ssbo() {
         for (int i = 0; i < SPHERES_N; i++) {
-            objects[i].position = vec3(0, 0, -20);
+            objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            //objects[i].position *= ;
+
             objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
             objects[i].velocity *= 2;
+
             //objects[i].velocity = vec3(0, -1, 0);
             objects[i].m = 1;
-            objects[i].r = 1;
+            objects[i].r = 0.1;
         }
         glGenBuffers(1, &objects_gpu);
         upload();
@@ -508,10 +511,6 @@ public:
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
         // Draw the objects
-        prog->bind();
-        glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-        glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-
         for (auto i = 0; i < SPHERES_N; i++) {
             auto &obj = world.objects[i];
             static float w = 0.0;
@@ -528,6 +527,9 @@ public:
             // Draw the box using GLSL.
             V = mycam.process(frametime);
             //send the matrices to the shaders
+            prog->bind();
+            glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+            glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
             glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
             glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
             glActiveTexture(GL_TEXTURE0);
