@@ -18,7 +18,7 @@ sphere self;
 
 uniform float dt;
 uniform vec3 acceleration;
-/*
+
 // Projects v onto the unit vector onto.
 float project_unit(vec3 v, vec3 onto) {
     return dot(onto, v);
@@ -52,19 +52,26 @@ vec3 collide(sphere other) {
     return new_velocity - self.velocity;
 }
 
+float wall_dist = 3;
+
 void bounds_check() {
-    if ((self.position.y-self.radius) < -5.0)
-    self.velocity.y *= -1.0;
+    if ((self.position.y - self.radius) < -wall_dist) {
+        self.velocity.y = abs(self.velocity.y);
+    }
 
-    if ((self.position.x - self.radius) < -5.0)
-    self.velocity.x *= -1.0;
-    if ((self.position.x + self.radius) > 5.0)
-    self.velocity.x *= -1.0;
+    if ((self.position.x - self.radius) < -wall_dist){
+        self.velocity.x = abs(self.velocity.x);
+    }
+    if ((self.position.x + self.radius) > wall_dist){
+        self.velocity.x = -abs(self.velocity.x);
+    }
 
-    if ((self.position.z - self.radius) < -5.0)
-    self.velocity.z *= -1.0;
-    if ((self.position.z + self.radius) < +5.0)
-    self.velocity.z *= -1.0;
+    if ((self.position.z - self.radius) < -wall_dist){
+        self.velocity.z = abs(self.velocity.z);
+    }
+    if ((self.position.z + self.radius) < +wall_dist) {
+        self.velocity.z = -abs(self.velocity.z);
+    }
 }
 
 void main() {
@@ -73,6 +80,7 @@ void main() {
     // Load from memory
     self = items[index];
 
+    /*
     // Calculate collisions. Note that we skip over 0.
     for (int i = 1; i < 100; i++) {
         uint other_index = (index + i) % 100;
@@ -80,7 +88,7 @@ void main() {
         vec3 impulse = collide(other);
         self.velocity += impulse;
         barrier();
-    }
+    }*/
 
     // Integration
     self.velocity += acceleration * dt;
@@ -91,8 +99,4 @@ void main() {
     // Store
     items[index].position = self.position;
     items[index].velocity = self.velocity;
-}*/
-
-void main() {
-
 }

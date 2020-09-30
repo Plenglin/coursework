@@ -71,26 +71,20 @@ public:
 };
 
 camera mycam;
+
 #define ACC vec3(0,-9.81,0)
-class object
-	{
+class object {
 	public:
 		vec3 pos, v;
 		float m;
 		float r;
-		object() 
-			{
+		object() {
 			pos = vec3(0);
 			v = vec3(0);
 			m = 1;
 			r = 1;
-			}
-		void update(float delta_t)
-			{
-			v = v + ACC*0.001f;
-			pos = pos + v * delta_t;
-			}
-	};
+        }
+};
 
 class physics_world {
 public:
@@ -136,6 +130,7 @@ public:
             objects[i].v = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
         }
         glGenBuffers(1, &objects_gpu);
+        upload();
     }
 
     void init_atomic() {
@@ -193,8 +188,6 @@ class Application : public EventCallbacks
 {
 
 public:
-
-	object pluto;
 	physics_world world;
 
 	WindowManager * windowManager = nullptr;
@@ -404,9 +397,6 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		pluto.pos = vec3(0,0,-20);
-		pluto.v = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-
 		world.init_ssbo();
 		world.init_atomic();
 	}
@@ -457,28 +447,11 @@ public:
 	}
 
 
-	void update(float dt)
-		{
-		
-		//compute stuff
-		pluto.update(dt);
-
-        world.step(dt);
-
-		if ((pluto.pos.y-pluto.r) < -5.0)
-			pluto.v.y *= -1.0;
-
-		if ((pluto.pos.x - pluto.r) < -5.0)
-			pluto.v.x *= -1.0;
-		if ((pluto.pos.x + pluto.r) > 5.0)
-			pluto.v.x *= -1.0;
-
-		if ((pluto.pos.z - pluto.r) < -5.0)
-			pluto.v.z *= -1.0;
-		if ((pluto.pos.z + pluto.r) < +5.0)
-			pluto.v.z *= -1.0;
-
-		}
+	void update(float dt) {
+        // Update the physics world
+        world.step(0.01);
+        world.download();
+    }
 
 	/****DRAW
 	This is the most important function in your program - this is where you
@@ -514,65 +487,71 @@ public:
 		// ...but we overwrite it (optional) with a perspective projection.
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
-		//animation with the model matrix:
-		static float w = 0.0;
-		w += 1.0 * frametime;//rotation angle
-		float trans = 0;// sin(t) * 2;
-		glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
-		float angle = -3.1415926/2.0;
-		glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), pluto.pos);
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(pluto.r));
+        // Draw the objects
+        prog->bind();
+        glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+        glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 
-		M =  TransZ * RotateY * RotateX * S;
+        for (auto i = 0; i < 100; i++) {
+            auto &obj = world.objects[i];
+            static float w = 0.0;
+            w += 1.0 * frametime;//rotation angle
+            float trans = 0;// sin(t) * 2;
+            glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
+            float angle = -3.1415926/2.0;
+            glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
+            glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), obj.pos);
+            glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(obj.r));
 
-		// Draw the box using GLSL.
-		prog->bind();
+            M =  TransZ * S;
 
-		V = mycam.process(frametime);
-		//send the matrices to the shaders
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, HeightTex);
-		shape->draw(prog,false);
+            // Draw the box using GLSL.
+            V = mycam.process(frametime);
+            //send the matrices to the shaders
+            glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+            glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, HeightTex);
+            shape->draw(prog,false);
+		}
 
-        world.step(0.01);
+        render_walls(V, P);
+    }
 
-		heightshader->bind();
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		S = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 10.0f, 10.0f));
-		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, -5.0f, -25));
-		M = TransY * S;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		
-		glBindVertexArray(VertexArrayID);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
+    void render_walls(const mat4 &V, const mat4 &P) {// Wall
+        mat4 RotateX, S, M;
+        float angle = 3.14159265 / 2;
+        heightshader->bind();
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        S = scale(mat4(1.0f), vec3(10.0f, 10.0f, 10.0f));
+        mat4 TransY = translate(mat4(1.0f), vec3(-5.0f, -5.0f, -25));
+        M = TransY * S;
+        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+        glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+        glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 
-		M = TransY * S * RotateX;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
+        glBindVertexArray(VertexArrayID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, Texture);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-		RotateY = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-		M = TransY * S * RotateY*RotateX;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
+        M = TransY * S * RotateX;
+        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-		RotateY = glm::rotate(glm::mat4(1.0f), -angle, glm::vec3(0.0f, 1.0f, 0.0f));
-		TransY = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, -5.0f, -15));
-		M = TransY * S * RotateY * RotateX;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
-		heightshader->unbind();
+        auto RotateY = glm::rotate(mat4(1.0f), angle, vec3(0.0f, 1.0f, 0.0f));
+        M = TransY * S * RotateY*RotateX;
+        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-	}
+        RotateY = glm::rotate(mat4(1.0f), -angle, vec3(0.0f, 1.0f, 0.0f));
+        TransY = translate(mat4(1.0f), vec3(5.0f, -5.0f, -15));
+        M = TransY * S * RotateY * RotateX;
+        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
+        heightshader->unbind();
+    }
 
 };
 //******************************************************************************************
