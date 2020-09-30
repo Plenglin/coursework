@@ -31,6 +31,10 @@ sphere self;
 uniform float dt;
 uniform vec3 acceleration;
 
+// Compressible fluid friction. Probably not the most representative for bouncy balls, but it gets the job done.
+vec3 dampening(float k, vec3 velocity) {
+    return k * -velocity * velocity;
+}
 
 // Returns the impulse on a.
 vec3 collide_sphere_sphere(sphere a, sphere b) {
@@ -46,7 +50,7 @@ vec3 collide_sphere_sphere(sphere a, sphere b) {
     float d = sqrt(d2);
     float penetration = radius_sum - d;
     vec3 normal = dpos / d;
-    return 1000 * penetration * normal;
+    return 10000 * penetration * normal + dampening(0.01, a.velocity - b.velocity);
 }
 
 float wall_dist = 5;
@@ -55,8 +59,8 @@ vec3 collide_sphere_plane(sphere s, plane p) {
     float distance = dot(s.position - p.position, p.normal);
     if (distance < s.radius) {   // Inside the plane
         // it's a spring!
-        float k = 1000;
-        return -k * (distance - s.radius) * p.normal;
+        float k = 10000;
+        return -k * (distance - s.radius) * p.normal + dampening(0.05, s.velocity);
     }
     return vec3(0, 0, 0);
 }
