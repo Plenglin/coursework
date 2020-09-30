@@ -82,6 +82,13 @@ struct sphere {
     float r;
     vec3 impulse;
     float _0;
+
+    float kinetic_energy() {
+        return 0.5 * m * glm::dot(velocity, velocity);
+    }
+    float potential_energy() {
+        return m * ACC.y * position.y;
+    }
 };
 
 struct world_gpu_data {
@@ -137,7 +144,7 @@ public:
 
             //objects[i].velocity = vec3(0, -1, 0);
             objects[i].m = 1;
-            objects[i].r = 0.1;
+            objects[i].r = 0.2;
         }
         glGenBuffers(1, &objects_gpu);
         upload();
@@ -176,6 +183,7 @@ public:
         auto* ref = mmap_ssbo(GL_READ_ONLY);
         for (int i = 0; i < SPHERES_N; i++) {
             objects[i].position = ref[i].position;
+            objects[i].velocity = ref[i].velocity;
         }
         munmap_ssbo();
     }
@@ -464,7 +472,7 @@ public:
 
 	void update(float dt) {
         // Update the physics world
-        world.step(0.02);
+        world.step(0.01);
         world.download();
         // for (int i = 0; i < SPHERES_N; i++) {
         //     auto &s = world.objects[i];
@@ -474,6 +482,15 @@ public:
         //     printvec(s.velocity);
         //     cout << " " << s.m << " " << s.r << endl;
         // }
+
+        float ke = 0;
+        float pe = 0;
+        for (int i = 0; i < SPHERES_N; i++) {
+            ke += world.objects[i].kinetic_energy();
+            pe += world.objects[i].potential_energy();
+        }
+
+        cout << "Net energy: " << ke + pe << " KE: " << ke << " PE: " << pe << endl;
     }
 
 	/****DRAW

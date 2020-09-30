@@ -62,7 +62,7 @@ vec3 collide(sphere a, sphere b) {
     float d2 = dot(dpos, dpos);
     float radius_sum = a.radius + b.radius;
 
-    if (d2 < radius_sum * radius_sum) {
+    if (d2 < radius_sum * radius_sum && dot(a.velocity, b.velocity) > 0) {
         return get_reflection_impulse(a.mass, a.velocity, b.mass, b.velocity, normalize(dpos));
     }
     return vec3(0, 0, 0);
@@ -77,6 +77,7 @@ bool should_collide_circle_plane(sphere s, plane p) {
 }
 
 plane walls[] = {
+{ vec3(0, wall_dist, 0), vec3(0, -1, 0) },
 { vec3(0, -wall_dist, 0), vec3(0, 1, 0) },
 { vec3(0, 0, wall_dist), vec3(0, 0, -1) },
 { vec3(0, 0, -wall_dist), vec3(0, 0, 1) },
@@ -86,7 +87,7 @@ plane walls[] = {
 
 vec3 bounds_check(sphere self) {
     vec3 impulse = vec3(0, 0, 0);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         if (should_collide_circle_plane(self, walls[i])) {
             impulse += get_reflection_impulse(self.mass, self.velocity, -1, vec3(0, 0, 0), walls[i].normal);
         }
