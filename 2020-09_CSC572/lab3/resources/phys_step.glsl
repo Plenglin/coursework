@@ -29,24 +29,18 @@ sphere self;
 uniform float dt;
 uniform vec3 acceleration;
 
-// Projects v onto the unit vector onto.
-float project_unit(vec3 v, vec3 onto) {
-    return dot(onto, v);
-}
 
-// Reflects v over the unit vector over.
+// Reflects v over the unit vector.
 vec3 reflect(vec3 v, vec3 over) {
-    vec3 proj = normalize(v) * project_unit(v, over);
-    vec3 step = proj - v;
-    return v + 2 * step;
+    return v - 2 * dot(v, over) * over;
 }
 
 // Given two objects colliding with masses ma, mb; velocities va, vb; and collision unit normal N, returns the impulse applied to object a.
-vec3 get_reflection_force(float ma, vec3 va, float mb, vec3 pb, vec3 N) {
+vec3 get_reflection_impulse(float ma, vec3 va, float mb, vec3 pb, vec3 N) {
     vec3 va_dir = reflect(va, N);
 
-    if (isinf(mb)) {  // second object is static
-        return va_dir;  // Pure reflection
+    if (mb < 0) {  // second object is static
+        return ma * (va_dir - va);  // Pure reflection
     }
 
     // For now, assume ma = mb.
@@ -83,44 +77,37 @@ vec3 collide(sphere other) {
     return new_velocity - self.velocity;
 }
 
-float wall_dist = 3;
+float wall_dist = 5;
 
-vec3 collide_circle_plane(sphere s, plane p) {
+bool should_collide_circle_plane(sphere s, plane p) {
     float distance = dot(s.position - p.position, p.normal);
-    if (distance < s.radius) {
-        //return get_reflection_force(s.mass, s.velocity, 1 / 0, vec3(0, 0, 0), p.normal);
-    }
-    return vec3(0, 0, 0);
+    return distance < s.radius &&  // Inside the plane
+        dot(s.velocity, p.normal) < 0;  // Not leaving the plane
 }
 
-plane bottom = {
-    vec3(0, 0, 0),
-    vec3(0, 1, 0)
+plane walls[] = {
+{ vec3(0, -wall_dist, 0), vec3(0, 1, 0) },
+{ vec3(0, 0, wall_dist), vec3(0, 0, -1) },
+{ vec3(0, 0, -wall_dist), vec3(0, 0, 1) },
+{ vec3(-wall_dist, 0, 0), vec3(1, 0, 0) },
+{ vec3(wall_dist, 0, 0), vec3(-1, 0, 0) }
 };
 
-void bounds_check(sphere self) {
-    self.impulse += collide_circle_plane(self, bottom);
-
-    /*if ((self.position.x - self.radius) < -wall_dist){
-        self.velocity.x = abs(self.velocity.x);
+vec3 bounds_check(sphere self) {
+    vec3 impulse = vec3(0, 0, 0);
+    for (int i = 0; i < 5; i++) {
+        if (should_collide_circle_plane(self, walls[i])) {
+            impulse += get_reflection_impulse(self.mass, self.velocity, -1, vec3(0, 0, 0), walls[i].normal);
+        }
     }
-    if ((self.position.x + self.radius) > wall_dist){
-        self.velocity.x = -abs(self.velocity.x);
-    }
-
-    if ((self.position.z - self.radius) < -wall_dist){
-        self.velocity.z = abs(self.velocity.z);
-    }
-    if ((self.position.z + self.radius) < +wall_dist) {
-        self.velocity.z = -abs(self.velocity.z);
-    }*/
+    return impulse;
 }
 
 void main() {
     index = gl_GlobalInvocationID.x;
 
     items[index].impulse = vec3(0, 0, 0);
-    //sphere self = items[index];
+    sphere self = items[index];
 
     // Calculate collisions. Note that we skip over 0.
     /*for (int i = 1; i < SPHERES_N; i++) {
@@ -131,13 +118,14 @@ void main() {
         barrier();
     }*/
 
-    //bounds_check(self);
+    self.impulse += bounds_check(self);
+    self.impulse += self.mass * acceleration * dt;
 
     // Integration
-    //self.velocity += (self.impulse / self.mass) * dt;
-    //self.position += self.velocity * dt;
+    self.velocity += (self.impulse / self.mass);
+    self.position += self.velocity * dt;
 
     // Store
-    //items[index].position = self.position;
-    //items[index].velocity = self.velocity;
+    items[index].position = self.position;
+    items[index].velocity = self.velocity;
 }

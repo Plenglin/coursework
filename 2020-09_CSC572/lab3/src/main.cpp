@@ -131,6 +131,8 @@ public:
         for (int i = 0; i < SPHERES_N; i++) {
             objects[i].position = vec3(0, 0, -20);
             objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            objects[i].velocity *= 2;
+            //objects[i].velocity = vec3(0, -1, 0);
             objects[i].m = 1;
             objects[i].r = 1;
         }
@@ -459,16 +461,16 @@ public:
 
 	void update(float dt) {
         // Update the physics world
-        for (int i = 0; i < SPHERES_N; i++) {
-            auto &s = world.objects[i];
-            cout << i << ": ";
-            printvec(s.position);
-            cout << " ";
-            printvec(s.velocity);
-            cout << " " << s.m << " " << s.r << endl;
-        }
-        world.step(0.1);
+        world.step(0.02);
         world.download();
+        // for (int i = 0; i < SPHERES_N; i++) {
+        //     auto &s = world.objects[i];
+        //     cout << i << ": ";
+        //     printvec(s.position);
+        //     cout << " ";
+        //     printvec(s.velocity);
+        //     cout << " " << s.m << " " << s.r << endl;
+        // }
     }
 
 	/****DRAW
