@@ -25,9 +25,6 @@ layout (std430, binding=0) volatile buffer shader_data {
     sphere items[SPHERES_N];
 };
 
-uint index;
-sphere self;
-
 uniform float dt;
 uniform vec3 acceleration;
 
@@ -83,22 +80,36 @@ vec3 bounds_check(sphere self) {
 }
 
 void main() {
-    index = gl_GlobalInvocationID.x;
+    uint index = gl_GlobalInvocationID.x;
 
-    sphere self = items[index];
-    self.impulse = vec3(0, 0, 0);
+    // Reset impulse
+    items[index].impulse = vec3(0, 0, 0);
+    barrier();
 
-    // Calculate collisions. Note that we skip over 0.
-    for (int i = 1; i < SPHERES_N; i++) {
-        uint other_index = (index + i) % SPHERES_N;
+    // Calculate sphere collisions
+    for (uint other_index = 0; other_index < SPHERES_N; other_index++) {
+        if (other_index <= index) {
+            barrier();
+            barrier();
+            continue;
+        }
+
         sphere other = items[other_index];
+        sphere self = items[index];
         vec3 impulse = collide_sphere_sphere(self, other) * dt;
 
-        self.impulse += impulse;
-
-        barrier();
+        if (dot(impulse, impulse) > 0) {
+            items[index].impulse += impulse;
+            barrier();
+            items[other_index].impulse -= impulse;
+            barrier();
+        } else {
+            barrier();
+            barrier();
+        }
     }
 
+    sphere self = items[index];
     self.impulse += bounds_check(self);
     self.impulse += self.mass * acceleration * dt;
 
