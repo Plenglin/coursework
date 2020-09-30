@@ -465,25 +465,13 @@ public:
 
 		world.init_shader();
 	}
-
-	void printvec(vec3 v) {
-        cout << "(" << v.x << "," << v.z << "," << v.z << ")";
-    }
-
+    
 	void update(float dt) {
-        // Update the physics world
+        // Update the physics world. Use fixed timesteps to ensure stability.
         for (int i = 0; i < 5; i++) {
             world.step(0.001);
         }
         world.download();
-        // for (int i = 0; i < SPHERES_N; i++) {
-        //     auto &s = world.objects[i];
-        //     cout << i << ": ";
-        //     printvec(s.position);
-        //     cout << " ";
-        //     printvec(s.velocity);
-        //     cout << " " << s.m << " " << s.r << endl;
-        // }
 
         float ke = 0;
         float pe = 0;
