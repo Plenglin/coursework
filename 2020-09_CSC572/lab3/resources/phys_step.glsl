@@ -3,6 +3,8 @@
 
 #define SPHERES_N 100
 
+// Assume all objects act like ideal springs.
+
 struct sphere {
     vec3 position;
     float mass;
@@ -56,24 +58,34 @@ vec3 get_reflection_impulse(float ma, vec3 va, float mb, vec3 pb, vec3 N) {
 
 // Let's just blatantly copy box2d's modeling of this whole situation! https://www.iforce2d.net/b2dtut/collision-anatomy
 
-// Returns the impulse on self caused by other.
-vec3 collide(sphere a, sphere b) {
+// Returns the impulse on a.
+vec3 collide_sphere_sphere(sphere a, sphere b) {
     vec3 dpos = a.position - b.position;
     float d2 = dot(dpos, dpos);
     float radius_sum = a.radius + b.radius;
 
-    if (d2 < radius_sum * radius_sum && dot(a.velocity, b.velocity) > 0) {
-        return get_reflection_impulse(a.mass, a.velocity, b.mass, b.velocity, normalize(dpos));
+    if (d2 > radius_sum * radius_sum) {  // Not inside each other
+        return vec3(0, 0, 0);
     }
-    return vec3(0, 0, 0);
+
+    // Inside each other
+    float d = sqrt(d2);
+    float penetration = d - radius_sum;
+    vec3 normal = dpos / d;
+    float k = 100;
+    return k * normal * penetration;
 }
 
 float wall_dist = 5;
 
-bool should_collide_circle_plane(sphere s, plane p) {
+vec3 collide_sphere_plane(sphere s, plane p) {
     float distance = dot(s.position - p.position, p.normal);
-    return distance < s.radius &&  // Inside the plane
-        dot(s.velocity, p.normal) < 0;  // Not leaving the plane
+    if (distance < s.radius) {   // Inside the plane
+        // it's a spring!
+        float k = 100;
+        return -k * distance * p.normal;
+    }
+    return vec3(0, 0, 0);
 }
 
 plane walls[] = {
@@ -86,13 +98,11 @@ plane walls[] = {
 };
 
 vec3 bounds_check(sphere self) {
-    vec3 impulse = vec3(0, 0, 0);
+    vec3 force = vec3(0, 0, 0);
     for (int i = 0; i < 6; i++) {
-        if (should_collide_circle_plane(self, walls[i])) {
-            impulse += get_reflection_impulse(self.mass, self.velocity, -1, vec3(0, 0, 0), walls[i].normal);
-        }
+        force += collide_sphere_plane(self, walls[i]);
     }
-    return impulse;
+    return force * dt;
 }
 
 void main() {
@@ -105,7 +115,7 @@ void main() {
     for (int i = 1; i < SPHERES_N; i++) {
         uint other_index = (index + i) % SPHERES_N;
         sphere other = items[other_index];
-        vec3 impulse = collide(self, other);
+        vec3 impulse = collide_sphere_sphere(self, other) * dt;
 
         self.impulse += impulse;
 
