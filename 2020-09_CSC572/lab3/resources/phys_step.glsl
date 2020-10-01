@@ -30,7 +30,7 @@ uniform vec3 acceleration;
 
 // Compressible fluid friction. Probably not the most representative for bouncy balls, but it gets the job done.
 vec3 dampening(float k, vec3 velocity) {
-    return k * -velocity * velocity;
+    return k * -velocity * abs(velocity);
 }
 
 // Returns the impulse on a.
@@ -47,7 +47,7 @@ vec3 collide_sphere_sphere(sphere a, sphere b) {
     float d = sqrt(d2);
     float penetration = radius_sum - d;
     vec3 normal = dpos / d;
-    return 10000 * penetration * normal + dampening(0.01, a.velocity - b.velocity);
+    return 10000 * penetration * normal;
 }
 
 float wall_dist = 5;
@@ -57,7 +57,7 @@ vec3 collide_sphere_plane(sphere s, plane p) {
     if (distance < s.radius) {   // Inside the plane
         // it's a spring!
         float k = 10000;
-        return -k * (distance - s.radius) * p.normal + dampening(0.05, s.velocity);
+        return -k * (distance - s.radius) * p.normal + dampening(1.0, s.velocity);
     }
     return vec3(0, 0, 0);
 }
@@ -87,21 +87,25 @@ void main() {
     barrier();
 
     // Calculate sphere collisions
+
     for (uint other_index = 0; other_index < SPHERES_N; other_index++) {
-        if (other_index <= index) {
+        if (other_index >= index) {
             barrier();
             barrier();
             continue;
         }
 
-        sphere other = items[other_index];
-        sphere self = items[index];
-        vec3 impulse = collide_sphere_sphere(self, other) * dt;
+        sphere b = items[other_index];
+        sphere a = items[index];
+        vec3 force = collide_sphere_sphere(a, b) * dt;
 
-        if (dot(impulse, impulse) > 0) {
-            items[index].impulse += impulse;
+        if (dot(force, force) > 0) {
+            vec3 impulse_a = (force + dampening(0.5, a.velocity)) * dt;
+            vec3 impulse_b = (-force + dampening(0.5, b.velocity)) * dt;
+
+            items[index].impulse += impulse_a;
             barrier();
-            items[other_index].impulse -= impulse;
+            items[other_index].impulse += impulse_b;
             barrier();
         } else {
             barrier();
