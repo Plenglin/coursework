@@ -11,7 +11,7 @@ struct sphere {
     vec3 velocity;
     float radius;
     vec3 impulse;
-    float _0;  // padding
+    float spring_energy;
 };
 
 struct plane {
@@ -57,7 +57,7 @@ vec3 collide_sphere_plane(sphere s, plane p) {
     if (distance < s.radius) {   // Inside the plane
         // it's a spring!
         float k = 10000;
-        return -k * (distance - s.radius) * p.normal + dampening(1.0, s.velocity);
+        return -k * (distance - s.radius) * p.normal + dampening(0, s.velocity);
     }
     return vec3(0, 0, 0);
 }
@@ -100,9 +100,10 @@ void main() {
         vec3 force = collide_sphere_sphere(a, b) * dt;
 
         if (dot(force, force) > 0) {
-            vec3 impulse_a = (force + dampening(0.5, a.velocity)) * dt;
-            vec3 impulse_b = (-force + dampening(0.5, b.velocity)) * dt;
+            vec3 impulse_a = (force + dampening(0.2, a.velocity)) * dt;
+            vec3 impulse_b = (-force + dampening(0.2, b.velocity)) * dt;
 
+            // Barriers to ensure no race conditions.
             items[index].impulse += impulse_a;
             barrier();
             items[other_index].impulse += impulse_b;

@@ -82,7 +82,7 @@ struct sphere {
     vec3 velocity;
     float r;
     vec3 impulse;
-    float _0;
+    float spring_energy;
 
     float kinetic_energy() {
         return 0.5 * m * glm::dot(velocity, velocity);
