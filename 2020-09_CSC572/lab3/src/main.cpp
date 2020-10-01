@@ -75,14 +75,13 @@ camera mycam;
 
 #define ACC vec3(0,-9.81,0)
 #define SPHERES_N 100
+#define MAX_COLLISIONS SPHERES_N * (SPHERES_N - 1) / 2
 
 struct sphere {
     vec3 position;
     float m;
     vec3 velocity;
     float r;
-    vec3 impulse;
-    float _0;
 
     float kinetic_energy() {
         return 0.5 * m * glm::dot(velocity, velocity);
@@ -109,8 +108,9 @@ public:
     void init_shader() {
         std::string shader_string = readFileAsString("../resources/phys_step.glsl");
         const char *cstr = shader_string.c_str();
-        GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-        glShaderSource(shader, 1, &cstr, nullptr);
+        GLuint shader;
+        CHECKED_GL_CALL(shader = glCreateShader(GL_COMPUTE_SHADER));
+        CHECKED_GL_CALL(glShaderSource(shader, 1, &cstr, nullptr));
 
         GLint rc;
         CHECKED_GL_CALL(glCompileShader(shader));
@@ -121,10 +121,10 @@ public:
             exit(1);
         }
 
-        program = glCreateProgram();
-        glAttachShader(program, shader);
-        glLinkProgram(program);
-        glUseProgram(program);
+        CHECKED_GL_CALL(program = glCreateProgram());
+        CHECKED_GL_CALL(glAttachShader(program, shader));
+        CHECKED_GL_CALL(glLinkProgram(program));
+        CHECKED_GL_CALL(glUseProgram(program));
 
         object_block_index = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "shader_data");
         glShaderStorageBlockBinding(program, object_block_index, 2);
