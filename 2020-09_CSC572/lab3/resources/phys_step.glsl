@@ -24,13 +24,11 @@ layout(local_size_x = SPHERES_N, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
     sphere items[SPHERES_N];
+    vec3 collision_component_forces[MAX_COLLISIONS];
 };
 
 uniform float dt;
 uniform vec3 acceleration;
-
-//shared vec3 collision_component_forces[MAX_COLLISIONS];
-shared vec3 collision_component_forces[3];
 
 // Maps t in [0, MAX_COLLISIONS) to lower triangular collision space.
 uvec2 task_to_pair(uint t) {

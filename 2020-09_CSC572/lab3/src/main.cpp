@@ -93,16 +93,16 @@ struct sphere {
 
 struct world_gpu_data {
     sphere objects[SPHERES_N];
-
 };
 
 class physics_world {
 public:
-    sphere objects[SPHERES_N];
-    GLuint objects_gpu;
+    world_gpu_data object_data;
+    GLuint objects_gpu, workmem_gpu;
     GLuint program;
     GLuint atomic_buf;
     GLuint object_block_index;
+    GLuint collision_workmem_block_index;
     GLuint uniform_dt, uniform_acc;
 
     void init_shader() {
@@ -128,6 +128,8 @@ public:
 
         object_block_index = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "shader_data");
         glShaderStorageBlockBinding(program, object_block_index, 2);
+        collision_workmem_block_index = glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, "collision_workmem");
+        glShaderStorageBlockBinding(program, collision_workmem_block_index, 2);
 
         uniform_dt = glGetUniformLocation(program, "dt");
         uniform_acc = glGetUniformLocation(program, "acceleration");
@@ -137,16 +139,18 @@ public:
 
     void init_ssbo() {
         for (int i = 0; i < SPHERES_N; i++) {
-            objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            objects[i].position *= 8;
+            object_data.objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            object_data.objects[i].position *= 8;
 
-            objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            object_data.objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 
-            //objects[i].velocity = vec3(0, -1, 0);
-            objects[i].m = 1;
-            objects[i].r = 0.2;
+            //object_data.objects[i].velocity = vec3(0, -1, 0);
+            object_data.objects[i].m = 1;
+            object_data.objects[i].r = 0.2;
         }
         glGenBuffers(1, &objects_gpu);
+        glGenBuffers(1, &workmem_gpu);
+
         upload();
     }
 
@@ -154,23 +158,23 @@ public:
         glGenBuffers(1, &atomic_buf);
         // bind the buffer and define its initial storage capacity
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
-        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint) * 1, nullptr, GL_DYNAMIC_DRAW);
         // unbind the buffer
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
     }
 
     void upload() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sphere) * SPHERES_N, objects, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(world_gpu_data) + 16 * MAX_COLLISIONS, &object_data, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
-    sphere* mmap_ssbo(GLenum flags) {
+    world_gpu_data* mmap_ssbo(GLenum flags) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, flags);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-        return (sphere*)p;
+        return (world_gpu_data*)p;
     }
 
     void munmap_ssbo() {
@@ -182,23 +186,23 @@ public:
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
         for (int i = 0; i < SPHERES_N; i++) {
-            objects[i].position = ref[i].position;
-            objects[i].velocity = ref[i].velocity;
+            object_data.objects[i].position = ref->objects[i].position;
+            object_data.objects[i].velocity = ref->objects[i].velocity;
         }
         munmap_ssbo();
     }
 
     void step(float dt) {
-        glShaderStorageBlockBinding(program, object_block_index, 0);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
+        CHECKED_GL_CALL(glShaderStorageBlockBinding(program, object_block_index, 0));
+        CHECKED_GL_CALL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu));
 
-        glUseProgram(program);
-        glUniform1f(uniform_dt, dt);
-        //activate atomic counter
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
-        glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);
+        CHECKED_GL_CALL(glUseProgram(program));
+        CHECKED_GL_CALL(glUniform1f(uniform_dt, dt));
+        // activate atomic counter
+        CHECKED_GL_CALL(glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf));
+        CHECKED_GL_CALL(glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf));
 
-        glDispatchCompute(1, 1, 1);				//start compute shader
+        CHECKED_GL_CALL(glDispatchCompute(1, 1, 1));
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
     }
@@ -478,8 +482,8 @@ public:
         float ke = 0;
         float pe = 0;
         for (int i = 0; i < SPHERES_N; i++) {
-            ke += world.objects[i].kinetic_energy();
-            pe += world.objects[i].potential_energy();
+            ke += world.object_data.objects[i].kinetic_energy();
+            pe += world.object_data.objects[i].potential_energy();
         }
 
         cout << "Net energy: " << ke + pe << " KE: " << ke << " PE: " << pe << endl;
@@ -521,7 +525,7 @@ public:
 
         // Draw the objects
         for (auto i = 0; i < SPHERES_N; i++) {
-            auto &obj = world.objects[i];
+            auto &obj = world.object_data.objects[i];
             static float w = 0.0;
             w += 1.0 * frametime;//rotation angle
             float trans = 0;// sin(t) * 2;
