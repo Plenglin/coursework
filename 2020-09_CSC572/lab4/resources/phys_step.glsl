@@ -9,7 +9,7 @@ struct sphere {
     vec3 position;
     float mass;
     vec3 velocity;
-    uint next;  // Singly-linked list. -1 is nil.
+    uint cell;  // Singly-linked list. -1 is nil.
     vec3 acceleration;
     uint _;
 };

@@ -30,11 +30,6 @@ double get_last_elapsed_time()
 	lasttime = actualtime;
 	return difference;
 }
-
-float randf() {
-    return (float)(rand() / (float)RAND_MAX);
-}
-
 class camera
 {
 public:
@@ -97,6 +92,10 @@ struct world_gpu_data {
     cell cells[RASTERIZATION_CELLS];
     sphere objects[STARS_N];
 };
+
+float randf() {
+    return (float)rand() / (1 << 30);
+}
 
 class physics_world {
 public:
@@ -218,6 +217,9 @@ public:
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID;
 
+	GLuint VAO;
+	GLuint VBO;
+
 	// Data necessary to give our box to OpenGL
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
 
@@ -275,6 +277,18 @@ public:
 		if (action == GLFW_PRESS)
 		{
 			
+
+			vec3 vert[200];
+			for (int i = 0; i < 200; i++)
+				{
+				vert[i] = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 2.0f;
+				vert[i].z -= 20.;
+				}
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec3) * 200, vert);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
 		}
 	}
 
@@ -289,6 +303,29 @@ public:
 #define MESHSIZE 4
 	void init_mesh()
 	{
+
+		//generate the VAO
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
+		glGenBuffers(1, &VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		
+
+		vec3 vert[200];
+
+		for (int i = 0; i < 200; i++)
+			{
+			vert[i] = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 2.0f;
+			vert[i].z -= 20.;
+			}
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 200, vert, GL_DYNAMIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+
+
 		//generate the VAO
 		glGenVertexArrays(1, &VertexArrayID);
 		glBindVertexArray(VertexArrayID);
@@ -298,10 +335,10 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, MeshPosID);
 		vec3 vertices[MESHSIZE];
 		
-		vertices[0] = vec3(1.0, 0.0, 1.0);
-		vertices[1] = vec3(-1.0, 0.0, 1.0);
-		vertices[2] = vec3(-1.0, 0.0, -1.0);
-		vertices[3] = vec3(1.0, 0.0, -1.0);
+		vertices[0] = vec3(1.0, 0.0, 0.0);
+		vertices[1] = vec3(0.0, 0.0, 0.0);
+		vertices[2] = vec3(0.0, 0.0, 1.0);
+		vertices[3] = vec3(1.0, 0.0, 1.0);
 		
 
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) *MESHSIZE, vertices, GL_DYNAMIC_DRAW);
@@ -443,10 +480,9 @@ public:
 		prog->addUniform("P");
 		prog->addUniform("V");
 		prog->addUniform("M");
-		prog->addUniform("campos");
+	
 		prog->addAttribute("vertPos");
-		prog->addAttribute("vertNor");
-		prog->addAttribute("vertTex");
+
 
 		// Initialize the GLSL program.
 		heightshader = std::make_shared<Program>();
@@ -464,7 +500,6 @@ public:
 		heightshader->addAttribute("vertTex");
 
 		world.init_shader();
-		mycam.pos = vec3(0, 0, -20);
 	}
 
 	void update(float dt) {
@@ -493,7 +528,7 @@ public:
 		glViewport(0, 0, width, height);
 
 		// Clear framebuffer.
-		glClearColor(0.8f, 0.8f, 1.0f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Create the matrix stacks - please leave these alone for now
@@ -510,68 +545,45 @@ public:
 		// ...but we overwrite it (optional) with a perspective projection.
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
-        // Draw the objects
-        for (auto i = 0; i < STARS_N; i++) {
-            auto &obj = world.objects[i];
-            static float w = 0.0;
-            w += 1.0 * frametime;//rotation angle
-            float trans = 0;// sin(t) * 2;
-            glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
-            float angle = -3.1415926/2.0;
-            glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
-            glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), obj.position);
+		//animation with the model matrix:
+		static float w = 0.0;
+		w += 1.0 * frametime;//rotation angle
+		float trans = 0;// sin(t) * 2;
+		glm::mat4 RotateY = glm::rotate(glm::mat4(1.0f), w, glm::vec3(0.0f, 1.0f, 0.0f));
+		float angle = -3.1415926/2.0;
+		glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
 
-            M = TransZ;
+		M = mat4(1);// TransZ* RotateY* RotateX* S;
 
-            // Draw the box using GLSL.
-            V = mycam.process(frametime);
-            //send the matrices to the shaders
-            prog->bind();
-            glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-            glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-            glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-            glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, HeightTex);
-            shape->draw(prog,false);
-		}
+		// Draw the box using GLSL.
+		prog->bind();
 
-        render_walls(V, P);
-    }
+		V = mycam.process(frametime);
+		//send the matrices to the shaders
+		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glBindVertexArray(VAO);	
+		glDrawArrays(GL_POINTS, 0,200);
 
-    void render_walls(const mat4 &V, const mat4 &P) {// Wall
-        float angle = 3.14159265 / 2;
-        heightshader->bind();
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        mat4 S = scale(mat4(1.0f), vec3(5, 5, 5));
-        mat4 TransY = translate(mat4(1.0f), vec3(0, -1, 0));
-        mat4 M = S * TransY;
-        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-        glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-        glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		prog->unbind();
 
-        glBindVertexArray(VertexArrayID);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, Texture);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-        auto RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
-        auto RotateY = glm::rotate(mat4(1.0f), angle, vec3(0.0f, 1.0f, 0.0f));
 
-        M = RotateX * M;
-        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-        M = RotateY * M;
-        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
 
-        M = RotateY * M;
-        glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void*)0);
-        heightshader->unbind();
-    }
+
+
+
+
+
+
+
+
+
+		heightshader->bind();
+
+	}
 
 };
 //******************************************************************************************
