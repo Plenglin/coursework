@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 10000
+#define STARS_N 100
 #define RASTERIZATION_WIDTH 4
 #define RASTERIZATION_CELLS RASTERIZATION_WIDTH * RASTERIZATION_WIDTH
 
@@ -144,7 +144,7 @@ public:
     void init_stars() {
         for (int i = 0; i < STARS_N; i++) {
             objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            objects[i].position *= 8;
+            objects[i].position *= 4;
 
             objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 

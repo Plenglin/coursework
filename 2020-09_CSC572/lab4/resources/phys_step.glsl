@@ -1,37 +1,86 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define STARS_N 200
-
-// Assume all objects are rubbery and act like ideal springs.
+#define RASTERIZATION 5
+#define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
 struct star {
     vec3 position;
-    float mass;
+    uint cell;
 };
 
 struct cell {
     vec3 barycenter;
     uint mass;
     vec3 acceleration;
-    uint head;  // Singly-linked list. -1 is nil.
+    uint _;
 };
 
-layout(local_size_x = STARS_N, local_size_y = 1) in;
+layout(local_size_x = RASTERIZATION, local_size_y = RASTERIZATION, local_size_z = RASTERIZATION) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
     star stars[];
 };
 
+// Minimums and maximums found by each worker
+shared vec3 intermediate_min_bounds[TOTAL_CELLS];
+shared vec3 intermediate_max_bounds[TOTAL_CELLS];
+// Global minimum and maximum
+shared vec3 min_bounds;
+shared vec3 max_bounds;
+
+// Raster group data
+shared cell cells[TOTAL_CELLS];
+
 uniform float dt;
 uniform float G;
+const uint linear_index = gl_GlobalInvocationID.x + RASTERIZATION * (gl_GlobalInvocationID.y + RASTERIZATION * gl_GlobalInvocationID.z);
+
+// Result index to put this worker's results in during linear scan
+const uint scan_block_index = linear_index / stars.length();
+
+// Star indices to scan through during linear scan
+const uint linear_scan_start = scan_block_index * RASTERIZATION;
+const uint linear_scan_end = (scan_block_index + 1) * RASTERIZATION;
+
+void calculate_bounds() {
+    // Phase 1: Calculate bounds for only this one's linear scan set
+    vec3 min_b = vec3(0, 0, 0);
+    vec3 max_b = vec3(0, 0, 0);
+    for (uint i = linear_scan_start; i < linear_scan_end; i++) {
+        min_b = min(min_b, stars[i].position);
+        max_b = max(max_b, stars[i].position);
+    }
+    intermediate_min_bounds[linear_index] = min_b;
+    intermediate_max_bounds[linear_index] = max_b;
+    barrier();
+
+    // Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
+    if (linear_index != 0) {
+        barrier();
+        return;
+    }
+    min_bounds = min_b;
+    max_bounds = max_b;
+    for (int i = 0; i < TOTAL_CELLS; i++) {
+        min_bounds = min(min_bounds, intermediate_min_bounds[i]);
+        max_bounds = max(max_bounds, intermediate_max_bounds[i]);
+    }
+    barrier();
+}
+
+// Scan stars for items inside this linear index
+void rasterize() {
+    for (uint i = linear_scan_start; i < linear_scan_end; i++) {
+
+    }
+}
 
 void main() {
-    uint index = gl_GlobalInvocationID.x;
+    calculate_bounds();
 
     // Reset impulse
-    barrier();
-    stars[index].position.x += 1 * dt;
+    rasterize();
 
     // Calculate sphere collisions
 /*
