@@ -73,33 +73,34 @@ public:
 
 camera mycam;
 
-#define ACC vec3(0,-9.81,0)
-#define SPHERES_N 100
+#define STARS_N 100
+#define RASTERIZATION_WIDTH 4
+#define RASTERIZATION_CELLS RASTERIZATION_WIDTH * RASTERIZATION_WIDTH
+
+struct cell {
+    vec3 barycenter;
+    uint mass;
+    vec3 acceleration;
+    uint _;
+};
 
 struct sphere {
     vec3 position;
-    float m;
+    float mass;
     vec3 velocity;
-    float r;
-    vec3 impulse;
-    float spring_energy;
-
-    float kinetic_energy() {
-        return 0.5 * m * glm::dot(velocity, velocity);
-    }
-    float potential_energy() {
-        return m * ACC.y * position.y;
-    }
+    uint next;  // Singly-linked list. -1 is nil.
+    vec3 acceleration;
+    uint _;
 };
 
 struct world_gpu_data {
-    sphere objects[SPHERES_N];
-
+    cell cells[RASTERIZATION_CELLS];
+    sphere objects[STARS_N];
 };
 
 class physics_world {
 public:
-    sphere objects[SPHERES_N];
+    sphere objects[STARS_N];
     GLuint objects_gpu;
     GLuint program;
     GLuint atomic_buf;
@@ -130,21 +131,20 @@ public:
         glShaderStorageBlockBinding(program, object_block_index, 2);
 
         uniform_dt = glGetUniformLocation(program, "dt");
-        uniform_acc = glGetUniformLocation(program, "acceleration");
-        const vec3 acc = ACC;
-        glUniform3fv(uniform_acc, 1, &acc[0]);
+        uniform_acc = glGetUniformLocation(program, "G");
+        const float G = 1e-8;
+        glUniform1f(uniform_acc, G);
     }
 
     void init_ssbo() {
-        for (int i = 0; i < SPHERES_N; i++) {
+        for (int i = 0; i < STARS_N; i++) {
             objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
             objects[i].position *= 8;
 
             objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
 
             //objects[i].velocity = vec3(0, -1, 0);
-            objects[i].m = 1;
-            objects[i].r = 0.2;
+            objects[i].mass = 1;
         }
         glGenBuffers(1, &objects_gpu);
         upload();
@@ -161,7 +161,7 @@ public:
 
     void upload() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sphere) * SPHERES_N, objects, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sphere) * STARS_N, objects, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
@@ -181,7 +181,7 @@ public:
 
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
-        for (int i = 0; i < SPHERES_N; i++) {
+        for (int i = 0; i < STARS_N; i++) {
             objects[i].position = ref[i].position;
             objects[i].velocity = ref[i].velocity;
         }
@@ -474,15 +474,6 @@ public:
             world.step(fixed_dt / 5);
         }
         world.download();
-
-        float ke = 0;
-        float pe = 0;
-        for (int i = 0; i < SPHERES_N; i++) {
-            ke += world.objects[i].kinetic_energy();
-            pe += world.objects[i].potential_energy();
-        }
-
-        cout << "Net energy: " << ke + pe << " KE: " << ke << " PE: " << pe << endl;
     }
 
 	/****DRAW
@@ -520,7 +511,7 @@ public:
 		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width/ (float)height), 0.1f, 1000.0f); //so much type casting... GLM metods are quite funny ones
 
         // Draw the objects
-        for (auto i = 0; i < SPHERES_N; i++) {
+        for (auto i = 0; i < STARS_N; i++) {
             auto &obj = world.objects[i];
             static float w = 0.0;
             w += 1.0 * frametime;//rotation angle
@@ -529,9 +520,8 @@ public:
             float angle = -3.1415926/2.0;
             glm::mat4 RotateX = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
             glm::mat4 TransZ = glm::translate(glm::mat4(1.0f), obj.position);
-            glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(obj.r));
 
-            M =  TransZ * S;
+            M = TransZ;
 
             // Draw the box using GLSL.
             V = mycam.process(frametime);
