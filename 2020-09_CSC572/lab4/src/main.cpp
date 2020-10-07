@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 100
+#define STARS_N 10000
 #define RASTERIZATION_WIDTH 4
 #define RASTERIZATION_CELLS RASTERIZATION_WIDTH * RASTERIZATION_WIDTH
 
@@ -192,9 +192,8 @@ public:
     }
 
     void write_points(vec3 *vert) const {
-        for (int i = 0; i < 200; i++) {
-            vert[i] = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 2.0f;
-            vert[i].z -= 20.;
+        for (int i = 0; i < STARS_N; i++) {
+            vert[i] = objects[i].position;
         }
     }
 
@@ -287,15 +286,16 @@ public:
 		float newPt[2];
 		if (action == GLFW_PRESS)
 		{
+		    world.init_stars();
             phys_to_vbo();
         }
 	}
 
     void phys_to_vbo() const {
-        vec3 vert[200];
+        vec3 vert[STARS_N];
         world.write_points(vert);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec3) * 200, vert);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec3) * STARS_N, vert);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
@@ -316,10 +316,9 @@ public:
 		glBindVertexArray(VAO);
 		glGenBuffers(1, &VBO);
 
-		vec3 vert[200];
-        world.write_points(vert);
+		vec3 vert[STARS_N];
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 200, vert, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * STARS_N, vert, GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -500,6 +499,7 @@ public:
 		heightshader->addAttribute("vertTex");
 
 		world.init_shader();
+		mycam.pos = vec3(0, 0, -20);
 	}
 
 	void update(float dt) {
@@ -565,7 +565,7 @@ public:
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glBindVertexArray(VAO);	
-		glDrawArrays(GL_POINTS, 0,200);
+		glDrawArrays(GL_POINTS, 0,STARS_N);
 
 		prog->unbind();
 		heightshader->bind();

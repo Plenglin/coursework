@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define STARS_N 100
+#define STARS_N 200
 
 // Assume all objects are rubbery and act like ideal springs.
 
@@ -31,6 +31,7 @@ void main() {
 
     // Reset impulse
     barrier();
+    stars[index].position.x += 1 * dt;
 
     // Calculate sphere collisions
 /*
