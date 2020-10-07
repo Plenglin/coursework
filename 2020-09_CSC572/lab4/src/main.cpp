@@ -136,6 +136,12 @@ public:
     }
 
     void init_ssbo() {
+        init_stars();
+        glGenBuffers(1, &objects_gpu);
+        upload();
+    }
+
+    void init_stars() {
         for (int i = 0; i < STARS_N; i++) {
             objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
             objects[i].position *= 8;
@@ -145,8 +151,6 @@ public:
             //objects[i].velocity = vec3(0, -1, 0);
             objects[i].mass = 1;
         }
-        glGenBuffers(1, &objects_gpu);
-        upload();
     }
 
     void init_atomic() {
@@ -185,6 +189,13 @@ public:
             objects[i].velocity = ref[i].velocity;
         }
         munmap_ssbo();
+    }
+
+    void write_points(vec3 *vert) const {
+        for (int i = 0; i < 200; i++) {
+            vert[i] = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 2.0f;
+            vert[i].z -= 20.;
+        }
     }
 
     void step(float dt) {
@@ -276,23 +287,19 @@ public:
 		float newPt[2];
 		if (action == GLFW_PRESS)
 		{
-			
-
-			vec3 vert[200];
-			for (int i = 0; i < 200; i++)
-				{
-				vert[i] = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 2.0f;
-				vert[i].z -= 20.;
-				}
-			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec3) * 200, vert);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-		}
+            phys_to_vbo();
+        }
 	}
 
-	//if the window is resized, capture the new size and reset the viewport
+    void phys_to_vbo() const {
+        vec3 vert[200];
+        world.write_points(vert);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec3) * 200, vert);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    //if the window is resized, capture the new size and reset the viewport
 	void resizeCallback(GLFWwindow *window, int in_width, int in_height)
 	{
 		//get the window size - may be different then pixels for retina
@@ -308,23 +315,15 @@ public:
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
 		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		
 
 		vec3 vert[200];
-
-		for (int i = 0; i < 200; i++)
-			{
-			vert[i] = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 2.0f;
-			vert[i].z -= 20.;
-			}
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 200, vert, GL_DYNAMIC_DRAW);
+        world.write_points(vert);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 200, vert, GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
-
-
 
 		//generate the VAO
 		glGenVertexArrays(1, &VertexArrayID);
@@ -375,7 +374,8 @@ public:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * 6, elements, GL_STATIC_DRAW);
 		glBindVertexArray(0);
 	}
-	/*Note that any gl calls must always happen after a GL state is initialized */
+
+    /*Note that any gl calls must always happen after a GL state is initialized */
 	void initGeom()
 	{
 		//initialize the net mesh
@@ -509,6 +509,7 @@ public:
             world.step(fixed_dt / 5);
         }
         world.download();
+        phys_to_vbo();
     }
 
 	/****DRAW
@@ -567,20 +568,6 @@ public:
 		glDrawArrays(GL_POINTS, 0,200);
 
 		prog->unbind();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		heightshader->bind();
 
 	}

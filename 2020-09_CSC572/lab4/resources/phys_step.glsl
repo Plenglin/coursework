@@ -5,13 +5,9 @@
 
 // Assume all objects are rubbery and act like ideal springs.
 
-struct sphere {
+struct star {
     vec3 position;
     float mass;
-    vec3 velocity;
-    uint cell;  // Singly-linked list. -1 is nil.
-    vec3 acceleration;
-    uint _;
 };
 
 struct cell {
@@ -24,7 +20,7 @@ struct cell {
 layout(local_size_x = STARS_N, local_size_y = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
-    sphere items[];
+    star stars[];
 };
 
 uniform float dt;
@@ -34,7 +30,6 @@ void main() {
     uint index = gl_GlobalInvocationID.x;
 
     // Reset impulse
-    items[index].acceleration = vec3(0, 0, 0);
     barrier();
 
     // Calculate sphere collisions
