@@ -7,6 +7,8 @@
 struct star {
     vec3 position;
     uint cell;
+    vec3 velocity;
+    float _;
 };
 
 struct cell {
@@ -28,13 +30,18 @@ shared vec3 intermediate_max_bounds[TOTAL_CELLS];
 // Global minimum and maximum
 shared vec3 min_bounds;
 shared vec3 max_bounds;
+shared vec3 world_to_raster_scale;
 
 // Raster group data
 shared cell cells[TOTAL_CELLS];
 
+uint linearize_raster_cell(uvec3 pos) {
+    return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
+}
+
 uniform float dt;
 uniform float G;
-const uint linear_index = gl_GlobalInvocationID.x + RASTERIZATION * (gl_GlobalInvocationID.y + RASTERIZATION * gl_GlobalInvocationID.z);
+const uint linear_index = linearize_raster_cell(gl_GlobalInvocationID);
 
 // Result index to put this worker's results in during linear scan
 const uint scan_block_index = linear_index / stars.length();
@@ -66,20 +73,23 @@ void calculate_bounds() {
         min_bounds = min(min_bounds, intermediate_min_bounds[i]);
         max_bounds = max(max_bounds, intermediate_max_bounds[i]);
     }
+    world_to_raster_scale = (max_bounds - min_bounds) * RASTERIZATION;
     barrier();
 }
 
 // Scan stars for items inside this linear index
 void rasterize() {
     for (uint i = linear_scan_start; i < linear_scan_end; i++) {
-
+        uvec3 cell = uvec3((stars[i].position - min_bounds) / world_to_raster_scale);
+        uint cell_index = linearize_raster_cell(cell);
+        atomicAdd(cells[cell_index].mass, 1);
+        stars[i].cell = cell_index;
     }
+    barrier();
 }
 
 void main() {
     calculate_bounds();
-
-    // Reset impulse
     rasterize();
 
     // Calculate sphere collisions

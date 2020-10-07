@@ -69,27 +69,15 @@ public:
 camera mycam;
 
 #define STARS_N 100
-#define RASTERIZATION_WIDTH 4
-#define RASTERIZATION_CELLS RASTERIZATION_WIDTH * RASTERIZATION_WIDTH
-
-struct cell {
-    vec3 barycenter;
-    uint mass;
-    vec3 acceleration;
-    uint _;
-};
 
 struct sphere {
     vec3 position;
-    float mass;
+    uint cell;
     vec3 velocity;
-    uint next;  // Singly-linked list. -1 is nil.
-    vec3 acceleration;
-    uint _;
+    float _;
 };
 
 struct world_gpu_data {
-    cell cells[RASTERIZATION_CELLS];
     sphere objects[STARS_N];
 };
 
@@ -147,9 +135,6 @@ public:
             objects[i].position *= 4;
 
             objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-
-            //objects[i].velocity = vec3(0, -1, 0);
-            objects[i].mass = 1;
         }
     }
 
