@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 5
+#define RASTERIZATION 4
 #define BARYCENTER_RESOLUTION 1000
 
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
@@ -34,6 +34,7 @@ shared vec3 intermediate_max_bounds[TOTAL_CELLS];
 // Global minimum and maximum
 shared vec3 min_bounds;
 shared vec3 max_bounds;
+shared float world_to_raster_scale;
 
 // Raster group data
 shared cell cells[TOTAL_CELLS];
@@ -93,13 +94,15 @@ void calculate_bounds() {
         min_bounds = min(min_bounds, intermediate_min_bounds[i]);
         max_bounds = max(max_bounds, intermediate_max_bounds[i]);
     }
+
+    // Calculate scale
+    vec3 scale_vec = RASTERIZATION / (max_bounds - min_bounds);
+    world_to_raster_scale = max(scale_vec.x, max(scale_vec.y, scale_vec.z));
     barrier();
 }
 
 // Assign stars to their cells
 void rasterize(vec3 min_bounds, vec3 max_bounds) {
-    vec3 world_to_raster_scale = RASTERIZATION / (max_bounds - min_bounds);
-
     cells[linear_cell_index].barycenter_int = ivec3(0, 0, 0);
     cells[linear_cell_index].mass = 0;
     barrier();
@@ -115,7 +118,6 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
 
         // Link star to cell
         stars[i].cell = cell_index;
-        stars[i]._ = float(cell.x);
 
         // Increment cell mass
         atomicAdd(cells[cell_index].mass, 1);
@@ -129,7 +131,9 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
     barrier();
 
     // Convert sum to average
-    cells[linear_cell_index].barycenter = vec3(cells[linear_cell_index].barycenter_int) / cells[linear_cell_index].mass / BARYCENTER_RESOLUTION;
+    if (cells[linear_cell_index].mass > 0) {
+        cells[linear_cell_index].barycenter = vec3(cells[linear_cell_index].barycenter_int) / cells[linear_cell_index].mass / BARYCENTER_RESOLUTION;
+    }
 }
 
 // Apply gravitational forces
@@ -152,7 +156,7 @@ void gravitate_cells() {
 
         vec3 delta = a.barycenter - b.barycenter;
         float r2 = dot(delta, delta);
-        float Gr2 = 100 / r2;
+        float Gr2 = -1e-4 / r2;
         vec3 norm_delta = delta / sqrt(r2);
 
         vec3 accel_a = Gr2 * b.mass * norm_delta;
@@ -179,7 +183,7 @@ void integrate() {
 
 void main() {
     calculate_bounds();
-    rasterize(vec3(0, 0, 0), vec3(5, 5, 5));
-    //gravitate_cells();
-    //integrate();
+    rasterize(min_bounds, max_bounds);
+    gravitate_cells();
+    integrate();
 }

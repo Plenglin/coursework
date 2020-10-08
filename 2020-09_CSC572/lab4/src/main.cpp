@@ -134,8 +134,8 @@ public:
             objects[i].position = vec3(randf(), randf(), randf());
             objects[i].position *= 4;
 
-            //objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            objects[i].velocity = vec3(0, 0, 0);
+            objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            //objects[i].velocity = vec3(0, 0, 0);
         }
     }
 
@@ -490,9 +490,8 @@ public:
 	void update(float dt) {
         // Update the physics world. Limit timesteps to ensure stability.
         float fixed_dt = std::min(dt, 0.02f);
-        for (int i = 0; i < 5; i++) {
-            world.step(fixed_dt / 5);
-        }
+        //world.step(fixed_dt / 5);
+        world.step(0.01f);
         world.download();
         phys_to_vbo();
     }
