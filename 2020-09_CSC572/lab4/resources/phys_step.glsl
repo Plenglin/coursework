@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 4
+#define RASTERIZATION 8
 #define BARYCENTER_RESOLUTION 1000
 
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
@@ -34,7 +34,7 @@ shared vec3 intermediate_max_bounds[TOTAL_CELLS];
 // Global minimum and maximum
 shared vec3 min_bounds;
 shared vec3 max_bounds;
-shared float world_to_raster_scale;
+shared vec3 world_to_raster_scale;
 
 // Raster group data
 shared cell cells[TOTAL_CELLS];
@@ -96,8 +96,7 @@ void calculate_bounds() {
     }
 
     // Calculate scale
-    vec3 scale_vec = RASTERIZATION / (max_bounds - min_bounds);
-    world_to_raster_scale = max(scale_vec.x, max(scale_vec.y, scale_vec.z));
+    world_to_raster_scale = 1.01 * RASTERIZATION / (max_bounds - min_bounds);
     barrier();
 }
 
@@ -142,31 +141,28 @@ void gravitate_cells() {
     cells[linear_cell_index].acceleration = vec3(0, 0, 0);
     barrier();
 
-    bool empty = cells[linear_cell_index].mass == 0;
+    if (cells[linear_cell_index].mass == 0) return;
 
     for (uint other_linear_cell_index = 0; other_linear_cell_index < TOTAL_CELLS; other_linear_cell_index++) {
-        if (empty || other_linear_cell_index >= linear_cell_index) {
-            barrier();
-            barrier();
+        if (other_linear_cell_index == linear_cell_index) {
+            continue;
+        }
+        cell b = cells[other_linear_cell_index];
+        if (b.mass == 0) {
             continue;
         }
 
         cell a = cells[linear_cell_index];
-        cell b = cells[other_linear_cell_index];
 
         vec3 delta = a.barycenter - b.barycenter;
         float r2 = dot(delta, delta);
-        float Gr2 = -1e-4 / r2;
         vec3 norm_delta = delta / sqrt(r2);
+        float accel_mag = -1e-3 * float(b.mass) / r2;
 
-        vec3 accel_a = Gr2 * b.mass * norm_delta;
-        vec3 accel_b = -Gr2 * a.mass * norm_delta;
+        vec3 accel_a = accel_mag * norm_delta;
 
         // Barriers to ensure no race conditions.
         cells[linear_cell_index].acceleration += accel_a;
-        barrier();
-        cells[other_linear_cell_index].acceleration += accel_b;
-        barrier();
     }
 }
 
