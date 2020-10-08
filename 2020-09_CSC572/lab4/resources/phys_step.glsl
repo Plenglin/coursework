@@ -3,6 +3,7 @@
 
 #define RASTERIZATION 5
 #define BARYCENTER_RESOLUTION 1000
+
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
 struct star {
@@ -37,11 +38,11 @@ shared vec3 world_to_raster_scale;
 // Raster group data
 shared cell cells[TOTAL_CELLS];
 
-uint linearize_raster_cell(uvec3 pos) {
+uint raster_pos_to_storage_index(uvec3 pos) {
     return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
 }
 
-uvec3 vectorize_linear_index(uint i) {
+uvec3 storage_index_to_raster_pos(uint i) {
     uvec3 pos;
     pos.x = i % RASTERIZATION;
 
@@ -57,7 +58,7 @@ uniform float dt;
 uniform float G;
 
 // Where this worker's cell index is
-const uint linear_cell_index = linearize_raster_cell(gl_GlobalInvocationID);
+const uint linear_cell_index = raster_pos_to_storage_index(gl_GlobalInvocationID);
 
 // Result index to put this worker's results in during linear scan
 const uint star_scan_block_index = linear_cell_index / stars.length();
@@ -70,15 +71,30 @@ void calculate_bounds() {
     // Phase 1: Calculate bounds for only this one's linear scan set
     vec3 min_b = vec3(0, 0, 0);
     vec3 max_b = vec3(0, 0, 0);
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
-        min_b = min(min_b, stars[i].position);
-        max_b = max(max_b, stars[i].position);
-    }
-    intermediate_min_bounds[linear_cell_index] = min_b;
-    intermediate_max_bounds[linear_cell_index] = max_b;
-    barrier();
+    /*
+for (uint i = star_scan_start; i < star_scan_end; i++) {
+    min_b = min(min_b, stars[i].position);
+    max_b = max(max_b, stars[i].position);
+}
+intermediate_min_bounds[linear_cell_index] = min_b;
+intermediate_max_bounds[linear_cell_index] = max_b;
+barrier();
 
-    // Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
+
+// Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
+if (linear_cell_index != 0) {
+    barrier();
+    return;
+}
+min_bounds = min_b;
+max_bounds = max_b;
+for (int i = 0; i < TOTAL_CELLS; i++) {
+    min_bounds = min(min_bounds, intermediate_min_bounds[i]);
+    max_bounds = max(max_bounds, intermediate_max_bounds[i]);
+}
+world_to_raster_scale = (max_bounds - min_bounds) * RASTERIZATION;
+barrier();
+*/
     if (linear_cell_index != 0) {
         barrier();
         return;
@@ -86,10 +102,13 @@ void calculate_bounds() {
     min_bounds = min_b;
     max_bounds = max_b;
     for (int i = 0; i < TOTAL_CELLS; i++) {
-        min_bounds = min(min_bounds, intermediate_min_bounds[i]);
-        max_bounds = max(max_bounds, intermediate_max_bounds[i]);
+        min_bounds = min(min_bounds, stars[i].position);
+        max_bounds = max(max_bounds, stars[i].position);
     }
+    stars[0].position = min_bounds;
+    stars[1].position = max_bounds;
     world_to_raster_scale = (max_bounds - min_bounds) * RASTERIZATION;
+    barrier();
 }
 
 // Assign stars to their cells
@@ -101,7 +120,7 @@ void rasterize() {
         vec3 star_position = stars[i].position;
 
         uvec3 cell = uvec3((star_position - min_bounds) / world_to_raster_scale);
-        uint cell_index = linearize_raster_cell(cell);
+        uint cell_index = raster_pos_to_storage_index(cell);
         atomicAdd(cells[cell_index].mass, 1);
         stars[i].cell = cell_index;
 
@@ -133,8 +152,13 @@ void gravitate_cells() {
         cell a = cells[linear_cell_index];
         cell b = cells[other_linear_cell_index];
 
-        vec3 accel_a = vec3(0,0,0);
-        vec3 accel_b = vec3(0,0,0);
+        vec3 delta = a.barycenter - b.barycenter;
+        float r2 = dot(delta, delta);
+        float Gr2 = 100 / r2;
+        vec3 norm_delta = delta / sqrt(r2);
+
+        vec3 accel_a = Gr2 * b.mass * norm_delta;
+        vec3 accel_b = -Gr2 * a.mass * norm_delta;
 
         // Barriers to ensure no race conditions.
         cells[linear_cell_index].acceleration += accel_a;
@@ -157,7 +181,7 @@ void integrate() {
 
 void main() {
     calculate_bounds();
-    rasterize();
-    gravitate_cells();
-    integrate();
+    //rasterize();
+    //gravitate_cells();
+    //integrate();
 }
