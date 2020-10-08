@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 10
+#define STARS_N 1000
 
 struct sphere {
     vec3 position;
@@ -82,7 +82,7 @@ struct world_gpu_data {
 };
 
 float randf() {
-    return (float)rand() / (1 << 30);
+    return (float)rand() / RAND_MAX;
 }
 
 class physics_world {
@@ -131,7 +131,7 @@ public:
 
     void init_stars() {
         for (int i = 0; i < STARS_N; i++) {
-            objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            objects[i].position = vec3(randf(), randf(), randf());
             objects[i].position *= 4;
 
             //objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
@@ -171,8 +171,7 @@ public:
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
         for (int i = 0; i < STARS_N; i++) {
-            objects[i].position = ref[i].position;
-            objects[i].velocity = ref[i].velocity;
+            objects[i] = ref[i];
         }
         munmap_ssbo();
     }
