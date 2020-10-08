@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 1000
+#define STARS_N 10000
 
 struct sphere {
     vec3 position;
@@ -131,12 +131,12 @@ public:
 
     void init_stars() {
         for (int i = 0; i < STARS_N; i++) {
-            objects[i].position = vec3(randf(), randf(), randf());
-            objects[i].position *= 4;
+            objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            objects[i].position *= 10;
 
-            objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            //objects[i].velocity = vec3(0, 0, 0);
-            objects[i].velocity *= 0.3;
+            //objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            objects[i].velocity = vec3(0, 0, 0);
+            //objects[i].velocity *= 0.3;
         }
     }
 
@@ -492,9 +492,7 @@ public:
         // Update the physics world. Limit timesteps to ensure stability.
         float fixed_dt = std::min(dt, 0.02f);
         //world.step(fixed_dt / 5);
-        for (int i = 0; i < 16; i++) {
-            world.step(0.005f);
-        }
+        world.step(0.02f);
         world.download();
         phys_to_vbo();
     }

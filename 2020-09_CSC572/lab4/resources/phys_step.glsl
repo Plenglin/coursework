@@ -34,7 +34,7 @@ shared vec3 intermediate_max_bounds[TOTAL_CELLS];
 // Global minimum and maximum
 shared vec3 min_bounds;
 shared vec3 max_bounds;
-shared vec3 world_to_raster_scale;
+shared vec3 bounding_dims;
 
 // Raster group data
 shared cell cells[TOTAL_CELLS];
@@ -96,7 +96,7 @@ void calculate_bounds() {
     }
 
     // Calculate scale
-    world_to_raster_scale = 1.01 * RASTERIZATION / (max_bounds - min_bounds);
+    bounding_dims = max_bounds - min_bounds;
     barrier();
 }
 
@@ -111,8 +111,8 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
         vec3 star_position = stars[i].position;
 
         // Calculate the cell it's in
-        vec3 cell_float = (star_position - min_bounds) * world_to_raster_scale;
-        uvec3 cell = uvec3(floor(cell_float));
+        vec3 cell_float = (star_position - min_bounds) / bounding_dims;
+        uvec3 cell = uvec3(floor(cell_float * RASTERIZATION));
         uint cell_index = raster_pos_to_storage_index(cell);
 
         // Link star to cell
@@ -156,6 +156,11 @@ void gravitate_cells() {
 
         vec3 delta = a.barycenter - b.barycenter;
         float r2 = dot(delta, delta);
+
+        if (r2 < 0.001) {
+            continue;
+        }
+
         vec3 norm_delta = delta / sqrt(r2);
         float accel_mag = -1e-3 * float(b.mass) / r2;
 
