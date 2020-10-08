@@ -71,30 +71,15 @@ void calculate_bounds() {
     // Phase 1: Calculate bounds for only this one's linear scan set
     vec3 min_b = vec3(0, 0, 0);
     vec3 max_b = vec3(0, 0, 0);
-    /*
-for (uint i = star_scan_start; i < star_scan_end; i++) {
-    min_b = min(min_b, stars[i].position);
-    max_b = max(max_b, stars[i].position);
-}
-intermediate_min_bounds[linear_cell_index] = min_b;
-intermediate_max_bounds[linear_cell_index] = max_b;
-barrier();
-
-
-// Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
-if (linear_cell_index != 0) {
+    for (uint i = star_scan_start; i < star_scan_end; i++) {
+        min_b = min(min_b, stars[i].position);
+        max_b = max(max_b, stars[i].position);
+    }
+    intermediate_min_bounds[linear_cell_index] = min_b;
+    intermediate_max_bounds[linear_cell_index] = max_b;
     barrier();
-    return;
-}
-min_bounds = min_b;
-max_bounds = max_b;
-for (int i = 0; i < TOTAL_CELLS; i++) {
-    min_bounds = min(min_bounds, intermediate_min_bounds[i]);
-    max_bounds = max(max_bounds, intermediate_max_bounds[i]);
-}
-world_to_raster_scale = (max_bounds - min_bounds) * RASTERIZATION;
-barrier();
-*/
+
+    // Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
     if (linear_cell_index != 0) {
         barrier();
         return;
@@ -102,8 +87,8 @@ barrier();
     min_bounds = min_b;
     max_bounds = max_b;
     for (int i = 0; i < TOTAL_CELLS; i++) {
-        min_bounds = min(min_bounds, stars[i].position);
-        max_bounds = max(max_bounds, stars[i].position);
+        min_bounds = min(min_bounds, intermediate_min_bounds[i]);
+        max_bounds = max(max_bounds, intermediate_max_bounds[i]);
     }
     stars[0].position = min_bounds;
     stars[1].position = max_bounds;
