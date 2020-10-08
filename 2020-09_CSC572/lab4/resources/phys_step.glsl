@@ -2,6 +2,7 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 #define RASTERIZATION 5
+#define BARYCENTER_RESOLUTION 1000
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
 struct star {
@@ -12,10 +13,11 @@ struct star {
 };
 
 struct cell {
-    vec3 barycenter;
+    ivec3 barycenter_int;
     uint mass;
     vec3 acceleration;
     uint _;
+    vec3 barycenter;
 };
 
 layout(local_size_x = RASTERIZATION, local_size_y = RASTERIZATION, local_size_z = RASTERIZATION) in;
@@ -39,31 +41,45 @@ uint linearize_raster_cell(uvec3 pos) {
     return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
 }
 
+uvec3 vectorize_linear_index(uint i) {
+    uvec3 pos;
+    pos.x = i % RASTERIZATION;
+
+    i /= RASTERIZATION;
+    pos.y = i % RASTERIZATION;
+
+    i /= RASTERIZATION;
+    pos.z = i % RASTERIZATION;
+    return pos;
+}
+
 uniform float dt;
 uniform float G;
-const uint linear_index = linearize_raster_cell(gl_GlobalInvocationID);
+
+// Where this worker's cell index is
+const uint linear_cell_index = linearize_raster_cell(gl_GlobalInvocationID);
 
 // Result index to put this worker's results in during linear scan
-const uint scan_block_index = linear_index / stars.length();
+const uint star_scan_block_index = linear_cell_index / stars.length();
 
 // Star indices to scan through during linear scan
-const uint linear_scan_start = scan_block_index * RASTERIZATION;
-const uint linear_scan_end = (scan_block_index + 1) * RASTERIZATION;
+const uint star_scan_start = star_scan_block_index * RASTERIZATION;
+const uint star_scan_end = (star_scan_block_index + 1) * RASTERIZATION;
 
 void calculate_bounds() {
     // Phase 1: Calculate bounds for only this one's linear scan set
     vec3 min_b = vec3(0, 0, 0);
     vec3 max_b = vec3(0, 0, 0);
-    for (uint i = linear_scan_start; i < linear_scan_end; i++) {
+    for (uint i = star_scan_start; i < star_scan_end; i++) {
         min_b = min(min_b, stars[i].position);
         max_b = max(max_b, stars[i].position);
     }
-    intermediate_min_bounds[linear_index] = min_b;
-    intermediate_max_bounds[linear_index] = max_b;
+    intermediate_min_bounds[linear_cell_index] = min_b;
+    intermediate_max_bounds[linear_cell_index] = max_b;
     barrier();
 
     // Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
-    if (linear_index != 0) {
+    if (linear_cell_index != 0) {
         barrier();
         return;
     }
@@ -74,61 +90,74 @@ void calculate_bounds() {
         max_bounds = max(max_bounds, intermediate_max_bounds[i]);
     }
     world_to_raster_scale = (max_bounds - min_bounds) * RASTERIZATION;
-    barrier();
 }
 
-// Scan stars for items inside this linear index
+// Assign stars to their cells
 void rasterize() {
-    for (uint i = linear_scan_start; i < linear_scan_end; i++) {
-        uvec3 cell = uvec3((stars[i].position - min_bounds) / world_to_raster_scale);
+    cells[linear_cell_index].barycenter_int = ivec3(0, 0, 0);
+    barrier();
+
+    for (uint i = star_scan_start; i < star_scan_end; i++) {
+        vec3 star_position = stars[i].position;
+
+        uvec3 cell = uvec3((star_position - min_bounds) / world_to_raster_scale);
         uint cell_index = linearize_raster_cell(cell);
         atomicAdd(cells[cell_index].mass, 1);
         stars[i].cell = cell_index;
+
+        ivec3 int_pos = ivec3(BARYCENTER_RESOLUTION * star_position);
+        atomicAdd(cells[cell_index].barycenter_int.x, int_pos.x);
+        atomicAdd(cells[cell_index].barycenter_int.y, int_pos.y);
+        atomicAdd(cells[cell_index].barycenter_int.z, int_pos.z);
     }
     barrier();
+
+    cells[linear_cell_index].barycenter = vec3(cells[linear_cell_index].barycenter_int);
 }
 
-void main() {
-    calculate_bounds();
-    rasterize();
+// Apply gravitational forces
+void gravitate_cells() {
+    // Reset cell acceleration
+    cells[linear_cell_index].acceleration = vec3(0, 0, 0);
+    barrier();
 
-    // Calculate sphere collisions
-/*
-    for (uint other_index = 0; other_index < STARS_N; other_index++) {
-        if (other_index >= index) {
+    bool empty = cells[linear_cell_index].mass == 0;
+
+    for (uint other_linear_cell_index = 0; other_linear_cell_index < TOTAL_CELLS; other_linear_cell_index++) {
+        if (empty || other_linear_cell_index >= linear_cell_index) {
             barrier();
             barrier();
             continue;
         }
 
-        sphere b = items[other_index];
-        sphere a = items[index];
-        vec3 force = collide_sphere_sphere(a, b) * dt;
+        cell a = cells[linear_cell_index];
+        cell b = cells[other_linear_cell_index];
 
-        if (dot(force, force) > 0) {
-            vec3 impulse_a = (force + dampening(0.2, a.velocity)) * dt;
-            vec3 impulse_b = (-force + dampening(0.2, b.velocity)) * dt;
+        vec3 accel_a = vec3(0,0,0);
+        vec3 accel_b = vec3(0,0,0);
 
-            // Barriers to ensure no race conditions.
-            items[index].impulse += impulse_a;
-            barrier();
-            items[other_index].impulse += impulse_b;
-            barrier();
-        } else {
-            barrier();
-            barrier();
-        }
+        // Barriers to ensure no race conditions.
+        cells[linear_cell_index].acceleration += accel_a;
+        barrier();
+        cells[other_linear_cell_index].acceleration += accel_b;
+        barrier();
     }
+}
 
-    sphere self = items[index];
-    self.impulse += bounds_check(self);
-    self.impulse += self.mass * acceleration * dt;
+// Apply star acceleration
+void integrate() {
+    for (uint i = star_scan_start; i < star_scan_end; i++) {
+        star self = stars[i];
+        vec3 acceleration = cells[self.cell].acceleration;
+        self.velocity += acceleration * dt;
+        self.position += self.velocity * dt;
+        stars[i] = self;
+    }
+}
 
-    // Integration
-    self.velocity += (self.impulse / self.mass);
-    self.position += self.velocity * dt;
-
-    // Store
-    items[index].position = self.position;
-    items[index].velocity = self.velocity;*/
+void main() {
+    calculate_bounds();
+    rasterize();
+    gravitate_cells();
+    integrate();
 }

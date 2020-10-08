@@ -134,7 +134,8 @@ public:
             objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
             objects[i].position *= 4;
 
-            objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            //objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            objects[i].velocity = vec3(0, 0, 0);
         }
     }
 
