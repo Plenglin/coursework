@@ -68,13 +68,15 @@ public:
 
 camera mycam;
 
-#define STARS_N 10000
+#define STARS_N 1000
 
 struct sphere {
     vec3 position;
     uint cell;
     vec3 velocity;
     float _;
+    vec3 acceleration;
+    float _1;
 };
 
 struct world_gpu_data {
@@ -130,13 +132,15 @@ public:
     }
 
     void init_stars() {
+        glm::mat4 trs = glm::rotate(mat4(1.0), 3.1415f/2, vec3(0.0f, 1, 0));
         for (int i = 0; i < STARS_N; i++) {
-            objects[i].position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            objects[i].position *= 10;
+            auto position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            position *= 10;
 
-            //objects[i].velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            objects[i].velocity = vec3(0, 0, 0);
-            //objects[i].velocity *= 0.3;
+            auto velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+
+            objects[i].position = position;
+            objects[i].velocity = velocity;
         }
     }
 

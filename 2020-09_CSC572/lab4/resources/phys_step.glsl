@@ -11,13 +11,13 @@ struct star {
     uint cell;
     vec3 velocity;
     float _;
+    vec3 acceleration;
+    uint _1;
 };
 
 struct cell {
     ivec3 barycenter_int;
     uint mass;
-    vec3 acceleration;
-    uint _;
     vec3 barycenter;
     uint _2;
 };
@@ -67,8 +67,8 @@ const uint star_scan_end = (linear_cell_index + 1) * stars.length() / TOTAL_CELL
 
 void calculate_bounds() {
     // Phase 1: Calculate bounds for only this one's linear scan set
-    vec3 min_b = vec3(0, 0, 0);
-    vec3 max_b = vec3(0, 0, 0);
+    vec3 min_b = 1 / vec3(0, 0, 0);
+    vec3 max_b = -1 / vec3(0, 0, 0);
 
     // For each star
     for (uint i = star_scan_start; i < star_scan_end; i++) {
@@ -137,37 +137,29 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
 
 // Apply gravitational forces
 void gravitate_cells() {
-    // Reset cell acceleration
-    cells[linear_cell_index].acceleration = vec3(0, 0, 0);
-    barrier();
+    // For each star
+    for (uint i = star_scan_start; i < star_scan_end; i++) {
+        star a = stars[i];
+        a.acceleration = vec3(0, 0, 0);
 
-    if (cells[linear_cell_index].mass == 0) return;
+        // For each cell
+        for (int j = 0; j < TOTAL_CELLS; j++) {
+            cell b = cells[j];
+            if (b.mass == 0 || (b.mass == 1 && a.cell == j)) {
+                continue;
+            }
 
-    for (uint other_linear_cell_index = 0; other_linear_cell_index < TOTAL_CELLS; other_linear_cell_index++) {
-        if (other_linear_cell_index == linear_cell_index) {
-            continue;
+            vec3 delta = a.position - b.barycenter;
+            float r2 = dot(delta, delta);
+
+            vec3 norm_delta = delta / sqrt(r2);
+            float accel_mag = -1e-3 * float(b.mass) / r2;
+
+            vec3 accel_a = accel_mag * norm_delta;
+
+            a.acceleration += accel_a;
         }
-        cell b = cells[other_linear_cell_index];
-        if (b.mass == 0) {
-            continue;
-        }
-
-        cell a = cells[linear_cell_index];
-
-        vec3 delta = a.barycenter - b.barycenter;
-        float r2 = dot(delta, delta);
-
-        if (r2 < 0.001) {
-            continue;
-        }
-
-        vec3 norm_delta = delta / sqrt(r2);
-        float accel_mag = -1e-3 * float(b.mass) / r2;
-
-        vec3 accel_a = accel_mag * norm_delta;
-
-        // Barriers to ensure no race conditions.
-        cells[linear_cell_index].acceleration += accel_a;
+        stars[i].acceleration = a.acceleration;
     }
 }
 
@@ -175,8 +167,7 @@ void gravitate_cells() {
 void integrate() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
         star self = stars[i];
-        vec3 acceleration = cells[self.cell].acceleration;
-        self.velocity += acceleration * dt;
+        self.velocity += self.acceleration * dt;
         self.position += self.velocity * dt;
         stars[i] = self;
     }
