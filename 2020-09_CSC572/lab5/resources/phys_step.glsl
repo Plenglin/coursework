@@ -42,11 +42,13 @@ layout (std430, binding=0) volatile buffer shader_data {
 };
 
 // Minimums and maximums found by each worker
-shared vec3 intermediate_min_bounds[TOTAL_CELLS];
-shared vec3 intermediate_max_bounds[TOTAL_CELLS];
+shared vec3 intermediate_vec[TOTAL_CELLS];
+
 // Global minimum and maximum
-shared vec3 min_bounds;
+shared vec3 mean_pos;
+shared vec3 stdev_pos;
 shared vec3 max_bounds;
+shared vec3 min_bounds;
 shared vec3 bounding_dims;
 shared uint max_cell_density;
 
@@ -55,6 +57,7 @@ shared cell cells[TOTAL_CELLS];
 
 const uint STARS_COUNT = stars.length();
 #define NIL STARS_COUNT
+#define BOUNDS_STDEVS 2
 
 uint raster_pos_to_storage_index(uvec3 pos) {
     return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
@@ -105,36 +108,53 @@ void disconnect_linked_lists() {
 }
 
 void calculate_bounds() {
-    // Phase 1: Calculate bounds for only this one's scan set
-    vec3 min_b = 1 / vec3(0, 0, 0);
-    vec3 max_b = -1 / vec3(0, 0, 0);
-
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
-        min_b = min(min_b, stars[i].position);
-        max_b = max(max_b, stars[i].position);
+    {
+        // Workers calculate sum of workset positions
+        vec3 sum = vec3(0, 0, 0);
+        for (uint i = star_scan_start; i < star_scan_end; i++) {
+            sum += stars[i].position;
+        }
+        intermediate_vec[linear_cell_index] = sum;
+        barrier();
     }
-    intermediate_min_bounds[linear_cell_index] = min_b;
-    intermediate_max_bounds[linear_cell_index] = max_b;
+
+    // Leader aggregates sums to get the mean
+    if (linear_cell_index == 0) {
+        vec3 sum = vec3(0, 0, 0);
+        for (uint i = star_scan_start; i < star_scan_end; i++) {
+            sum += intermediate_vec[linear_cell_index];
+        }
+        mean_pos = sum / STARS_COUNT;
+    }
     barrier();
 
-    // Phase 2: The leader aggregates the results. TODO: use binary tree aggregation
-    if (linear_cell_index != 0) {
+    {
+        // Workers calculate sum of squared deviations of workset positions
+        vec3 sum = vec3(0, 0, 0);
+        for (uint i = star_scan_start; i < star_scan_end; i++) {
+            vec3 dev = stars[i].position - mean_pos;
+            sum += dev * dev;
+        }
+        intermediate_vec[linear_cell_index] = sum;
         barrier();
-        return;
+    }
+    barrier();
+
+    // Leader aggregates sum squared diffs to get the mean
+    if (linear_cell_index == 0) {
+        vec3 sum = vec3(0, 0, 0);
+        for (uint i = star_scan_start; i < star_scan_end; i++) {
+            sum += intermediate_vec[linear_cell_index];
+        }
+        stdev_pos = sqrt(sum / STARS_COUNT);
+
+        max_bounds = mean_pos + BOUNDS_STDEVS * stdev_pos;
+        min_bounds = mean_pos - BOUNDS_STDEVS * stdev_pos;
+
+        // Calculate scale
+        bounding_dims = max_bounds - min_bounds;
     }
 
-    // Default min/max bounding value
-    min_bounds = min_b;
-    max_bounds = max_b;
-
-    // For each cell, aggregate
-    for (int i = 0; i < TOTAL_CELLS; i++) {
-        min_bounds = min(min_bounds, intermediate_min_bounds[i]);
-        max_bounds = max(max_bounds, intermediate_max_bounds[i]);
-    }
-
-    // Calculate scale
-    bounding_dims = max_bounds - min_bounds;
     barrier();
 }
 

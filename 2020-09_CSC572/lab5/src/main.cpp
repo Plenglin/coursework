@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 1000
+#define STARS_N 5000
 
 struct sphere {
     vec3 position;
