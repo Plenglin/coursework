@@ -9,17 +9,30 @@
 struct star {
     vec3 position;
     uint cell;
+
     vec3 velocity;
     float mass;
+
     vec3 acceleration;
     uint next;
+
+    uint array_list_ref;
+    uint _1;
+    uint _2;
+    uint _3;
 };
 
 struct cell {
     ivec3 barycenter_int;
     uint mass;
+
     vec3 barycenter;
     uint head;
+
+    uint array_list_start;
+    uint count;
+    uint _1;
+    uint _2;
 };
 
 layout(local_size_x = RASTERIZATION, local_size_y = RASTERIZATION, local_size_z = RASTERIZATION) in;
@@ -39,7 +52,8 @@ shared vec3 bounding_dims;
 // Raster group data
 shared cell cells[TOTAL_CELLS];
 
-#define NIL stars.length()
+const uint STARS_COUNT = stars.length();
+#define NIL STARS_COUNT
 
 uint raster_pos_to_storage_index(uvec3 pos) {
     return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
@@ -64,12 +78,12 @@ uniform float G;
 const uint linear_cell_index = raster_pos_to_storage_index(gl_GlobalInvocationID);
 
 // Star indices this worker scans through
-const uint star_scan_start = linear_cell_index * stars.length() / TOTAL_CELLS;
-const uint star_scan_end = (linear_cell_index + 1) * stars.length() / TOTAL_CELLS;
+const uint star_scan_start = linear_cell_index * STARS_COUNT / TOTAL_CELLS;
+const uint star_scan_end = (linear_cell_index + 1) * STARS_COUNT / TOTAL_CELLS;
 
 // Cell indices this worker scans through
-const uint cell_scan_start = linear_cell_index * stars.length() / TOTAL_CELLS;
-const uint cell_scan_end = (linear_cell_index + 1) * stars.length() / TOTAL_CELLS;
+const uint cell_scan_start = linear_cell_index * STARS_COUNT / TOTAL_CELLS;
+const uint cell_scan_end = (linear_cell_index + 1) * STARS_COUNT / TOTAL_CELLS;
 
 #define FOREACH_STAR for (uint i = star_scan_start; i < star_scan_end; i++)
 
@@ -140,6 +154,7 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
 
         // Link star to cell
         stars[i].cell = cell_index;
+        atomicAdd(cells[cell_index].count, 1);
 
         // Increment cell mass
         atomicAdd(cells[cell_index].mass, 1);
@@ -165,6 +180,29 @@ void build_linked_lists() {
     barrier();
 }
 
+void build_array_lists() {
+    // Determine allocations
+    if (linear_cell_index == 0) {
+        uint cumulative = 0;
+        for (int i = 0; i < TOTAL_CELLS; i++) {
+            cells[i].array_list_start = cumulative;
+            cumulative += cells[i].count;
+        }
+    }
+    barrier();
+
+    // Create references
+    const uint head = cells[linear_cell_index].head;
+    const uint list_start = cells[linear_cell_index].array_list_start;
+    uint i = stars[head].next;
+    uint i_count = 0;
+    while (i != NIL && i_count < STARS_COUNT) {
+        stars[list_start + i].array_list_ref = i;
+        i = stars[i].next;
+        i_count++;
+    }
+}
+
 // Apply gravitational forces
 void gravitate_stars_to_cells() {
     FOREACH_STAR {
@@ -188,10 +226,10 @@ void gravitate_within_cells() {
     const uint head = cells[linear_cell_index].head;
     uint i = stars[head].next;
     uint i_count = 1;
-    while (i != NIL && i_count < stars.length()) {
+    while (i != NIL && i_count < STARS_COUNT) {
         uint j = head;
         uint j_count = 0;
-        while (j != NIL && j_count < i_count && j_count < stars.length()) {
+        while (j != NIL && j_count < i_count && j_count < STARS_COUNT) {
             vec3 gr = gravity(stars[i].position, stars[j].position);
             stars[i].acceleration -= gr * stars[j].mass;
             stars[j].acceleration += gr * stars[i].mass;
@@ -219,7 +257,8 @@ void main() {
     calculate_bounds();
     rasterize(min_bounds, max_bounds);
     build_linked_lists();
+    build_array_lists();
     gravitate_stars_to_cells();
-    gravitate_within_cells();
+    //gravitate_within_cells();
     integrate();
 }

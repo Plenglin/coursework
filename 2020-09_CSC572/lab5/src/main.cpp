@@ -77,6 +77,10 @@ struct sphere {
     float mass;
     vec3 acceleration;
     uint next;
+    uint array_list_ref;
+    uint _1;
+    uint _2;
+    uint _3;
 };
 
 struct world_gpu_data {
