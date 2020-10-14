@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 8
+#define RASTERIZATION 2
 #define BARYCENTER_RESOLUTION 1000
 
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
@@ -10,16 +10,16 @@ struct star {
     vec3 position;
     uint cell;
     vec3 velocity;
-    float _;
+    float mass;
     vec3 acceleration;
-    uint _1;
+    uint next;
 };
 
 struct cell {
     ivec3 barycenter_int;
     uint mass;
     vec3 barycenter;
-    uint _2;
+    uint head;
 };
 
 layout(local_size_x = RASTERIZATION, local_size_y = RASTERIZATION, local_size_z = RASTERIZATION) in;
@@ -38,6 +38,8 @@ shared vec3 bounding_dims;
 
 // Raster group data
 shared cell cells[TOTAL_CELLS];
+
+#define NIL stars.length()
 
 uint raster_pos_to_storage_index(uvec3 pos) {
     return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
@@ -61,17 +63,39 @@ uniform float G;
 // Where this worker's cell index is
 const uint linear_cell_index = raster_pos_to_storage_index(gl_GlobalInvocationID);
 
-// Star indices to scan through during linear scan
+// Star indices this worker scans through
 const uint star_scan_start = linear_cell_index * stars.length() / TOTAL_CELLS;
 const uint star_scan_end = (linear_cell_index + 1) * stars.length() / TOTAL_CELLS;
 
+// Cell indices this worker scans through
+const uint cell_scan_start = linear_cell_index * stars.length() / TOTAL_CELLS;
+const uint cell_scan_end = (linear_cell_index + 1) * stars.length() / TOTAL_CELLS;
+
+#define FOREACH_STAR for (uint i = star_scan_start; i < star_scan_end; i++)
+
+vec3 gravity(vec3 p1, vec3 p2) {
+    vec3 delta = p1 - p2;
+    float r2 = dot(delta, delta);
+
+    vec3 norm_delta = delta / sqrt(r2);
+    float accel_mag = -1e-3 / r2;
+
+    return accel_mag * norm_delta;
+}
+
+void disconnect_linked_lists() {
+    FOREACH_STAR {
+        stars[i].next = NIL;
+    }
+    cells[linear_cell_index].head = NIL;
+}
+
 void calculate_bounds() {
-    // Phase 1: Calculate bounds for only this one's linear scan set
+    // Phase 1: Calculate bounds for only this one's scan set
     vec3 min_b = 1 / vec3(0, 0, 0);
     vec3 max_b = -1 / vec3(0, 0, 0);
 
-    // For each star
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
+    FOREACH_STAR {
         min_b = min(min_b, stars[i].position);
         max_b = max(max_b, stars[i].position);
     }
@@ -100,14 +124,13 @@ void calculate_bounds() {
     barrier();
 }
 
-// Assign stars to their cells
+// Link stars to their cells
 void rasterize(vec3 min_bounds, vec3 max_bounds) {
     cells[linear_cell_index].barycenter_int = ivec3(0, 0, 0);
     cells[linear_cell_index].mass = 0;
     barrier();
 
-    // For each star
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
+    FOREACH_STAR {
         vec3 star_position = stars[i].position;
 
         // Calculate the cell it's in
@@ -135,37 +158,54 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
     }
 }
 
+void build_linked_lists() {
+    FOREACH_STAR {
+        stars[i].next = atomicExchange(cells[stars[i].cell].head, i);
+    }
+    barrier();
+}
+
 // Apply gravitational forces
-void gravitate_cells() {
-    // For each star
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
+void gravitate_stars_to_cells() {
+    FOREACH_STAR {
         star a = stars[i];
         a.acceleration = vec3(0, 0, 0);
 
         // For each cell
         for (int j = 0; j < TOTAL_CELLS; j++) {
             cell b = cells[j];
-            if (b.mass == 0 || (b.mass == 1 && a.cell == j)) {
+            if (b.mass == 0 || b.mass == 1 || a.cell == j) {
                 continue;
             }
 
-            vec3 delta = a.position - b.barycenter;
-            float r2 = dot(delta, delta);
-
-            vec3 norm_delta = delta / sqrt(r2);
-            float accel_mag = -1e-3 * float(b.mass) / r2;
-
-            vec3 accel_a = accel_mag * norm_delta;
-
-            a.acceleration += accel_a;
+            a.acceleration += gravity(a.position, b.barycenter) * b.mass;
         }
         stars[i].acceleration = a.acceleration;
     }
 }
 
+void gravitate_within_cells() {
+    const uint head = cells[linear_cell_index].head;
+    uint i = stars[head].next;
+    uint i_count = 1;
+    while (i != NIL) {
+        uint j = head;
+        uint j_count = 0;
+        while (j != NIL && j_count < i_count) {
+            vec3 a2b = gravity(stars[i].position, stars[j].position);
+            stars[i].acceleration += a2b * stars[j].mass;
+            stars[j].acceleration -= a2b * stars[i].mass;
+            j_count++;
+        }
+        i = stars[i].next;
+        i_count++;
+    }
+    barrier();
+}
+
 // Apply star acceleration
 void integrate() {
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
+    FOREACH_STAR {
         star self = stars[i];
         self.velocity += self.acceleration * dt;
         self.position += self.velocity * dt;
@@ -174,8 +214,11 @@ void integrate() {
 }
 
 void main() {
+    disconnect_linked_lists();
     calculate_bounds();
     rasterize(min_bounds, max_bounds);
-    gravitate_cells();
+    build_linked_lists();
+    gravitate_stars_to_cells();
+    //gravitate_within_cells();
     integrate();
 }

@@ -74,9 +74,9 @@ struct sphere {
     vec3 position;
     uint cell;
     vec3 velocity;
-    float _;
+    float mass;
     vec3 acceleration;
-    float _1;
+    uint next;
 };
 
 struct world_gpu_data {
@@ -141,6 +141,7 @@ public:
 
             objects[i].position = position;
             objects[i].velocity = velocity;
+            objects[i].mass = 1;
         }
     }
 
