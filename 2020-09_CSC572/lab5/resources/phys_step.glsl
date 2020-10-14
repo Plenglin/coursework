@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 2
+#define RASTERIZATION 8
 #define BARYCENTER_RESOLUTION 1000
 
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
@@ -188,13 +188,14 @@ void gravitate_within_cells() {
     const uint head = cells[linear_cell_index].head;
     uint i = stars[head].next;
     uint i_count = 1;
-    while (i != NIL) {
+    while (i != NIL && i_count < stars.length()) {
         uint j = head;
         uint j_count = 0;
-        while (j != NIL && j_count < i_count) {
-            vec3 a2b = gravity(stars[i].position, stars[j].position);
-            stars[i].acceleration += a2b * stars[j].mass;
-            stars[j].acceleration -= a2b * stars[i].mass;
+        while (j != NIL && j_count < i_count && j_count < stars.length()) {
+            vec3 gr = gravity(stars[i].position, stars[j].position);
+            stars[i].acceleration -= gr * stars[j].mass;
+            stars[j].acceleration += gr * stars[i].mass;
+            j = stars[j].next;
             j_count++;
         }
         i = stars[i].next;
@@ -219,6 +220,6 @@ void main() {
     rasterize(min_bounds, max_bounds);
     build_linked_lists();
     gravitate_stars_to_cells();
-    //gravitate_within_cells();
+    gravitate_within_cells();
     integrate();
 }
