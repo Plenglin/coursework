@@ -152,6 +152,12 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
         uvec3 cell = uvec3(floor(cell_float * RASTERIZATION));
         uint cell_index = raster_pos_to_storage_index(cell);
 
+        // Ensure that there exists a cell containing this star
+        if (!(0 <= cell_index && cell_index < TOTAL_CELLS)) {
+            stars[i].cell = NIL;
+            continue;
+        }
+
         // Link star to cell
         stars[i].cell = cell_index;
         atomicAdd(cells[cell_index].count, 1);
@@ -175,6 +181,7 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
 
 void build_linked_lists() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
+        if (stars[i].cell == NIL) continue;
         stars[i].next = atomicExchange(cells[stars[i].cell].head, i);
     }
     barrier();
