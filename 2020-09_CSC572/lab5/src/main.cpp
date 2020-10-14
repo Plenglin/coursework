@@ -142,7 +142,7 @@ public:
             position *= 10;
 
             auto velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            velocity *= 0;
+            velocity *= 0.4;
 
             objects[i].position = position;
             objects[i].velocity = velocity;

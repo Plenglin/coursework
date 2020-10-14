@@ -226,13 +226,9 @@ void gravitate_stars_to_cells() {
 }
 
 void gravitate_within_cells() {
-    for (uint self_heap_offset = star_scan_start; self_heap_offset < star_scan_end; self_heap_offset++) {
-        const uint self_index = stars[self_heap_offset].array_list_ref;
+    for (uint self_index = star_scan_start; self_index < star_scan_end; self_index++) {
         const uint list_count = cells[stars[self_index].cell].count;
         const uint list_start = cells[stars[self_index].cell].array_list_start;
-        const uint self_list_offset = self_heap_offset - list_start;
-
-        stars[self_index].acceleration = vec3(0, 0, 0);
 
         for (uint other_list_offset = 0; other_list_offset < list_count; other_list_offset++) {
             const uint other_heap_offset = list_start + other_list_offset;
