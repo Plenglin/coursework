@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 5000
+#define STARS_N 1000
 
 struct sphere {
     vec3 position;
@@ -138,6 +138,10 @@ public:
     void init_stars() {
         glm::mat4 trs = glm::rotate(mat4(1.0), 3.1415f/2, vec3(0.0f, 1, 0));
         for (int i = 0; i < STARS_N; i++) {
+            auto angle = randf() * 2 * 3.1415;
+            auto radius = 4 * randf() + 1;
+            auto height = (2 * randf() - 1) * 4;
+
             auto position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
             position *= 10;
 
@@ -148,6 +152,9 @@ public:
             objects[i].velocity = velocity;
             objects[i].mass = 1;
         }
+        objects[0].position = vec3(0, 0, 0);
+        objects[0].velocity = vec3(0, 0, 0);
+        objects[0].mass = 10000;
     }
 
     void init_atomic() {
@@ -500,9 +507,9 @@ public:
 
 	void update(float dt) {
         // Update the physics world. Limit timesteps to ensure stability.
-        float fixed_dt = std::min(dt, 0.02f);
+        float fixed_dt = std::min(dt, 0.03f);
         //world.step(fixed_dt / 5);
-        world.step(0.02f);
+        world.step(fixed_dt);
         world.download();
         phys_to_vbo();
     }
