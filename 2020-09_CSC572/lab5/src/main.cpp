@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define STARS_N 1000
+#define STARS_N 100
 const float GRAV_CONST = 2e-3;
 
 struct sphere {

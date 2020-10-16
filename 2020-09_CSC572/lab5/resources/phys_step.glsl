@@ -130,23 +130,24 @@ void calculate_bounds() {
 
     {
         // Workers calculate sum of squared deviations of workset positions
-        vec3 sum = vec3(0, 0, 0);
+        float sum = 0;
         for (uint i = star_scan_start; i < star_scan_end; i++) {
             vec3 dev = stars[i].position - mean_pos;
-            sum += dev * dev;
+            sum += dot(dev, dev);
         }
-        intermediate_vec[linear_cell_index] = sum;
+        intermediate_vec[linear_cell_index].x = sum;
         barrier();
     }
     barrier();
 
     // Leader aggregates sum squared diffs to get the mean
     if (linear_cell_index == 0) {
-        vec3 sum = vec3(0, 0, 0);
+        float sum = 0;
         for (uint i = star_scan_start; i < star_scan_end; i++) {
-            sum += intermediate_vec[linear_cell_index];
+            sum += intermediate_vec[linear_cell_index].x;
         }
-        stdev_pos = sqrt(sum / STARS_COUNT);
+        float stdev = sqrt(sum / STARS_COUNT);
+        stdev_pos = vec3(stdev, stdev, stdev);
 
         max_bounds = mean_pos + BOUNDS_STDEVS * stdev_pos;
         min_bounds = mean_pos - BOUNDS_STDEVS * stdev_pos;
