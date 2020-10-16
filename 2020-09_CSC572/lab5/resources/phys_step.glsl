@@ -94,7 +94,7 @@ vec3 gravity(vec3 p1, vec3 p2) {
     float r2 = dot(delta, delta);
 
     vec3 norm_delta = delta / sqrt(r2);
-    float accel_mag = -1e-3 / r2;
+    float accel_mag = -G / r2;
 
     return accel_mag * norm_delta;
 }

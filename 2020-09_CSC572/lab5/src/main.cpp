@@ -68,7 +68,8 @@ public:
 
 camera mycam;
 
-#define STARS_N 5000
+#define STARS_N 1000
+const float GRAV_CONST = 2e-3;
 
 struct sphere {
     vec3 position;
@@ -125,8 +126,7 @@ public:
 
         uniform_dt = glGetUniformLocation(program, "dt");
         uniform_acc = glGetUniformLocation(program, "G");
-        const float G = 1e-8;
-        glUniform1f(uniform_acc, G);
+        glUniform1f(uniform_acc, GRAV_CONST);
     }
 
     void init_ssbo() {
@@ -138,8 +138,10 @@ public:
     void init_stars() {
         glm::mat4 trs = glm::rotate(mat4(1.0), 3.1415f/2, vec3(0.0f, 1, 0));
         for (int i = 0; i < STARS_N; i++) {
-            auto position = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
-            position *= 10;
+            float angle = randf() * 2 * 3.1415;
+            float radius = 3 * randf() + 3;
+            auto position = vec3(cos(angle), sin(angle), 0);
+            position *= radius;
 
             auto velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
             velocity *= 0.4;
