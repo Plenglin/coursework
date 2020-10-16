@@ -68,9 +68,11 @@ public:
 
 camera mycam;
 
-#define STARS_N 100
-#define CENTER_MASS 1000
-const float GRAV_CONST = 4e-3;
+#define STARS_N 1000
+#define CENTER_MASS 10000
+#define MIN_DIST 1
+#define MAX_DIST 6
+const float GRAV_CONST = 1e-3;
 
 struct sphere {
     vec3 position;
@@ -136,7 +138,7 @@ public:
     void init_stars() {
         for (int i = 1; i < STARS_N; i++) {
             float angle = randf() * 2 * 3.1415;
-            float radius = 3 * randf() + 1;
+            float radius = (MAX_DIST - MIN_DIST) * randf() + MIN_DIST;
             float c = cos(angle);
             float s = sin(angle);
             auto position = vec3(c, s, 0);
@@ -144,7 +146,7 @@ public:
             position.z = randf() * 0.1;
 
             auto velocity = vec3(-s, c, 0);
-            velocity *= sqrt(GRAV_CONST * CENTER_MASS / radius);
+            velocity *= 1 * sqrt(GRAV_CONST * CENTER_MASS / radius);
 
             objects[i].position = position;
             objects[i].velocity = velocity;

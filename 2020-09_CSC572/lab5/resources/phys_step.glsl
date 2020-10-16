@@ -55,7 +55,7 @@ shared cell cells[TOTAL_CELLS];
 
 const uint STARS_COUNT = stars.length();
 #define NIL STARS_COUNT
-#define BOUNDS_STDEVS 2
+#define BOUNDS_STDEVS 3
 
 uint raster_pos_to_storage_index(uvec3 pos) {
     return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
@@ -159,10 +159,12 @@ void calculate_bounds() {
 void calculate_bounds2() {
     if (linear_cell_index == 0) {
         vec3 sum = vec3(0, 0, 0);
+        float mass_sum = 0;
         for (uint i = 0; i < STARS_COUNT; i++) {
-            sum += stars[i].position;
+            mass_sum += stars[i].mass;
+            sum += stars[i].position * stars[i].mass;
         }
-        mean_pos = sum / STARS_COUNT;
+        mean_pos = sum / mass_sum;
 
         float dev2 = 0;
         for (uint i = 0; i < STARS_COUNT; i++) {
