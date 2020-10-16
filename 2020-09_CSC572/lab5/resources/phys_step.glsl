@@ -225,6 +225,7 @@ void rasterize() {
     if (mass_sum > 0) {
         cells[linear_cell_index].barycenter = wpos_sum / mass_sum;
     }
+    barrier();
 }
 
 
