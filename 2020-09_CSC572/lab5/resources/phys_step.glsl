@@ -47,7 +47,6 @@ shared vec3 intermediate_vec[TOTAL_CELLS];
 // Global minimum and maximum
 shared vec3 mean_pos;
 shared vec3 stdev_pos;
-shared vec3 deviation_bounds;
 shared vec3 max_bounds;
 shared vec3 min_bounds;
 shared vec3 bounding_dims;
@@ -148,7 +147,6 @@ void calculate_bounds() {
             sum += intermediate_vec[linear_cell_index];
         }
         stdev_pos = sqrt(sum / STARS_COUNT);
-        deviation_bounds = stdev_pos * BOUNDS_STDEVS;
 
         max_bounds = mean_pos + BOUNDS_STDEVS * stdev_pos;
         min_bounds = mean_pos - BOUNDS_STDEVS * stdev_pos;
@@ -169,12 +167,8 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
         vec3 star_position = stars[i].position;
 
-        // Calculate the cell it's in, biasing towards the center.
-        vec3 norm_dist = (star_position - mean_pos) / deviation_bounds;
-        vec3 abs_dist = abs(norm_dist);
-        vec3 adjusted_dist = norm_dist;//sign(norm_dist) * sqrt(abs_dist);
-
-        vec3 cell_float = (adjusted_dist + 1) / 2;
+        // Calculate the cell it's in
+        vec3 cell_float = (star_position - min_bounds) / bounding_dims;
         uvec3 cell = uvec3(floor(cell_float * RASTERIZATION));
         uint cell_index = raster_pos_to_storage_index(cell);
 
@@ -189,8 +183,7 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
         atomicAdd(cells[cell_index].count, 1);
 
         // Increment cell mass
-        uint mass_quantized = uint(stars[i].mass * BARYCENTER_RESOLUTION);
-        atomicAdd(cells[cell_index].mass, mass_quantized);
+        atomicAdd(cells[cell_index].mass, 1);
 
         // Increment barycenter accumulator
         ivec3 int_pos = ivec3(BARYCENTER_RESOLUTION * star_position);
@@ -253,8 +246,7 @@ void gravitate_stars_to_cells() {
                 continue;
             }
 
-            float cell_mass = float(b.mass) / BARYCENTER_RESOLUTION;
-            a.acceleration += gravity(a.position, b.barycenter) * cell_mass;
+            a.acceleration += gravity(a.position, b.barycenter) * b.mass;
         }
         stars[i].acceleration = a.acceleration;
     }
