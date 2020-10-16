@@ -180,6 +180,7 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
 
         // Link star to cell
         stars[i].cell = cell_index;
+        stars[i].next = atomicExchange(cells[cell_index].head, i);
         atomicAdd(cells[cell_index].count, 1);
 
         // Increment cell mass
@@ -197,14 +198,6 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
     if (cells[linear_cell_index].mass > 0) {
         cells[linear_cell_index].barycenter = vec3(cells[linear_cell_index].barycenter_int) / cells[linear_cell_index].mass / BARYCENTER_RESOLUTION;
     }
-}
-
-void build_linked_lists() {
-    for (uint i = star_scan_start; i < star_scan_end; i++) {
-        if (stars[i].cell == NIL) continue;
-        stars[i].next = atomicExchange(cells[stars[i].cell].head, i);
-    }
-    barrier();
 }
 
 void build_array_lists() {
@@ -282,7 +275,6 @@ void main() {
     disconnect_linked_lists();
     calculate_bounds();
     rasterize(min_bounds, max_bounds);
-    build_linked_lists();
     build_array_lists();
     gravitate_stars_to_cells();
     gravitate_within_cells();
