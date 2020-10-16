@@ -143,7 +143,7 @@ public:
             auto position = vec3(cos(angle), sin(angle), 0);
             position *= radius;
 
-            auto velocity = vec3(randf() - 0.5, randf() - 0.5, randf() - 0.5);
+            auto velocity = vec3(randf() - 0.5, randf() - 0.5, 0);
             velocity *= 0.4;
 
             objects[i].position = position;

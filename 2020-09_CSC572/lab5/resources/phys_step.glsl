@@ -16,7 +16,7 @@ struct star {
     vec3 acceleration;
     uint next;
 
-    uint array_list_ref;
+    uint _;
     uint _1;
     uint _2;
     uint _3;
@@ -200,32 +200,6 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
     }
 }
 
-void build_array_lists() {
-    // Determine allocations
-    if (linear_cell_index == 0) {
-        uint cumulative = 0;
-        max_cell_density = 0;
-        for (int i = 0; i < TOTAL_CELLS; i++) {
-            cells[i].array_list_start = cumulative;
-            uint count = cells[i].count;
-            cumulative += count;
-            max_cell_density = max(count, max_cell_density);
-        }
-    }
-    barrier();
-
-    // Create references
-    const uint head = cells[linear_cell_index].head;
-    const uint list_start = cells[linear_cell_index].array_list_start;
-    uint i = stars[head].next;
-    uint i_count = 0;
-    while (i != NIL && i_count < STARS_COUNT) {
-        stars[list_start + i].array_list_ref = i;
-        i = stars[i].next;
-        i_count++;
-    }
-}
-
 // Apply gravitational forces
 void gravitate_stars_to_cells() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
@@ -247,16 +221,15 @@ void gravitate_stars_to_cells() {
 
 void gravitate_within_cells() {
     for (uint self_index = star_scan_start; self_index < star_scan_end; self_index++) {
-        const uint list_count = cells[stars[self_index].cell].count;
-        const uint list_start = cells[stars[self_index].cell].array_list_start;
+        const uint head = cells[stars[self_index].cell].head;
+        uint i = head;
+        while (i != NIL) {
+            if (self_index != i) {
+                vec3 gr = gravity(stars[self_index].position, stars[i].position);
+                stars[self_index].acceleration += gr * stars[i].mass;
+            }
 
-        for (uint other_list_offset = 0; other_list_offset < list_count; other_list_offset++) {
-            const uint other_heap_offset = list_start + other_list_offset;
-            const uint other_index = stars[other_heap_offset].array_list_ref;
-            if (self_index == other_index) continue;
-
-            vec3 gr = gravity(stars[self_index].position, stars[other_index].position);
-            stars[self_index].acceleration += gr * stars[other_index].mass;
+            i = stars[i].next;
         }
     }
 }
@@ -275,7 +248,6 @@ void main() {
     disconnect_linked_lists();
     calculate_bounds();
     rasterize(min_bounds, max_bounds);
-    build_array_lists();
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();
