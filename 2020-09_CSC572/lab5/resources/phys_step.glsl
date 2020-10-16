@@ -22,7 +22,7 @@ struct star {
 
 struct cell {
     ivec3 barycenter_int;
-    uint mass;
+    float mass;
 
     vec3 barycenter;
     uint head;
@@ -187,6 +187,7 @@ void rasterize() {
     cells[linear_cell_index].mass = 0;
     barrier();
 
+    // For each cell
     for (uint i = star_scan_start; i < star_scan_end; i++) {
         vec3 star_position = stars[i].position;
 
@@ -206,23 +207,24 @@ void rasterize() {
         stars[i].cell = cell_index;
         stars[i].next = atomicExchange(cells[cell_index].head, i);
         atomicAdd(cells[cell_index].count, 1);
-
-        // Increment cell mass
-        atomicAdd(cells[cell_index].mass, 1);
-
-        // Increment barycenter accumulator
-        ivec3 int_pos = ivec3(BARYCENTER_RESOLUTION * star_position);
-        atomicAdd(cells[cell_index].barycenter_int.x, int_pos.x);
-        atomicAdd(cells[cell_index].barycenter_int.y, int_pos.y);
-        atomicAdd(cells[cell_index].barycenter_int.z, int_pos.z);
     }
+
     barrier();
 
-    // Convert sum to average
-    if (cells[linear_cell_index].mass > 0) {
-        cells[linear_cell_index].barycenter = vec3(cells[linear_cell_index].barycenter_int) / cells[linear_cell_index].mass / BARYCENTER_RESOLUTION;
+    // Compute cell data
+    const uint head = cells[linear_cell_index].head;
+    vec3 wpos_sum = vec3(0, 0, 0);
+    float mass_sum = 0;
+    for (uint i = head; i != NIL; i = stars[i].next) {
+        wpos_sum += stars[i].mass * stars[i].position;
+        mass_sum += stars[i].mass;
+    }
+    cells[linear_cell_index].mass = mass_sum;
+    if (mass_sum > 0) {
+        cells[linear_cell_index].barycenter = wpos_sum / mass_sum;
     }
 }
+
 
 // Apply gravitational forces
 void gravitate_stars_to_cells() {
@@ -246,14 +248,11 @@ void gravitate_stars_to_cells() {
 void gravitate_within_cells() {
     for (uint self_index = star_scan_start; self_index < star_scan_end; self_index++) {
         const uint head = cells[stars[self_index].cell].head;
-        uint i = head;
-        while (i != NIL) {
+        for (uint i = head; i != NIL; i = stars[i].next) {
             if (self_index != i) {
                 vec3 gr = gravity(stars[self_index].position, stars[i].position);
                 stars[self_index].acceleration += gr * stars[i].mass;
             }
-
-            i = stars[i].next;
         }
     }
 }

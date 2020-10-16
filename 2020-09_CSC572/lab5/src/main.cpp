@@ -69,6 +69,7 @@ public:
 camera mycam;
 
 #define STARS_N 100
+#define CENTER_MASS 1000
 const float GRAV_CONST = 4e-3;
 
 struct sphere {
@@ -133,20 +134,25 @@ public:
     }
 
     void init_stars() {
-        glm::mat4 trs = glm::rotate(mat4(1.0), 3.1415f/2, vec3(0.0f, 1, 0));
-        for (int i = 0; i < STARS_N; i++) {
+        for (int i = 1; i < STARS_N; i++) {
             float angle = randf() * 2 * 3.1415;
-            float radius = 3 * randf() + 3;
-            auto position = vec3(cos(angle), sin(angle), randf() * 0.1);
+            float radius = 3 * randf() + 1;
+            float c = cos(angle);
+            float s = sin(angle);
+            auto position = vec3(c, s, 0);
             position *= radius;
+            position.z = randf() * 0.1;
 
-            auto velocity = vec3(randf() - 0.5, randf() - 0.5, 0);
-            velocity *= 0.1;
+            auto velocity = vec3(-s, c, 0);
+            velocity *= sqrt(GRAV_CONST * CENTER_MASS / radius);
 
             objects[i].position = position;
             objects[i].velocity = velocity;
             objects[i].mass = 1;
         }
+        objects[0].position = vec3(0, 0, 0);
+        objects[0].velocity = vec3(0, 0, 0);
+        objects[0].mass = CENTER_MASS;
     }
 
     void init_atomic() {
