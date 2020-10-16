@@ -100,7 +100,7 @@ public:
     GLuint atomic_buf;
     GLuint object_block_index;
     GLuint uniform_dt, uniform_acc, uniform_centeredness;
-    float centeredness = 2;
+    float centeredness = 1;
 
     void init_shader() {
         std::string shader_string = readFileAsString("../resources/phys_step.glsl");
@@ -128,8 +128,6 @@ public:
         uniform_dt = glGetUniformLocation(program, "dt");
         uniform_acc = glGetUniformLocation(program, "G");
         uniform_centeredness = glGetUniformLocation(program, "centeredness");
-        glUniform1f(uniform_acc, centeredness);
-        glUniform1f(uniform_acc, GRAV_CONST);
     }
 
     void init_ssbo() {
@@ -209,6 +207,8 @@ public:
 
         glUseProgram(program);
         glUniform1f(uniform_dt, dt);
+        glUniform1f(uniform_centeredness, centeredness);
+        glUniform1f(uniform_acc, GRAV_CONST);
         //activate atomic counter
         glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_buf);
         glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_buf);

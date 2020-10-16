@@ -191,7 +191,7 @@ void rasterize() {
 
         // Calculate the cell it's in
         vec3 norm_pos = (star_position - mean_pos) / dev_limits;
-        vec3 skew_pos = norm_pos;
+        vec3 skew_pos = sign(norm_pos) * pow(abs(norm_pos), vec3(centeredness, centeredness, centeredness));
         vec3 cube_pos = (skew_pos + 1) / 2;
         uvec3 cell = uvec3(floor(cube_pos * RASTERIZATION));
         stars[i].test = floor(cube_pos * RASTERIZATION);
