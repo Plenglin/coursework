@@ -69,7 +69,7 @@ public:
 camera mycam;
 
 #define STARS_N 100
-const float GRAV_CONST = 2e-3;
+const float GRAV_CONST = 4e-3;
 
 struct sphere {
     vec3 position;
@@ -78,10 +78,7 @@ struct sphere {
     float mass;
     vec3 acceleration;
     uint next;
-    uint array_list_ref;
-    uint _1;
-    uint _2;
-    uint _3;
+    vec4 test;
 };
 
 struct world_gpu_data {
@@ -140,11 +137,11 @@ public:
         for (int i = 0; i < STARS_N; i++) {
             float angle = randf() * 2 * 3.1415;
             float radius = 3 * randf() + 3;
-            auto position = vec3(cos(angle), sin(angle), 0);
+            auto position = vec3(cos(angle), sin(angle), randf() * 0.1);
             position *= radius;
 
             auto velocity = vec3(randf() - 0.5, randf() - 0.5, 0);
-            velocity *= 0.4;
+            velocity *= 0.1;
 
             objects[i].position = position;
             objects[i].velocity = velocity;

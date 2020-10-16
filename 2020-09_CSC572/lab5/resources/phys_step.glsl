@@ -16,10 +16,8 @@ struct star {
     vec3 acceleration;
     uint next;
 
-    uint _;
-    uint _1;
-    uint _2;
-    uint _3;
+    vec3 test;
+    float _;
 };
 
 struct cell {
@@ -47,7 +45,7 @@ shared vec3 intermediate_vec[TOTAL_CELLS];
 // Global minimum and maximum
 shared vec3 mean_pos;
 shared vec3 stdev_pos;
-shared vec3 max_bounds;
+shared vec3 dev_limits;
 shared vec3 min_bounds;
 shared vec3 bounding_dims;
 shared uint max_cell_density;
@@ -105,11 +103,12 @@ void disconnect_linked_lists() {
     }
     cells[linear_cell_index].head = NIL;
     cells[linear_cell_index].count = 0;
+    barrier();
 }
 
 void calculate_bounds() {
+    // Workers calculate sum of workset positions
     {
-        // Workers calculate sum of workset positions
         vec3 sum = vec3(0, 0, 0);
         for (uint i = star_scan_start; i < star_scan_end; i++) {
             sum += stars[i].position;
@@ -128,8 +127,8 @@ void calculate_bounds() {
     }
     barrier();
 
+    // Workers calculate partial variances
     {
-        // Workers calculate sum of squared deviations of workset positions
         float sum = 0;
         for (uint i = star_scan_start; i < star_scan_end; i++) {
             vec3 dev = stars[i].position - mean_pos;
@@ -138,7 +137,6 @@ void calculate_bounds() {
         intermediate_vec[linear_cell_index].x = sum;
         barrier();
     }
-    barrier();
 
     // Leader aggregates sum squared diffs to get the mean
     if (linear_cell_index == 0) {
@@ -149,18 +147,42 @@ void calculate_bounds() {
         float stdev = sqrt(sum / STARS_COUNT);
         stdev_pos = vec3(stdev, stdev, stdev);
 
-        max_bounds = mean_pos + BOUNDS_STDEVS * stdev_pos;
-        min_bounds = mean_pos - BOUNDS_STDEVS * stdev_pos;
+        dev_limits = BOUNDS_STDEVS * stdev_pos;
+        min_bounds = mean_pos - dev_limits;
 
         // Calculate scale
-        bounding_dims = max_bounds - min_bounds;
+        bounding_dims = dev_limits * 2;
     }
+    barrier();
+}
 
+void calculate_bounds2() {
+    if (linear_cell_index == 0) {
+        vec3 sum = vec3(0, 0, 0);
+        for (uint i = 0; i < STARS_COUNT; i++) {
+            sum += stars[i].position;
+        }
+        mean_pos = sum / STARS_COUNT;
+
+        float dev2 = 0;
+        for (uint i = 0; i < STARS_COUNT; i++) {
+            vec3 d = stars[i].position - mean_pos;
+            dev2 += dot(d, d);
+        }
+        float stdev = sqrt(dev2 / STARS_COUNT);
+        stdev_pos = vec3(stdev, stdev, stdev);
+
+        dev_limits = BOUNDS_STDEVS * stdev_pos;
+        min_bounds = mean_pos - dev_limits;
+
+        // Calculate scale
+        bounding_dims = dev_limits * 2;
+    }
     barrier();
 }
 
 // Link stars to their cells
-void rasterize(vec3 min_bounds, vec3 max_bounds) {
+void rasterize() {
     cells[linear_cell_index].barycenter_int = ivec3(0, 0, 0);
     cells[linear_cell_index].mass = 0;
     barrier();
@@ -171,6 +193,7 @@ void rasterize(vec3 min_bounds, vec3 max_bounds) {
         // Calculate the cell it's in
         vec3 cell_float = (star_position - min_bounds) / bounding_dims;
         uvec3 cell = uvec3(floor(cell_float * RASTERIZATION));
+        stars[i].test = floor(cell_float * RASTERIZATION);
         uint cell_index = raster_pos_to_storage_index(cell);
 
         // Ensure that there exists a cell containing this star
@@ -247,9 +270,14 @@ void integrate() {
 
 void main() {
     disconnect_linked_lists();
-    calculate_bounds();
-    rasterize(min_bounds, max_bounds);
+    calculate_bounds2();
+    rasterize();
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();
+
+    stars[0].test = mean_pos;
+    stars[1].test = stdev_pos;
+    stars[2].test = min_bounds;
+    stars[3].test = bounding_dims;
 }
