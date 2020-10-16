@@ -72,7 +72,7 @@ camera mycam;
 #define CENTER_MASS 10000
 #define MIN_DIST 1
 #define MAX_DIST 6
-const float GRAV_CONST = 1e-3;
+const float GRAV_CONST = 1e-4;
 
 struct sphere {
     vec3 position;
@@ -99,7 +99,8 @@ public:
     GLuint program;
     GLuint atomic_buf;
     GLuint object_block_index;
-    GLuint uniform_dt, uniform_acc;
+    GLuint uniform_dt, uniform_acc, uniform_centeredness;
+    float centeredness = 2;
 
     void init_shader() {
         std::string shader_string = readFileAsString("../resources/phys_step.glsl");
@@ -126,6 +127,8 @@ public:
 
         uniform_dt = glGetUniformLocation(program, "dt");
         uniform_acc = glGetUniformLocation(program, "G");
+        uniform_centeredness = glGetUniformLocation(program, "centeredness");
+        glUniform1f(uniform_acc, centeredness);
         glUniform1f(uniform_acc, GRAV_CONST);
     }
 

@@ -46,9 +46,6 @@ shared vec3 intermediate_vec[TOTAL_CELLS];
 shared vec3 mean_pos;
 shared vec3 stdev_pos;
 shared vec3 dev_limits;
-shared vec3 min_bounds;
-shared vec3 bounding_dims;
-shared uint max_cell_density;
 
 // Raster group data
 shared cell cells[TOTAL_CELLS];
@@ -75,6 +72,7 @@ uvec3 storage_index_to_raster_pos(uint i) {
 
 uniform float dt;
 uniform float G;
+uniform float centeredness;
 
 // Where this worker's cell index is
 const uint linear_cell_index = raster_pos_to_storage_index(gl_GlobalInvocationID);
@@ -106,6 +104,7 @@ void disconnect_linked_lists() {
     barrier();
 }
 
+/*
 void calculate_bounds() {
     // Workers calculate sum of workset positions
     {
@@ -155,6 +154,7 @@ void calculate_bounds() {
     }
     barrier();
 }
+*/
 
 void calculate_bounds2() {
     if (linear_cell_index == 0) {
@@ -175,10 +175,6 @@ void calculate_bounds2() {
         stdev_pos = vec3(stdev, stdev, stdev);
 
         dev_limits = BOUNDS_STDEVS * stdev_pos;
-        min_bounds = mean_pos - dev_limits;
-
-        // Calculate scale
-        bounding_dims = dev_limits * 2;
     }
     barrier();
 }
@@ -194,9 +190,11 @@ void rasterize() {
         vec3 star_position = stars[i].position;
 
         // Calculate the cell it's in
-        vec3 cell_float = (star_position - min_bounds) / bounding_dims;
-        uvec3 cell = uvec3(floor(cell_float * RASTERIZATION));
-        stars[i].test = floor(cell_float * RASTERIZATION);
+        vec3 norm_pos = (star_position - mean_pos) / dev_limits;
+        vec3 skew_pos = norm_pos;
+        vec3 cube_pos = (skew_pos + 1) / 2;
+        uvec3 cell = uvec3(floor(cube_pos * RASTERIZATION));
+        stars[i].test = floor(cube_pos * RASTERIZATION);
         uint cell_index = raster_pos_to_storage_index(cell);
 
         // Ensure that there exists a cell containing this star
@@ -277,9 +275,4 @@ void main() {
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();
-
-    stars[0].test = mean_pos;
-    stars[1].test = stdev_pos;
-    stars[2].test = min_bounds;
-    stars[3].test = bounding_dims;
 }
