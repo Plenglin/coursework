@@ -4,6 +4,10 @@ define generate-target-zip
 $(DIR)/astrid_yu_$1.zip: 
 	$(GITZIP) $(DIR)/astrid_yu_$1.zip $(DIR)/$1 
 all:: $(DIR)/astrid_yu_$1.zip
+
+.PHONY: $(DIR)/$1
+$(DIR)/$1: $(DIR)/astrid_yu_$1.zip
+
 CLEANFILES += $(DIR)/astrid_yu_$1.zip
 endef
 
