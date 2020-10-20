@@ -555,3 +555,4 @@ MigrationBackup/
 
 !*/resources/**/*.obj
 *.zip
+!Makefile
