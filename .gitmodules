@@ -1,3 +1,6 @@
 [submodule "2020-01_CPE133"]
 	path = 2020-01_CPE133
 	url = https://github.com/Plenglin/Basys3-1D-Cellular-Automata.git
+[submodule "2020-09_ENGL149/fattes-pizza"]
+	path = 2020-09_ENGL149/fattes-pizza
+	url = https://github.com/Plenglin/fattes-pizza-mockup.git
