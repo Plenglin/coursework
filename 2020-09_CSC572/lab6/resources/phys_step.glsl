@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 10
+#define RASTERIZATION 15
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
 #define BARYCENTER_RESOLUTION 1000
@@ -37,6 +37,8 @@ struct cell {
 layout(local_size_x = WORKERS, local_size_y = 1, local_size_z = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
+    // Raster group data
+    cell cells[TOTAL_CELLS];
     star stars[];
 };
 
@@ -47,9 +49,6 @@ shared vec3 intermediate_vec[WORKERS];
 shared vec3 mean_pos;
 shared vec3 stdev_pos;
 shared vec3 dev_limits;
-
-// Raster group data
-shared cell cells[TOTAL_CELLS];
 
 const uint STARS_COUNT = stars.length();
 #define NIL STARS_COUNT

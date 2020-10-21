@@ -68,7 +68,7 @@ public:
 
 camera mycam;
 
-#define RASTERIZATION 10
+#define RASTERIZATION 15
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
 #define STARS_N 3000
@@ -87,7 +87,21 @@ struct sphere {
     vec4 test;
 };
 
+struct cell {
+    ivec3 barycenter_int;
+    float mass;
+
+    vec3 barycenter;
+    uint head;
+
+    uint array_list_start;
+    uint count;
+    uint _1;
+    uint _2;
+};
+
 struct world_gpu_data {
+    cell cells[TOTAL_CELLS];
     sphere objects[STARS_N];
 };
 
@@ -177,11 +191,11 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
 
-    sphere* mmap_ssbo(GLenum flags) {
+    world_gpu_data* mmap_ssbo(GLenum flags) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
         GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, flags);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-        return (sphere*)p;
+        return (world_gpu_data*)p;
     }
 
     void munmap_ssbo() {
@@ -193,7 +207,7 @@ public:
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
         for (int i = 0; i < STARS_N; i++) {
-            data.objects[i] = ref[i];
+            data.objects[i] = ref->objects[i];
         }
         munmap_ssbo();
     }
