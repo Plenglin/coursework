@@ -69,7 +69,11 @@ public:
 camera mycam;
 
 #define RASTERIZATION 15
+#define L1_WIDTH 5
+#define L2_WIDTH 3
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
+#define L1_CELLS RASTERIZATION
+#define L2_CELLS (L2_WIDTH * L2_WIDTH * L2_WIDTH * 27)
 
 #define STARS_N 3000
 #define CENTER_MASS 1e4
@@ -88,7 +92,7 @@ struct sphere {
 };
 
 struct cell {
-    ivec3 barycenter_int;
+    vec3 acceleration;
     float mass;
 
     vec3 barycenter;
@@ -102,6 +106,8 @@ struct cell {
 
 struct world_gpu_data {
     cell cells[TOTAL_CELLS];
+    cell l1[L1_CELLS];
+    cell l2[L2_CELLS];
     sphere objects[STARS_N];
 };
 

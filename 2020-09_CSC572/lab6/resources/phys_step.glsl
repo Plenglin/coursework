@@ -2,7 +2,11 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 #define RASTERIZATION 15
+#define L1_WIDTH 5
+#define L2_WIDTH 3
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
+#define L1_CELLS RASTERIZATION
+#define L2_CELLS (L2_WIDTH * L2_WIDTH * L2_WIDTH * 27)
 
 #define BARYCENTER_RESOLUTION 1000
 #define WORKERS 512
@@ -22,7 +26,7 @@ struct star {
 };
 
 struct cell {
-    ivec3 barycenter_int;
+    vec3 acceleration;
     float mass;
 
     vec3 barycenter;
@@ -39,6 +43,8 @@ layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
     // Raster group data
     cell cells[TOTAL_CELLS];
+    cell l1[L1_CELLS];
+    cell l2[L2_CELLS];
     star stars[];
 };
 
@@ -54,19 +60,19 @@ const uint STARS_COUNT = stars.length();
 #define NIL STARS_COUNT
 #define BOUNDS_STDEVS 3
 
-uint raster_pos_to_storage_index(uvec3 pos) {
-    return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
+uint raster_pos_to_storage_index(uvec3 pos, uint width) {
+    return pos.x + width * (pos.y + width * pos.z);
 }
 
-uvec3 storage_index_to_raster_pos(uint i) {
+uvec3 storage_index_to_raster_pos(uint i, uint width) {
     uvec3 pos;
-    pos.x = i % RASTERIZATION;
+    pos.x = i % width;
 
-    i /= RASTERIZATION;
-    pos.y = i % RASTERIZATION;
+    i /= width;
+    pos.y = i % width;
 
-    i /= RASTERIZATION;
-    pos.z = i % RASTERIZATION;
+    i /= width;
+    pos.z = i;
     return pos;
 }
 
@@ -131,7 +137,6 @@ void calculate_bounds2() {
 
 // Link stars to their cells
 void rasterize() {
-    cells[worker_index].barycenter_int = ivec3(0, 0, 0);
     cells[worker_index].mass = 0;
     barrier();
 
@@ -145,7 +150,7 @@ void rasterize() {
         vec3 cube_pos = (skew_pos + 1) / 2;
         uvec3 cell = uvec3(floor(cube_pos * RASTERIZATION));
         stars[i].test = floor(cube_pos * RASTERIZATION);
-        uint cell_index = raster_pos_to_storage_index(cell);
+        uint cell_index = raster_pos_to_storage_index(cell, RASTERIZATION);
 
         // Ensure that there exists a cell containing this star
         if (!(0 <= cell_index && cell_index < TOTAL_CELLS)) {
