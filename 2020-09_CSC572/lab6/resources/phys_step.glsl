@@ -2,10 +2,10 @@
 #extension GL_ARB_shader_storage_buffer_object : require
 
 #define RASTERIZATION 10
+#define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
+
 #define BARYCENTER_RESOLUTION 1000
 #define WORKERS 512
-
-#define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
 struct star {
     vec3 position;
@@ -41,7 +41,7 @@ layout (std430, binding=0) volatile buffer shader_data {
 };
 
 // Minimums and maximums found by each worker
-shared vec3 intermediate_vec[TOTAL_CELLS];
+shared vec3 intermediate_vec[WORKERS];
 
 // Global minimum and maximum
 shared vec3 mean_pos;

@@ -68,6 +68,9 @@ public:
 
 camera mycam;
 
+#define RASTERIZATION 10
+#define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
+
 #define STARS_N 3000
 #define CENTER_MASS 1e4
 #define MIN_DIST 0.1
@@ -94,7 +97,7 @@ float randf() {
 
 class physics_world {
 public:
-    sphere objects[STARS_N];
+    world_gpu_data data;
     GLuint objects_gpu;
     GLuint program;
     GLuint atomic_buf;
@@ -149,13 +152,13 @@ public:
             auto velocity = vec3(-s, c, 0);
             velocity *= 1 * sqrt(GRAV_CONST * CENTER_MASS / radius);
 
-            objects[i].position = position;
-            objects[i].velocity = velocity;
-            objects[i].mass = 1;
+            data.objects[i].position = position;
+            data.objects[i].velocity = velocity;
+            data.objects[i].mass = 1;
         }
-        objects[0].position = vec3(0, 0, 0);
-        objects[0].velocity = vec3(0, 0, 0);
-        objects[0].mass = CENTER_MASS;
+        data.objects[0].position = vec3(0, 0, 0);
+        data.objects[0].velocity = vec3(0, 0, 0);
+        data.objects[0].mass = CENTER_MASS;
     }
 
     void init_atomic() {
@@ -169,7 +172,7 @@ public:
 
     void upload() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, objects_gpu);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(sphere) * STARS_N, objects, GL_DYNAMIC_COPY);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(world_gpu_data), &data, GL_DYNAMIC_COPY);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objects_gpu);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     }
@@ -190,14 +193,14 @@ public:
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
         for (int i = 0; i < STARS_N; i++) {
-            objects[i] = ref[i];
+            data.objects[i] = ref[i];
         }
         munmap_ssbo();
     }
 
     void write_points(vec3 *vert) const {
         for (int i = 0; i < STARS_N; i++) {
-            vert[i] = objects[i].position;
+            vert[i] = data.objects[i].position;
         }
     }
 
