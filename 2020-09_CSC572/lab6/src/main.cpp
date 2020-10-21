@@ -69,10 +69,10 @@ public:
 camera mycam;
 
 #define STARS_N 3000
-#define CENTER_MASS 1e7
+#define CENTER_MASS 1e4
 #define MIN_DIST 0.1
 #define MAX_DIST 6
-const float GRAV_CONST = 1e-7;
+const float GRAV_CONST = 1e-4;
 
 struct sphere {
     vec3 position;

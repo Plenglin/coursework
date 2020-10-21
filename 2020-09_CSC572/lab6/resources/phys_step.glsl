@@ -1,8 +1,9 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 8
+#define RASTERIZATION 10
 #define BARYCENTER_RESOLUTION 1000
+#define WORKERS 512
 
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 
@@ -33,7 +34,7 @@ struct cell {
     uint _2;
 };
 
-layout(local_size_x = RASTERIZATION, local_size_y = RASTERIZATION, local_size_z = RASTERIZATION) in;
+layout(local_size_x = WORKERS, local_size_y = 1, local_size_z = 1) in;
 layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
     star stars[];
@@ -75,15 +76,15 @@ uniform float G;
 uniform float centeredness;
 
 // Where this worker's cell index is
-const uint linear_cell_index = raster_pos_to_storage_index(gl_GlobalInvocationID);
+const uint worker_index = gl_GlobalInvocationID.x;
 
 // Star indices this worker scans through
-const uint star_scan_start = linear_cell_index * STARS_COUNT / TOTAL_CELLS;
-const uint star_scan_end = (linear_cell_index + 1) * STARS_COUNT / TOTAL_CELLS;
+const uint star_scan_start = worker_index * STARS_COUNT / WORKERS;
+const uint star_scan_end = (worker_index + 1) * STARS_COUNT / WORKERS;
 
 // Cell indices this worker scans through
-const uint cell_scan_start = linear_cell_index * STARS_COUNT / TOTAL_CELLS;
-const uint cell_scan_end = (linear_cell_index + 1) * STARS_COUNT / TOTAL_CELLS;
+const uint cell_scan_start = worker_index * TOTAL_CELLS / WORKERS;
+const uint cell_scan_end = (worker_index + 1) * TOTAL_CELLS / WORKERS;
 
 vec3 gravity(vec3 p1, vec3 p2) {
     vec3 delta = p1 - p2;
@@ -99,65 +100,15 @@ void disconnect_linked_lists() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
         stars[i].next = NIL;
     }
-    cells[linear_cell_index].head = NIL;
-    cells[linear_cell_index].count = 0;
-    barrier();
-}
-
-/*
-void calculate_bounds() {
-    // Workers calculate sum of workset positions
-    {
-        vec3 sum = vec3(0, 0, 0);
-        for (uint i = star_scan_start; i < star_scan_end; i++) {
-            sum += stars[i].position;
-        }
-        intermediate_vec[linear_cell_index] = sum;
-        barrier();
-    }
-
-    // Leader aggregates sums to get the mean
-    if (linear_cell_index == 0) {
-        vec3 sum = vec3(0, 0, 0);
-        for (uint i = star_scan_start; i < star_scan_end; i++) {
-            sum += intermediate_vec[linear_cell_index];
-        }
-        mean_pos = sum / STARS_COUNT;
-    }
-    barrier();
-
-    // Workers calculate partial variances
-    {
-        float sum = 0;
-        for (uint i = star_scan_start; i < star_scan_end; i++) {
-            vec3 dev = stars[i].position - mean_pos;
-            sum += dot(dev, dev);
-        }
-        intermediate_vec[linear_cell_index].x = sum;
-        barrier();
-    }
-
-    // Leader aggregates sum squared diffs to get the mean
-    if (linear_cell_index == 0) {
-        float sum = 0;
-        for (uint i = star_scan_start; i < star_scan_end; i++) {
-            sum += intermediate_vec[linear_cell_index].x;
-        }
-        float stdev = sqrt(sum / STARS_COUNT);
-        stdev_pos = vec3(stdev, stdev, stdev);
-
-        dev_limits = BOUNDS_STDEVS * stdev_pos;
-        min_bounds = mean_pos - dev_limits;
-
-        // Calculate scale
-        bounding_dims = dev_limits * 2;
+    for (uint i = cell_scan_start; i < cell_scan_end; i++) {
+        cells[i].head = NIL;
+        cells[i].count = 0;
     }
     barrier();
 }
-*/
 
 void calculate_bounds2() {
-    if (linear_cell_index == 0) {
+    if (worker_index == 0) {
         vec3 sum = vec3(0, 0, 0);
         float mass_sum = 0;
         for (uint i = 0; i < STARS_COUNT; i++) {
@@ -181,8 +132,8 @@ void calculate_bounds2() {
 
 // Link stars to their cells
 void rasterize() {
-    cells[linear_cell_index].barycenter_int = ivec3(0, 0, 0);
-    cells[linear_cell_index].mass = 0;
+    cells[worker_index].barycenter_int = ivec3(0, 0, 0);
+    cells[worker_index].mass = 0;
     barrier();
 
     // For each cell
@@ -212,16 +163,18 @@ void rasterize() {
     barrier();
 
     // Compute cell data
-    const uint head = cells[linear_cell_index].head;
-    vec3 wpos_sum = vec3(0, 0, 0);
-    float mass_sum = 0;
-    for (uint i = head; i != NIL; i = stars[i].next) {
-        wpos_sum += stars[i].mass * stars[i].position;
-        mass_sum += stars[i].mass;
-    }
-    cells[linear_cell_index].mass = mass_sum;
-    if (mass_sum > 0) {
-        cells[linear_cell_index].barycenter = wpos_sum / mass_sum;
+    for (uint c = cell_scan_start; c < cell_scan_end; c++) {
+        const uint head = cells[c].head;
+        vec3 wpos_sum = vec3(0, 0, 0);
+        float mass_sum = 0;
+        for (uint i = head; i != NIL; i = stars[i].next) {
+            wpos_sum += stars[i].mass * stars[i].position;
+            mass_sum += stars[i].mass;
+        }
+        cells[c].mass = mass_sum;
+        if (mass_sum > 0) {
+            cells[c].barycenter = wpos_sum / mass_sum;
+        }
     }
     barrier();
 }
