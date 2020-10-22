@@ -1,0 +1,6 @@
+*.sublime-workspace
+*.bin
+*.o
+*/result
+*/build
+
