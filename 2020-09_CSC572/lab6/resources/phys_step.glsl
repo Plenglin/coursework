@@ -222,22 +222,28 @@ void aggregate_layer_1() {
     }
 }
 
-// Apply gravitational forces
+// Apply gravitational forces for layer 0
 void gravitate_stars_to_cells() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
-        star a = stars[i];
-        a.acceleration = vec3(0, 0, 0);
+        vec3 acceleration = vec3(0, 0, 0);
+        vec3 self_pos = stars[i].position;
+        uvec3 self_grid_pos = storage_index_to_raster_pos(stars[i].cell, RASTERIZATION);
 
-        // For each cell
-        for (int j = 0; j < TOTAL_CELLS; j++) {
-            cell b = cells[j];
-            if (b.mass == 0 || b.mass == 1 || a.cell == j) {
+        // For each cell next to this
+        for (int j = 0; j < 27; j++) {
+            ivec3 neighbor_offset = ivec3(storage_index_to_raster_pos(j, 3)) - 1;
+            if (neighbor_offset.x == 0 && neighbor_offset.y == 0 && neighbor_offset.z == 0) {
                 continue;
             }
 
-            a.acceleration += gravity(a.position, b.barycenter) * b.mass;
+            uint neighbor_index = raster_pos_to_storage_index(self_grid_pos + neighbor_offset, RASTERIZATION);
+            if (cells[neighbor_index].mass == 0) {
+                continue;
+            }
+
+            acceleration += gravity(self_pos, cells[neighbor_index].barycenter) * cells[neighbor_index].mass;
         }
-        stars[i].acceleration = a.acceleration;
+        stars[i].acceleration = acceleration;
     }
 }
 
