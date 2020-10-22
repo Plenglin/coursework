@@ -41,7 +41,7 @@ layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
     // Raster group data
     cell cells[TOTAL_CELLS];
-    cell supercells[2 * L1_CELLS][27];  // Cells are stored at L1_CELLS divided by powers of 2.
+    cell l1_cells[RASTERIZATION][RASTERIZATION][RASTERIZATION];
     star stars[];
 };
 
@@ -71,6 +71,12 @@ uvec3 storage_index_to_raster_pos(uint i, uint size) {
     i /= size;
     pos.z = i % size;
     return pos;
+}
+
+bool in_range(ivec3 pos, ivec3 min, ivec3 max) {
+    return min.x <= pos.x && pos.x < max.x &&
+            min.y <= pos.y && pos.y <= max.y &&
+            min.z <= pos.z && pos.z <= max.z;
 }
 
 uniform float dt;
@@ -208,6 +214,36 @@ void rasterize() {
 void aggregate_layer_1() {
     uvec2 storage_params = get_cell_storage_params(1);
 
+    for (uint ai = 0; ai < L1_WIDTH; ai++) {
+        for (uint aj = 0; aj < L1_WIDTH; aj++) {
+            for (uint ak = 0; ak < L1_WIDTH; ak++) {
+                ivec3 opos = ivec3(ai, aj, ak);
+                vec3 position_sum = vec3(0, 0, 0);
+                float mass_sum = 0;
+
+                for (uint ni = -1; ni <= 1; ni++) {
+                    for (uint nj = -1; nj <= 1; nj++) {
+                        for (uint nk = -1; nk <= 1; nk++) {
+                            ivec3 dpos = ivec3(ni, nj, nk);
+                            ivec3 subcell = opos + dpos;
+                            if (in_range(subcell, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
+                                continue;
+                            }
+
+                            uint subcell_index = raster_pos_to_storage_index(subcell, RASTERIZATION);
+                            float mass = cells[subcell_index].mass;
+                            position_sum += cells[subcell_index].barycenter * mass;
+                            mass_sum += mass;
+                        }
+                    }
+                }
+
+                l1_cells[ai][aj][ak].barycenter += position_sum / mass_sum;
+                l1_cells[ai][aj][ak].mass += mass_sum;
+            }
+        }
+    }
+
     // For each intra-supercell offset
     for (uint di = 0; di < 27; di++) {
         uvec3 center_offset = storage_index_to_raster_pos(di, 3);
@@ -236,43 +272,6 @@ void aggregate_layer_1() {
             supercells[supercell_storage_index][di].mass = mass_sum;
         }*/
     }
-}
-
-void aggregate_layer_n(uint layer) {
-    uvec2 this_layer_storage = get_cell_storage_params(layer);
-    uvec2 sub_layer_storage = get_cell_storage_params(layer - 1);
-    uint this_layer_width = get_level_width(layer);
-    uint sub_layer_width = this_layer_width * 3;
-
-    // For each intra-lvl1-supercell offset
-    for (uint di = 0; di < 27; di++) {
-        uvec3 center_offset = storage_index_to_raster_pos(di, 3);
-        uvec2 tasks = get_worker_assignments(this_layer_storage.y);
-
-        // For each supercell lvl(layer)
-        for (uint i = tasks.x; i < tasks.y; i++) {
-            uint supercell_storage_index = i + this_layer_storage.x;
-            uvec3 supercell_pos = storage_index_to_raster_pos(i, this_layer_width);
-            uvec3 projected_cell_pos = supercell_pos * 3 + center_offset;
-
-            vec3 position_sum = vec3(0, 0, 0);
-            float mass_sum = 0;
-
-            // For each supercell lvl(layer - 1) inside
-            for (int dj = 0; dj < 27; dj++) {
-                uvec3 dpos = storage_index_to_raster_pos(dj, 3);
-                uvec3 cell_pos = projected_cell_pos + dpos;
-                uint j = raster_pos_to_storage_index(cell_pos, sub_layer_width);
-                mass_sum += cells[j].mass;
-                position_sum += cells[j].barycenter;
-            }
-
-            supercells[supercell_storage_index][di].barycenter = position_sum / mass_sum;
-            supercells[supercell_storage_index][di].mass = mass_sum;
-        }
-    }
-
-    barrier();
 }
 
 // Apply gravitational forces for layer 0
