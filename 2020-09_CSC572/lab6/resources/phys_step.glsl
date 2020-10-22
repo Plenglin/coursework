@@ -88,6 +88,14 @@ const uint star_scan_end = (worker_index + 1) * STARS_COUNT / WORKERS;
 const uint cell_scan_start = worker_index * TOTAL_CELLS / WORKERS;
 const uint cell_scan_end = (worker_index + 1) * TOTAL_CELLS / WORKERS;
 
+uint get_level_width(uint level) {
+    uint width = RASTERIZATION;
+    for (int i = 0; i < level; i++) {
+        width /= level;
+    }
+    return width;
+}
+
 // Returns (start incl., end excl.)
 uvec2 get_worker_assignments(uint count) {
     return uvec2(
@@ -97,9 +105,12 @@ uvec2 get_worker_assignments(uint count) {
 
 // Returns (offset, count)
 uvec2 get_cell_storage_params(uint level) {
-    if (level == 1) return uvec2(L1_CELLS, L1_CELLS);
-    uvec2 prev = get_cell_storage_params(level - 1);
-    return uvec2(prev.x / 2, prev.y / 27);
+    uvec2 params = uvec2(L1_CELLS, L1_CELLS);
+    for (uint i = 0; i < level; i++) {
+        params.x /= 2;
+        params.y /= 27;
+    }
+    return params;
 }
 
 vec3 gravity(vec3 p1, vec3 p2) {
@@ -197,10 +208,14 @@ void rasterize() {
 void aggregate_layer_1() {
     uvec2 storage_params = get_cell_storage_params(1);
 
+    // For each intra-supercell offset
     for (uint di = 0; di < 27; di++) {
         uvec3 center_offset = storage_index_to_raster_pos(di, 3);
+        uvec2 tasks = get_worker_assignments(storage_params.y);
 
-        for (uint i = 0; i < storage_params.y; i++) {
+        /*
+        // For each lvl 1 cell
+        for (uint i = tasks.x; i < tasks.y; i++) {
             uint supercell_storage_index = i + storage_params.x;
             uvec3 supercell_pos = storage_index_to_raster_pos(i, L1_WIDTH);
             uvec3 projected_cell_pos = supercell_pos * 3 + center_offset;
@@ -208,6 +223,7 @@ void aggregate_layer_1() {
             vec3 position_sum = vec3(0, 0, 0);
             float mass_sum = 0;
 
+            // For each lvl 0 cell inside
             for (int dj = 0; dj < 27; dj++) {
                 uvec3 dpos = storage_index_to_raster_pos(dj, 3);
                 uvec3 cell_pos = projected_cell_pos + dpos;
@@ -218,8 +234,45 @@ void aggregate_layer_1() {
 
             supercells[supercell_storage_index][di].barycenter = position_sum / mass_sum;
             supercells[supercell_storage_index][di].mass = mass_sum;
+        }*/
+    }
+}
+
+void aggregate_layer_n(uint layer) {
+    uvec2 this_layer_storage = get_cell_storage_params(layer);
+    uvec2 sub_layer_storage = get_cell_storage_params(layer - 1);
+    uint this_layer_width = get_level_width(layer);
+    uint sub_layer_width = this_layer_width * 3;
+
+    // For each intra-lvl1-supercell offset
+    for (uint di = 0; di < 27; di++) {
+        uvec3 center_offset = storage_index_to_raster_pos(di, 3);
+        uvec2 tasks = get_worker_assignments(this_layer_storage.y);
+
+        // For each supercell lvl(layer)
+        for (uint i = tasks.x; i < tasks.y; i++) {
+            uint supercell_storage_index = i + this_layer_storage.x;
+            uvec3 supercell_pos = storage_index_to_raster_pos(i, this_layer_width);
+            uvec3 projected_cell_pos = supercell_pos * 3 + center_offset;
+
+            vec3 position_sum = vec3(0, 0, 0);
+            float mass_sum = 0;
+
+            // For each supercell lvl(layer - 1) inside
+            for (int dj = 0; dj < 27; dj++) {
+                uvec3 dpos = storage_index_to_raster_pos(dj, 3);
+                uvec3 cell_pos = projected_cell_pos + dpos;
+                uint j = raster_pos_to_storage_index(cell_pos, sub_layer_width);
+                mass_sum += cells[j].mass;
+                position_sum += cells[j].barycenter;
+            }
+
+            supercells[supercell_storage_index][di].barycenter = position_sum / mass_sum;
+            supercells[supercell_storage_index][di].mass = mass_sum;
         }
     }
+
+    barrier();
 }
 
 // Apply gravitational forces for layer 0
@@ -273,6 +326,8 @@ void main() {
     disconnect_linked_lists();
     calculate_bounds2();
     rasterize();
+    aggregate_layer_1();
+    //aggregate_layer_n(2);
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();
