@@ -1,8 +1,10 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 15
+#define RASTERIZATION 27  // Must be a power of 3 so math isn't hard
+#define L1_WIDTH (RASTERIZATION / 3)
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
+#define L1_CELLS (TOTAL_CELLS / 27)
 
 #define BARYCENTER_RESOLUTION 1000
 #define WORKERS 512
@@ -22,7 +24,7 @@ struct star {
 };
 
 struct cell {
-    ivec3 barycenter_int;
+    vec3 acceleration;
     float mass;
 
     vec3 barycenter;
@@ -39,6 +41,7 @@ layout (binding = 0, offset = 0) uniform atomic_uint ac;
 layout (std430, binding=0) volatile buffer shader_data {
     // Raster group data
     cell cells[TOTAL_CELLS];
+    cell supercells[2 * L1_CELLS][27];  // Cells are stored at L1_CELLS divided by powers of 2.
     star stars[];
 };
 
@@ -54,19 +57,19 @@ const uint STARS_COUNT = stars.length();
 #define NIL STARS_COUNT
 #define BOUNDS_STDEVS 3
 
-uint raster_pos_to_storage_index(uvec3 pos) {
-    return pos.x + RASTERIZATION * (pos.y + RASTERIZATION * pos.z);
+uint raster_pos_to_storage_index(uvec3 pos, uint size) {
+    return pos.x + size * (pos.y + size * pos.z);
 }
 
-uvec3 storage_index_to_raster_pos(uint i) {
+uvec3 storage_index_to_raster_pos(uint i, uint size) {
     uvec3 pos;
-    pos.x = i % RASTERIZATION;
+    pos.x = i % size;
 
-    i /= RASTERIZATION;
-    pos.y = i % RASTERIZATION;
+    i /= size;
+    pos.y = i % size;
 
-    i /= RASTERIZATION;
-    pos.z = i % RASTERIZATION;
+    i /= size;
+    pos.z = i % size;
     return pos;
 }
 
@@ -84,6 +87,20 @@ const uint star_scan_end = (worker_index + 1) * STARS_COUNT / WORKERS;
 // Cell indices this worker scans through
 const uint cell_scan_start = worker_index * TOTAL_CELLS / WORKERS;
 const uint cell_scan_end = (worker_index + 1) * TOTAL_CELLS / WORKERS;
+
+// Returns (start incl., end excl.)
+uvec2 get_worker_assignments(uint count) {
+    return uvec2(
+        worker_index * count / WORKERS,
+        (worker_index + 1) * count / WORKERS);
+}
+
+// Returns (offset, count)
+uvec2 get_cell_storage_params(uint level) {
+    if (level == 1) return uvec2(L1_CELLS, L1_CELLS);
+    uvec2 prev = get_cell_storage_params(level - 1);
+    return uvec2(prev.x / 2, prev.y / 27);
+}
 
 vec3 gravity(vec3 p1, vec3 p2) {
     vec3 delta = p1 - p2;
@@ -131,7 +148,6 @@ void calculate_bounds2() {
 
 // Link stars to their cells
 void rasterize() {
-    cells[worker_index].barycenter_int = ivec3(0, 0, 0);
     cells[worker_index].mass = 0;
     barrier();
 
@@ -145,7 +161,7 @@ void rasterize() {
         vec3 cube_pos = (skew_pos + 1) / 2;
         uvec3 cell = uvec3(floor(cube_pos * RASTERIZATION));
         stars[i].test = floor(cube_pos * RASTERIZATION);
-        uint cell_index = raster_pos_to_storage_index(cell);
+        uint cell_index = raster_pos_to_storage_index(cell, RASTERIZATION);
 
         // Ensure that there exists a cell containing this star
         if (!(0 <= cell_index && cell_index < TOTAL_CELLS)) {
@@ -178,6 +194,33 @@ void rasterize() {
     barrier();
 }
 
+void aggregate_layer_1() {
+    uvec2 storage_params = get_cell_storage_params(1);
+
+    for (uint di = 0; di < 27; di++) {
+        uvec3 center_offset = storage_index_to_raster_pos(di, 3);
+
+        for (uint i = 0; i < storage_params.y; i++) {
+            uint supercell_storage_index = i + storage_params.x;
+            uvec3 supercell_pos = storage_index_to_raster_pos(i, L1_WIDTH);
+            uvec3 projected_cell_pos = supercell_pos * 3 + center_offset;
+
+            vec3 position_sum = vec3(0, 0, 0);
+            float mass_sum = 0;
+
+            for (int dj = 0; dj < 27; dj++) {
+                uvec3 dpos = storage_index_to_raster_pos(dj, 3);
+                uvec3 cell_pos = projected_cell_pos + dpos;
+                uint j = raster_pos_to_storage_index(cell_pos, RASTERIZATION);
+                mass_sum += cells[j].mass;
+                position_sum += cells[j].barycenter;
+            }
+
+            supercells[supercell_storage_index][di].barycenter = position_sum / mass_sum;
+            supercells[supercell_storage_index][di].mass = mass_sum;
+        }
+    }
+}
 
 // Apply gravitational forces
 void gravitate_stars_to_cells() {

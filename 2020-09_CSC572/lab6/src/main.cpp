@@ -68,8 +68,9 @@ public:
 
 camera mycam;
 
-#define RASTERIZATION 15
+#define RASTERIZATION 27
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
+#define L1_CELLS TOTAL_CELLS / 27
 
 #define STARS_N 3000
 #define CENTER_MASS 1e4
@@ -102,7 +103,7 @@ struct cell {
 
 struct world_gpu_data {
     cell cells[TOTAL_CELLS];
-    cell cells[TOTAL_CELLS];
+    cell supercells[2 * L1_CELLS][27];
     sphere objects[STARS_N];
 };
 
