@@ -218,6 +218,7 @@ void aggregate_layer_1() {
         ivec3 opos = ivec3(storage_index_to_raster_pos(i, RASTERIZATION));
         vec3 position_sum = vec3(0, 0, 0);
         float mass_sum = 0;
+        uint count_sum = 0;
 
         for (uint ni = -1; ni <= 1; ni++) {
             for (uint nj = -1; nj <= 1; nj++) {
@@ -230,14 +231,23 @@ void aggregate_layer_1() {
 
                     uint subcell_index = raster_pos_to_storage_index(subcell, RASTERIZATION);
                     float mass = cells[subcell_index].mass;
+                    uint count = cells[subcell_index].count;
+                    if (count == 0) {
+                        continue;
+                    }
+
                     position_sum += cells[subcell_index].barycenter * mass;
                     mass_sum += mass;
+                    count_sum += count;
                 }
             }
         }
 
-        l1_cells[opos.x][opos.y][opos.z].barycenter += position_sum / mass_sum;
         l1_cells[opos.x][opos.y][opos.z].mass += mass_sum;
+        l1_cells[opos.x][opos.y][opos.z].count += count_sum;
+        if (count_sum == 0) {
+            l1_cells[opos.x][opos.y][opos.z].barycenter += position_sum / mass_sum;
+        }
     }
 
     barrier();
