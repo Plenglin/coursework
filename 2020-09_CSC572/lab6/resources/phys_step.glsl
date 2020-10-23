@@ -42,6 +42,7 @@ layout (std430, binding=0) volatile buffer shader_data {
     // Raster group data
     cell cells[TOTAL_CELLS];
     cell l1_cells[RASTERIZATION][RASTERIZATION][RASTERIZATION];
+    cell l2_cells[L1_WIDTH][L1_WIDTH][L1_WIDTH];
     star stars[];
 };
 
@@ -75,8 +76,8 @@ uvec3 storage_index_to_raster_pos(uint i, uint size) {
 
 bool in_range(ivec3 pos, ivec3 min, ivec3 max) {
     return min.x <= pos.x && pos.x < max.x &&
-            min.y <= pos.y && pos.y <= max.y &&
-            min.z <= pos.z && pos.z <= max.z;
+            min.y <= pos.y && pos.y < max.y &&
+            min.z <= pos.z && pos.z < max.z;
 }
 
 uniform float dt;
@@ -199,11 +200,14 @@ void rasterize() {
         const uint head = cells[c].head;
         vec3 wpos_sum = vec3(0, 0, 0);
         float mass_sum = 0;
+        uint count = 0;
         for (uint i = head; i != NIL; i = stars[i].next) {
             wpos_sum += stars[i].mass * stars[i].position;
             mass_sum += stars[i].mass;
+            count++;
         }
         cells[c].mass = mass_sum;
+        cells[c].count = count;
         if (mass_sum > 0) {
             cells[c].barycenter = wpos_sum / mass_sum;
         }
@@ -212,20 +216,19 @@ void rasterize() {
 }
 
 void aggregate_layer_1() {
-    uvec2 storage_params = get_cell_storage_params(1);
-
     for (uint i = cell_scan_start; i < cell_scan_end; i++) {
         ivec3 opos = ivec3(storage_index_to_raster_pos(i, RASTERIZATION));
         vec3 position_sum = vec3(0, 0, 0);
         float mass_sum = 0;
         uint count_sum = 0;
 
-        for (uint ni = -1; ni <= 1; ni++) {
-            for (uint nj = -1; nj <= 1; nj++) {
-                for (uint nk = -1; nk <= 1; nk++) {
+        for (int ni = -1; ni <= 1; ni++) {
+            for (int nj = -1; nj <= 1; nj++) {
+                for (int nk = -1; nk <= 1; nk++) {
                     ivec3 dpos = ivec3(ni, nj, nk);
                     ivec3 subcell = opos + dpos;
-                    if (in_range(subcell, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
+
+                    if (!in_range(subcell, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
                         continue;
                     }
 
@@ -253,6 +256,47 @@ void aggregate_layer_1() {
     barrier();
 }
 
+void aggregate_layer_2() {
+    uvec2 tasks = get_worker_assignments(L1_CELLS);
+
+    for (uint i = tasks.x; i < tasks.y; i++) {
+        ivec3 opos = ivec3(storage_index_to_raster_pos(i, L1_WIDTH));
+        vec3 position_sum = vec3(0, 0, 0);
+        float mass_sum = 0;
+        uint count_sum = 0;
+
+        for (uint ni = -1; ni <= 1; ni++) {
+            for (uint nj = -1; nj <= 1; nj++) {
+                for (uint nk = -1; nk <= 1; nk++) {
+                    ivec3 dpos = ivec3(ni, nj, nk);
+                    ivec3 subcell = opos + dpos;
+                    if (in_range(subcell, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
+                        continue;
+                    }
+
+                    float mass = l1_cells[subcell.x][subcell.y][subcell.z].mass;
+                    uint count = l1_cells[subcell.x][subcell.y][subcell.z].count;
+                    if (count == 0) {
+                        continue;
+                    }
+
+                    position_sum += l1_cells[subcell.x][subcell.y][subcell.z].barycenter * mass;
+                    mass_sum += mass;
+                    count_sum += count;
+                }
+            }
+        }
+
+        l2_cells[opos.x][opos.y][opos.z].mass += mass_sum;
+        l2_cells[opos.x][opos.y][opos.z].count += count_sum;
+        if (count_sum == 0) {
+            l2_cells[opos.x][opos.y][opos.z].barycenter += position_sum / mass_sum;
+        }
+    }
+
+    barrier();
+}
+
 void gravitate_stars_to_cells() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
         vec3 acceleration = vec3(0, 0, 0);
@@ -274,7 +318,7 @@ void gravitate_stars_to_cells() {
             ivec3 l1_neighbor_pos = self_grid_pos + neighbor_offset * 3;
             if (in_range(l1_neighbor_pos, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
                 cell l1_neighbor = l1_cells[l1_neighbor_pos.x][l1_neighbor_pos.y][l1_neighbor_pos.z];
-                if (l1_neighbor.mass != 0) {
+                if (l1_neighbor.count != 0) {
                     acceleration += gravity(self_pos, l1_neighbor.barycenter) * l1_neighbor.mass;
                 }
             }
@@ -310,7 +354,7 @@ void main() {
     calculate_bounds2();
     rasterize();
     aggregate_layer_1();
-    //aggregate_layer_n(2);
+    //aggregate_layer_2();
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();

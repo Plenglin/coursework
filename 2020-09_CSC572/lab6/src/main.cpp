@@ -74,10 +74,11 @@ camera mycam;
 #define L1_CELLS TOTAL_CELLS / 27
 
 #define STARS_N 3000
-#define CENTER_MASS 1e4
+#define CENTER_MASS 1e6
 #define MIN_DIST 0.1
 #define MAX_DIST 6
-const float GRAV_CONST = 1e-4;
+const float GRAV_CONST = 1e-6;
+#define FULL_DOWNLOAD
 
 struct sphere {
     vec3 position;
@@ -105,6 +106,7 @@ struct cell {
 struct world_gpu_data {
     cell cells[TOTAL_CELLS];
     cell l1_cells[RASTERIZATION][RASTERIZATION][RASTERIZATION];
+    cell l2_cells[L1_WIDTH][L1_WIDTH][L1_WIDTH];
     sphere objects[STARS_N];
 };
 
@@ -217,9 +219,13 @@ public:
 
     void download() {
         auto* ref = mmap_ssbo(GL_READ_ONLY);
+#ifdef FULL_DOWNLOAD
+        memcpy(data, ref, sizeof(world_gpu_data));
+#else
         for (int i = 0; i < STARS_N; i++) {
             data->objects[i] = ref->objects[i];
         }
+#endif
         munmap_ssbo();
     }
 
