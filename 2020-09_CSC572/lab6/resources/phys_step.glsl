@@ -30,8 +30,8 @@ struct cell {
     vec3 barycenter;
     uint head;
 
-    uint array_list_start;
     uint count;
+    uint _0;
     uint _1;
     uint _2;
 };
@@ -233,12 +233,12 @@ void aggregate_layer_1() {
                     }
 
                     uint subcell_index = raster_pos_to_storage_index(subcell, RASTERIZATION);
-                    float mass = cells[subcell_index].mass;
                     uint count = cells[subcell_index].count;
                     if (count == 0) {
                         continue;
                     }
 
+                    float mass = cells[subcell_index].mass;
                     position_sum += cells[subcell_index].barycenter * mass;
                     mass_sum += mass;
                     count_sum += count;
@@ -246,10 +246,12 @@ void aggregate_layer_1() {
             }
         }
 
-        l1_cells[opos.x][opos.y][opos.z].mass += mass_sum;
-        l1_cells[opos.x][opos.y][opos.z].count += count_sum;
-        if (count_sum == 0) {
-            l1_cells[opos.x][opos.y][opos.z].barycenter += position_sum / mass_sum;
+        l1_cells[opos.x][opos.y][opos.z].mass = mass_sum;
+        l1_cells[opos.x][opos.y][opos.z].count = count_sum;
+        if (count_sum > 0) {
+            l1_cells[opos.x][opos.y][opos.z].barycenter = position_sum / mass_sum;
+        } else {
+            l1_cells[opos.x][opos.y][opos.z].barycenter = vec3(0, 0, 0);
         }
     }
 
@@ -265,9 +267,9 @@ void aggregate_layer_2() {
         float mass_sum = 0;
         uint count_sum = 0;
 
-        for (uint ni = -1; ni <= 1; ni++) {
-            for (uint nj = -1; nj <= 1; nj++) {
-                for (uint nk = -1; nk <= 1; nk++) {
+        for (uint ni = 0; ni <= 2; ni++) {
+            for (uint nj = 0; nj <= 2; nj++) {
+                for (uint nk = 0; nk <= 2; nk++) {
                     ivec3 dpos = ivec3(ni, nj, nk);
                     ivec3 subcell = opos + dpos;
                     if (in_range(subcell, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
@@ -311,14 +313,15 @@ void gravitate_stars_to_cells() {
             }
 
             uint l0_neighbor_index = raster_pos_to_storage_index(self_grid_pos + neighbor_offset, RASTERIZATION);
-            if (cells[l0_neighbor_index].mass != 0) {
-                acceleration += gravity(self_pos, cells[l0_neighbor_index].barycenter) * cells[l0_neighbor_index].mass;
+            cell l0_neighbor = cells[l0_neighbor_index];
+            if (l0_neighbor.mass != 0) {
+                acceleration += gravity(self_pos, l0_neighbor.barycenter) * l0_neighbor.mass;
             }
 
             ivec3 l1_neighbor_pos = self_grid_pos + neighbor_offset * 3;
             if (in_range(l1_neighbor_pos, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
                 cell l1_neighbor = l1_cells[l1_neighbor_pos.x][l1_neighbor_pos.y][l1_neighbor_pos.z];
-                if (l1_neighbor.count != 0) {
+                if (l1_neighbor.count > 0) {
                     acceleration += gravity(self_pos, l1_neighbor.barycenter) * l1_neighbor.mass;
                 }
             }

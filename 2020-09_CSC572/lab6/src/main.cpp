@@ -91,14 +91,14 @@ struct sphere {
 };
 
 struct cell {
-    ivec3 barycenter_int;
+    vec3 acceleration;
     float mass;
 
     vec3 barycenter;
     uint head;
 
-    uint array_list_start;
     uint count;
+    uint _0;
     uint _1;
     uint _2;
 };
