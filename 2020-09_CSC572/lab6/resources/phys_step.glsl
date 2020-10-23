@@ -260,28 +260,29 @@ void aggregate_layer_1() {
 
 void aggregate_layer_2() {
     uvec2 tasks = get_worker_assignments(L1_CELLS);
-
     for (uint i = tasks.x; i < tasks.y; i++) {
         ivec3 opos = ivec3(storage_index_to_raster_pos(i, L1_WIDTH));
         vec3 position_sum = vec3(0, 0, 0);
         float mass_sum = 0;
         uint count_sum = 0;
 
-        for (uint ni = 0; ni <= 2; ni++) {
-            for (uint nj = 0; nj <= 2; nj++) {
-                for (uint nk = 0; nk <= 2; nk++) {
+        for (int ni = -1; ni <= 1; ni++) {
+            for (int nj = -1; nj <= 1; nj++) {
+                for (int nk = -1; nk <= 1; nk++) {
                     ivec3 dpos = ivec3(ni, nj, nk);
-                    ivec3 subcell = opos + dpos;
-                    if (in_range(subcell, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
+                    ivec3 subcell = 3 * opos + dpos;
+
+                    if (!in_range(subcell, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
                         continue;
                     }
 
-                    float mass = l1_cells[subcell.x][subcell.y][subcell.z].mass;
                     uint count = l1_cells[subcell.x][subcell.y][subcell.z].count;
+                    l2_cells[subcell.x][subcell.y][subcell.z]._1 = 2345;
                     if (count == 0) {
                         continue;
                     }
 
+                    float mass = l1_cells[subcell.x][subcell.y][subcell.z].mass;
                     position_sum += l1_cells[subcell.x][subcell.y][subcell.z].barycenter * mass;
                     mass_sum += mass;
                     count_sum += count;
@@ -289,10 +290,12 @@ void aggregate_layer_2() {
             }
         }
 
-        l2_cells[opos.x][opos.y][opos.z].mass += mass_sum;
-        l2_cells[opos.x][opos.y][opos.z].count += count_sum;
-        if (count_sum == 0) {
-            l2_cells[opos.x][opos.y][opos.z].barycenter += position_sum / mass_sum;
+        l2_cells[opos.x][opos.y][opos.z].mass = mass_sum;
+        l2_cells[opos.x][opos.y][opos.z].count = count_sum;
+        if (count_sum > 0) {
+            l2_cells[opos.x][opos.y][opos.z].barycenter = position_sum / mass_sum;
+        } else {
+            l2_cells[opos.x][opos.y][opos.z].barycenter = vec3(0, 0, 0);
         }
     }
 
@@ -323,6 +326,14 @@ void gravitate_stars_to_cells() {
                 cell l1_neighbor = l1_cells[l1_neighbor_pos.x][l1_neighbor_pos.y][l1_neighbor_pos.z];
                 if (l1_neighbor.count > 0) {
                     acceleration += gravity(self_pos, l1_neighbor.barycenter) * l1_neighbor.mass;
+                }
+            }
+
+            ivec3 l2_neighbor_pos = self_grid_pos / 3 + neighbor_offset * 3;
+            if (in_range(l2_neighbor_pos, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
+                cell l2_neighbor = l2_cells[l2_neighbor_pos.x][l2_neighbor_pos.y][l2_neighbor_pos.z];
+                if (l2_neighbor.count > 0) {
+                    acceleration += gravity(self_pos, l2_neighbor.barycenter) * l2_neighbor.mass;
                 }
             }
         }
@@ -357,7 +368,7 @@ void main() {
     calculate_bounds2();
     rasterize();
     aggregate_layer_1();
-    //aggregate_layer_2();
+    aggregate_layer_2();
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();
