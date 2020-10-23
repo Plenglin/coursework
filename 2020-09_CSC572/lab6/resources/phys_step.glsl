@@ -54,6 +54,10 @@ shared vec3 mean_pos;
 shared vec3 stdev_pos;
 shared vec3 dev_limits;
 
+// In-bounds
+shared vec3 global_barycenter;
+shared float global_mass;
+
 const uint STARS_COUNT = stars.length();
 #define NIL STARS_COUNT
 #define BOUNDS_STDEVS 3
@@ -271,13 +275,15 @@ void aggregate_layer_2() {
                 for (int nk = -1; nk <= 1; nk++) {
                     ivec3 dpos = ivec3(ni, nj, nk);
                     ivec3 subcell = 3 * opos + dpos;
+                    l2_cells[opos.x][opos.y][opos.z]._0 = subcell.x;
+                    l2_cells[opos.x][opos.y][opos.z]._1 = subcell.y;
+                    l2_cells[opos.x][opos.y][opos.z]._2 = subcell.z;
 
-                    if (!in_range(subcell, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
+                    if (!in_range(subcell, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
                         continue;
                     }
 
                     uint count = l1_cells[subcell.x][subcell.y][subcell.z].count;
-                    l2_cells[subcell.x][subcell.y][subcell.z]._1 = 2345;
                     if (count == 0) {
                         continue;
                     }
@@ -308,7 +314,7 @@ void gravitate_stars_to_cells() {
         vec3 self_pos = stars[i].position;
         ivec3 self_grid_pos = ivec3(storage_index_to_raster_pos(stars[i].cell, RASTERIZATION));
 
-        // For each cell in layer 0
+        // For each direction
         for (int j = 0; j < 27; j++) {
             ivec3 neighbor_offset = ivec3(storage_index_to_raster_pos(j, 3)) - 1;
             if (neighbor_offset.x == 0 && neighbor_offset.y == 0 && neighbor_offset.z == 0) {
@@ -336,6 +342,11 @@ void gravitate_stars_to_cells() {
                     acceleration += gravity(self_pos, l2_neighbor.barycenter) * l2_neighbor.mass;
                 }
             }
+        }
+
+        // Did not get accelerated because it's out of bounds
+        if (dot(acceleration, acceleration) == 0) {
+            //acceleration =
         }
         stars[i].acceleration = acceleration;
     }
