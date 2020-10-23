@@ -214,34 +214,30 @@ void rasterize() {
 void aggregate_layer_1() {
     uvec2 storage_params = get_cell_storage_params(1);
 
-    for (uint ai = 0; ai < L1_WIDTH; ai++) {
-        for (uint aj = 0; aj < L1_WIDTH; aj++) {
-            for (uint ak = 0; ak < L1_WIDTH; ak++) {
-                ivec3 opos = ivec3(ai, aj, ak);
-                vec3 position_sum = vec3(0, 0, 0);
-                float mass_sum = 0;
+    for (uint i = cell_scan_start; i < cell_scan_end; i++) {
+        ivec3 opos = ivec3(storage_index_to_raster_pos(i, RASTERIZATION));
+        vec3 position_sum = vec3(0, 0, 0);
+        float mass_sum = 0;
 
-                for (uint ni = -1; ni <= 1; ni++) {
-                    for (uint nj = -1; nj <= 1; nj++) {
-                        for (uint nk = -1; nk <= 1; nk++) {
-                            ivec3 dpos = ivec3(ni, nj, nk);
-                            ivec3 subcell = opos + dpos;
-                            if (in_range(subcell, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
-                                continue;
-                            }
-
-                            uint subcell_index = raster_pos_to_storage_index(subcell, RASTERIZATION);
-                            float mass = cells[subcell_index].mass;
-                            position_sum += cells[subcell_index].barycenter * mass;
-                            mass_sum += mass;
-                        }
+        for (uint ni = -1; ni <= 1; ni++) {
+            for (uint nj = -1; nj <= 1; nj++) {
+                for (uint nk = -1; nk <= 1; nk++) {
+                    ivec3 dpos = ivec3(ni, nj, nk);
+                    ivec3 subcell = opos + dpos;
+                    if (in_range(subcell, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
+                        continue;
                     }
-                }
 
-                l1_cells[ai][aj][ak].barycenter += position_sum / mass_sum;
-                l1_cells[ai][aj][ak].mass += mass_sum;
+                    uint subcell_index = raster_pos_to_storage_index(subcell, RASTERIZATION);
+                    float mass = cells[subcell_index].mass;
+                    position_sum += cells[subcell_index].barycenter * mass;
+                    mass_sum += mass;
+                }
             }
         }
+
+        l1_cells[opos.x][opos.y][opos.z].barycenter += position_sum / mass_sum;
+        l1_cells[opos.x][opos.y][opos.z].mass += mass_sum;
     }
 
     // For each intra-supercell offset
@@ -274,26 +270,31 @@ void aggregate_layer_1() {
     }
 }
 
-// Apply gravitational forces for layer 0
 void gravitate_stars_to_cells() {
     for (uint i = star_scan_start; i < star_scan_end; i++) {
         vec3 acceleration = vec3(0, 0, 0);
         vec3 self_pos = stars[i].position;
-        uvec3 self_grid_pos = storage_index_to_raster_pos(stars[i].cell, RASTERIZATION);
+        ivec3 self_grid_pos = ivec3(storage_index_to_raster_pos(stars[i].cell, RASTERIZATION));
 
-        // For each cell next to this
+        // For each cell in layer 0
         for (int j = 0; j < 27; j++) {
             ivec3 neighbor_offset = ivec3(storage_index_to_raster_pos(j, 3)) - 1;
             if (neighbor_offset.x == 0 && neighbor_offset.y == 0 && neighbor_offset.z == 0) {
                 continue;
             }
 
-            uint neighbor_index = raster_pos_to_storage_index(self_grid_pos + neighbor_offset, RASTERIZATION);
-            if (cells[neighbor_index].mass == 0) {
-                continue;
+            uint l0_neighbor_index = raster_pos_to_storage_index(self_grid_pos + neighbor_offset, RASTERIZATION);
+            if (cells[l0_neighbor_index].mass != 0) {
+                acceleration += gravity(self_pos, cells[l0_neighbor_index].barycenter) * cells[l0_neighbor_index].mass;
             }
 
-            acceleration += gravity(self_pos, cells[neighbor_index].barycenter) * cells[neighbor_index].mass;
+            ivec3 l1_neighbor_pos = self_grid_pos + neighbor_offset * 3;
+            if (in_range(l1_neighbor_pos, ivec3(0, 0, 0), ivec3(RASTERIZATION, RASTERIZATION, RASTERIZATION))) {
+                cell l1_neighbor = l1_cells[l1_neighbor_pos.x][l1_neighbor_pos.y][l1_neighbor_pos.z];
+                if (l1_neighbor.mass != 0) {
+                    acceleration += gravity(self_pos, l1_neighbor.barycenter) * l1_neighbor.mass;
+                }
+            }
         }
         stars[i].acceleration = acceleration;
     }
