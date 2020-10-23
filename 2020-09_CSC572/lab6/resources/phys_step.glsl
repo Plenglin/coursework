@@ -240,34 +240,7 @@ void aggregate_layer_1() {
         l1_cells[opos.x][opos.y][opos.z].mass += mass_sum;
     }
 
-    // For each intra-supercell offset
-    for (uint di = 0; di < 27; di++) {
-        uvec3 center_offset = storage_index_to_raster_pos(di, 3);
-        uvec2 tasks = get_worker_assignments(storage_params.y);
-
-        /*
-        // For each lvl 1 cell
-        for (uint i = tasks.x; i < tasks.y; i++) {
-            uint supercell_storage_index = i + storage_params.x;
-            uvec3 supercell_pos = storage_index_to_raster_pos(i, L1_WIDTH);
-            uvec3 projected_cell_pos = supercell_pos * 3 + center_offset;
-
-            vec3 position_sum = vec3(0, 0, 0);
-            float mass_sum = 0;
-
-            // For each lvl 0 cell inside
-            for (int dj = 0; dj < 27; dj++) {
-                uvec3 dpos = storage_index_to_raster_pos(dj, 3);
-                uvec3 cell_pos = projected_cell_pos + dpos;
-                uint j = raster_pos_to_storage_index(cell_pos, RASTERIZATION);
-                mass_sum += cells[j].mass;
-                position_sum += cells[j].barycenter;
-            }
-
-            supercells[supercell_storage_index][di].barycenter = position_sum / mass_sum;
-            supercells[supercell_storage_index][di].mass = mass_sum;
-        }*/
-    }
+    barrier();
 }
 
 void gravitate_stars_to_cells() {
