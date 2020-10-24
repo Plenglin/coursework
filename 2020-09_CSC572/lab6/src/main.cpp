@@ -74,10 +74,10 @@ camera mycam;
 #define L1_CELLS TOTAL_CELLS / 27
 
 #define STARS_N 3000
-#define CENTER_MASS 1e6
+#define CENTER_MASS 1e5
 #define MIN_DIST 0.1
-#define MAX_DIST 6
-const float GRAV_CONST = 1e-6;
+#define MAX_DIST 4
+const float GRAV_CONST = 1e-5;
 #define FULL_DOWNLOAD
 
 struct sphere {
@@ -112,6 +112,30 @@ struct world_gpu_data {
 
 float randf() {
     return (float)rand() / RAND_MAX;
+}
+
+void build_galaxy(sphere *arr, int n, vec3 p_offset, vec3 v_offset) {
+    for (int i = 1; i < n; i++) {
+        float angle = randf() * 2 * 3.1415;
+        float radius = (MAX_DIST - MIN_DIST) * randf() + MIN_DIST;
+        float c = cos(angle);
+        float s = sin(angle);
+        auto position = vec3(c, s, 0);
+        position *= radius;
+        position.z = randf() * 0.1;
+        position += p_offset;
+
+        auto velocity = vec3(-s, c, 0);
+        velocity *= 1 * sqrt(GRAV_CONST * CENTER_MASS / radius);
+        velocity += v_offset;
+
+        arr[i].position = position;
+        arr[i].velocity = velocity;
+        arr[i].mass = 1;
+    }
+    arr[0].position = p_offset;
+    arr[0].velocity = v_offset;
+    arr[0].mass = CENTER_MASS;
 }
 
 class physics_world {
@@ -167,25 +191,8 @@ public:
     }
 
     void init_stars() {
-        for (int i = 1; i < STARS_N; i++) {
-            float angle = randf() * 2 * 3.1415;
-            float radius = (MAX_DIST - MIN_DIST) * randf() + MIN_DIST;
-            float c = cos(angle);
-            float s = sin(angle);
-            auto position = vec3(c, s, 0);
-            position *= radius;
-            position.z = randf() * 0.1;
-
-            auto velocity = vec3(-s, c, 0);
-            velocity *= 1 * sqrt(GRAV_CONST * CENTER_MASS / radius);
-
-            data->objects[i].position = position;
-            data->objects[i].velocity = velocity;
-            data->objects[i].mass = 1;
-        }
-        data->objects[0].position = vec3(0, 0, 0);
-        data->objects[0].velocity = vec3(0, 0, 0);
-        data->objects[0].mass = CENTER_MASS;
+        build_galaxy(data->objects, STARS_N / 2, vec3(5, 2, 1), vec3(-0.2, 0.2, 0.03));
+        build_galaxy(data->objects + STARS_N / 2, STARS_N / 2, vec3(-5, -2, 0), vec3(0, 0.1, 0));
     }
 
     void init_atomic() {

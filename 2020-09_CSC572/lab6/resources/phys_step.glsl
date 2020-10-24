@@ -150,6 +150,7 @@ void calculate_bounds2() {
         vec3 sum = vec3(0, 0, 0);
         float mass_sum = 0;
         for (uint i = 0; i < STARS_COUNT; i++) {
+            if (isnan(stars[i].mass) || any(isnan(stars[i].position))) continue;
             mass_sum += stars[i].mass;
             sum += stars[i].position * stars[i].mass;
         }
@@ -157,6 +158,7 @@ void calculate_bounds2() {
 
         float dev2 = 0;
         for (uint i = 0; i < STARS_COUNT; i++) {
+            if (isnan(stars[i].mass) || any(isnan(stars[i].position))) continue;
             vec3 d = stars[i].position - mean_pos;
             dev2 += dot(d, d);
         }
