@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_storage_buffer_object : require
 
-#define RASTERIZATION 27  // Must be a power of 3 so math isn't hard
+#define RASTERIZATION 15  // Must be a power of 3 so math isn't hard
 #define L1_WIDTH (RASTERIZATION / 3)
 #define TOTAL_CELLS (RASTERIZATION * RASTERIZATION * RASTERIZATION)
 #define L1_CELLS (TOTAL_CELLS / 27)
@@ -334,7 +334,7 @@ void gravitate_stars_to_cells() {
                     acceleration += gravity(self_pos, l1_neighbor.barycenter) * l1_neighbor.mass;
                 }
             }
-
+/*
             ivec3 l2_neighbor_pos = self_grid_pos / 3 + neighbor_offset * 3;
             if (in_range(l2_neighbor_pos, ivec3(0, 0, 0), ivec3(L1_WIDTH, L1_WIDTH, L1_WIDTH))) {
                 cell l2_neighbor = l2_cells[l2_neighbor_pos.x][l2_neighbor_pos.y][l2_neighbor_pos.z];
@@ -342,6 +342,7 @@ void gravitate_stars_to_cells() {
                     acceleration += gravity(self_pos, l2_neighbor.barycenter) * l2_neighbor.mass;
                 }
             }
+*/
         }
 
         // Did not get accelerated because it's out of bounds
@@ -379,7 +380,7 @@ void main() {
     calculate_bounds2();
     rasterize();
     aggregate_layer_1();
-    aggregate_layer_2();
+    //aggregate_layer_2();
     gravitate_stars_to_cells();
     gravitate_within_cells();
     integrate();
