@@ -191,7 +191,7 @@ public:
     }
 
     void init_stars() {
-        build_galaxy(data->objects, STARS_N / 2, vec3(5, 2, 1), vec3(-0.2, 0.2, 0.03));
+        build_galaxy(data->objects, STARS_N / 2, vec3(5, 0, 1), vec3(-0.2, 0.2, 0.03));
         build_galaxy(data->objects + STARS_N / 2, STARS_N / 2, vec3(-5, -2, 0), vec3(0, 0.1, 0));
     }
 
@@ -525,8 +525,9 @@ public:
 		}
 		prog->addUniform("P");
 		prog->addUniform("V");
-		prog->addUniform("M");
-	
+        prog->addUniform("M");
+        prog->addUniform("draw_color");
+
 		prog->addAttribute("vertPos");
 
 
@@ -602,16 +603,21 @@ public:
 
 		M = mat4(1);// TransZ* RotateY* RotateX* S;
 
-		// Draw the box using GLSL.
+		// Draw the box using GLSL.r
 		prog->bind();
 
 		V = mycam.process(frametime);
+		vec3 color = vec3(1, 1, 0);
 		//send the matrices to the shaders
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
 		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glBindVertexArray(VAO);	
-		glDrawArrays(GL_POINTS, 0,STARS_N);
+        glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+        glUniform3fv(prog->getUniform("draw_color"), 1, &color[0]);
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_POINTS, 0, STARS_N / 2);
+		color = vec3(1, 0, 1);
+        glUniform3fv(prog->getUniform("draw_color"), 1, &color[0]);
+        glDrawArrays(GL_POINTS, STARS_N / 2, STARS_N / 2);
 
 		prog->unbind();
 		heightshader->bind();
