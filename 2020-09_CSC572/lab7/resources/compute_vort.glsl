@@ -4,7 +4,14 @@ layout(rgba32f, binding = 0) uniform image2D img_input;
 layout(rgba32f, binding = 1) uniform image2D img_output;
 layout(rgba32f, binding = 2) uniform image2D img_wall;
 
-vec4 getPixel(ivec2 pixel_coords) {		
+bool is_wall(ivec2 coords) {
+    return imageLoad(img_wall, coords).a > 0;
+}
+
+vec4 getPixel(ivec2 pixel_coords) {
+    if (is_wall(pixel_coords)) {
+        return vec4(0, 0, 0, 0);
+    }
 	vec4 col=imageLoad(img_input, pixel_coords);
 	vec4 va;
 
@@ -24,7 +31,7 @@ float curl(ivec2 coords) {
 
 void main() {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    if (imageLoad(img_wall, pixel_coords).a > 0) return;
+    if (is_wall(pixel_coords)) return;
 
 	vec4 col;
 	vec4 va = getPixel(pixel_coords);
