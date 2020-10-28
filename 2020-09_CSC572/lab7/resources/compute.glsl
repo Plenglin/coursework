@@ -1,7 +1,8 @@
 #version 450 
-layout(local_size_x = 1, local_size_y = 1) in;											//local group of shaders
-layout(rgba32f, binding = 0) uniform image2D img_input;									//input image
-layout(rgba32f, binding = 1) uniform image2D img_output;									//output image
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(rgba32f, binding = 0) uniform image2D img_input;
+layout(rgba32f, binding = 1) uniform image2D img_output;
+layout(rgba32f, binding = 2) uniform image2D img_wall;
 
 vec4 bilinearInterp(vec2 coords) {
 	vec2 weight = fract(coords);
@@ -25,9 +26,10 @@ vec4 bilinearInterp(vec2 coords) {
 	return newpos;
 }
 
-void main() 
-	{
-	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);	
+void main() {
+	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    if (imageLoad(img_wall, pixel_coords).a > 0) return;
+
 	vec4 l,u,r,d;//left up right down				
 	vec4 col=imageLoad(img_input, pixel_coords);
 	vec4 va;

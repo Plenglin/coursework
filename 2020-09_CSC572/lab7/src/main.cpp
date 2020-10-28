@@ -61,8 +61,8 @@ public:
 	//framebufferstuff
 	GLuint fb, depth_fb, FBOtex;
 	//texture data
-	GLuint Texture, Texture2;
-	GLuint CS_tex_A, CS_tex_B;
+	GLuint Texture, Texture2, wall;
+    GLuint CS_tex_A, CS_tex_B, CS_wall_tex;
 
 	int tex_w, tex_h;
 
@@ -181,13 +181,13 @@ public:
 
 
 		//load input image
-		unsigned char* pic_data = stbi_load("../resources/testflow2.png", &width, &height, &channels, 4); //store the input data on the CPU memory and get the address
-		float* temp;
-		temp = (float*)malloc(RESX * RESY * 4 * sizeof(float));
-		for (int i = 0; i < RESX * RESY * 4; i++)
-			temp[i] = (float)pic_data[i] / 256;
+        unsigned char* pic_data = stbi_load("../resources/testflow2.png", &width, &height, &channels, 4); //store the input data on the CPU memory and get the address
+        float* temp;
+        temp = (float*)malloc(RESX * RESY * 4 * sizeof(float));
+        for (int i = 0; i < RESX * RESY * 4; i++)
+            temp[i] = (float)pic_data[i] / 256;
 
-		//make a texture (buffer) on the GPU to store the input image
+        //make a texture (buffer) on the GPU to store the input image
 		tex_w = width, tex_h = height;		//size
 		glGenTextures(1, &CS_tex_A);		//Generate texture and store context number
 		glActiveTexture(GL_TEXTURE0);		//since we have 2 textures in this program, we need to associate the input texture with "0" meaning first texture
@@ -199,18 +199,36 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, temp);	//copy image data to texture
 		glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);	//enable texture in shader
 
-		//make a texture (buffer) on the GPU to store the output image
-		glGenTextures(1, &CS_tex_B);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, CS_tex_B);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, NULL);
-		glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-		
-		stbi_image_free(temp);
+        stbi_image_free(temp);
+
+        //make a texture (buffer) on the GPU to store the output image
+        glGenTextures(1, &CS_tex_B);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, CS_tex_B);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, NULL);
+        glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+        pic_data = stbi_load("../resources/wall.png", &width, &height, &channels, 4); //store the input data on the CPU memory and get the address
+        temp = (float*)malloc(RESX * RESY * 4 * sizeof(float));
+        for (int i = 0; i < RESX * RESY * 4; i++)
+            temp[i] = (float)pic_data[i] / 256;
+
+        //make a texture (buffer) on the GPU to store the output image
+        glGenTextures(1, &CS_wall_tex);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, CS_wall_tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, temp);
+        glBindImageTexture(2, CS_wall_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+        stbi_image_free(temp);
 	}
 
 	//General OGL initialization - set OGL state here
@@ -285,30 +303,29 @@ public:
 	draw
 	********/
 
-	int compute(int printframes) 
-		{
-			static bool flap = 1;
-			glUseProgram(computeProgram);
-			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+	int compute(int printframes) {
+        static bool flap = 1;
+        glUseProgram(computeProgram);
+        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-			glUseProgram(computeProgramVort);
-			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			glBindImageTexture(!flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-			glBindImageTexture(flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glUseProgram(computeProgramVort);
+        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glBindImageTexture(!flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-//			flap = !flap;
+//		flap = !flap;
 
-			/*if (printframes == 2) {
-				glBindTexture(GL_TEXTURE_2D, CS_tex_A);
-				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
-				glBindTexture(GL_TEXTURE_2D, CS_tex_B);
-				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer2.data());
-			}*/
-			return flap;
+        /*if (printframes == 2) {
+            glBindTexture(GL_TEXTURE_2D, CS_tex_A);
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
+            glBindTexture(GL_TEXTURE_2D, CS_tex_B);
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer2.data());
+        }*/
+        return flap;
 	}
 	//*****************************************************************************************
 	void render(int texnum)
