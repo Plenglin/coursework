@@ -36,6 +36,11 @@ void main() {
 	vec4 col;
 	vec4 va = getPixel(pixel_coords);
 
+	ivec2 pd = pixel_coords+ivec2(0,-1);
+    ivec2 pu = pixel_coords+ivec2(0,1);
+    ivec2 pr = pixel_coords+ivec2(1,0);
+    ivec2 pl = pixel_coords+ivec2(-1,0);
+
 	//Vorticity
 	if (pixel_coords.x>0 && pixel_coords.x<1200-1
 		&& pixel_coords.y>0 && pixel_coords.y<720-1) {

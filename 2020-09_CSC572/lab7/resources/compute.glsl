@@ -17,6 +17,7 @@ vec4 bilinearInterp(vec2 coords) {
     ivec2 ptl = coordsfloor + ivec2(0, 1);
     ivec2 ptr = coordsfloor + ivec2(1, 1);
 
+    // Walls are unmoving
 	vec4 bl = is_wall(pbl) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, pbl);
 	vec4 br = is_wall(pbr) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, pbr);
 	vec4 tl = is_wall(ptl) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, ptl);
@@ -68,25 +69,28 @@ void main() {
 
 	//Advection
 	float p = length(va.xy);
-	if(pixel_coords.x>0 && pixel_coords.y>0 &&
-		pixel_coords.x<1200-1 && pixel_coords.y<720-1) {
+	if(pixel_coords.x>0 && pixel_coords.y>0 && pixel_coords.x<1200-1 && pixel_coords.y<720-1) {
 		vec2 pos = pixel_coords - p * va.xy;
 		va = bilinearInterp(pos);
 	}
 
-
 	//Diffusion
-	float alpha = 10.;
-	float beta = 4. + alpha;
-	va.xyz = (vl+vr+vd+vu+alpha*va.xyz)/beta;
-	va.a = (l.a+r.a+d.a+u.a+alpha*va.a)/beta;
+	float alpha = 0.9;
+
+	// Differences
+	vec4 dvl = wl ? vec4(0, 0, 0, 0) : vec4(vl, l.a) - va;
+	vec4 dvu = wu ? vec4(0, 0, 0, 0) : vec4(vu, u.a) - va;
+	vec4 dvr = wr ? vec4(0, 0, 0, 0) : vec4(vr, r.a) - va;
+	vec4 dvd = wd ? vec4(0, 0, 0, 0) : vec4(vd, d.a) - va;
+    va += mix((dvl + dvr + dvd + dvu) / 5, vec4(0, 0, 0, 0), alpha);
 
 	//Pressure
 	float hrdx = 0.25;
-	float dpl = l.a - va.a;
-	float dpu = u.a - va.a;
-	float dpr = r.a - va.a;
-	float dpd = d.a - va.a;
+	// Walls have no pressure differentials
+	float dpl = wl ? 0 : l.a - va.a;
+	float dpu = wu ? 0 : u.a - va.a;
+	float dpr = wr ? 0 : r.a - va.a;
+	float dpd = wd ? 0 : d.a - va.a;
 	va.xy -= hrdx*vec2(dpr-dpl, dpu-dpd);
 
 	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
