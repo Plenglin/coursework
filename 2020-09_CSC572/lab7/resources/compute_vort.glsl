@@ -22,42 +22,49 @@ vec4 getPixel(ivec2 pixel_coords) {
 }
 
 float curl(ivec2 coords) {
-	vec4 u = getPixel(coords+ivec2(0,1));
-	vec4 d = getPixel(coords+ivec2(0,-1));
-	vec4 l = getPixel(coords+ivec2(-1,0));
-	vec4 r = getPixel(coords+ivec2(1,0));
-	return u.x-d.x + l.y-r.y;
+    ivec2 pd = coords + ivec2(0,-1);
+    ivec2 pu = coords + ivec2(0,1);
+    ivec2 pr = coords + ivec2(1,0);
+    ivec2 pl = coords + ivec2(-1,0);
+
+    // Walls do not move
+	vec4 d = is_wall(pd) ? vec4(0, 0, 0, 0): getPixel(pd);
+	vec4 u = is_wall(pu) ? vec4(0, 0, 0, 0): getPixel(pu);
+	vec4 r = is_wall(pr) ? vec4(0, 0, 0, 0): getPixel(pr);
+	vec4 l = is_wall(pl) ? vec4(0, 0, 0, 0): getPixel(pl);
+
+	return u.x - d.x + l.y - r.y;
 }
 
 void main() {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     if (is_wall(pixel_coords)) return;
 
-	vec4 col;
 	vec4 va = getPixel(pixel_coords);
 
-	ivec2 pd = pixel_coords+ivec2(0,-1);
-    ivec2 pu = pixel_coords+ivec2(0,1);
-    ivec2 pr = pixel_coords+ivec2(1,0);
-    ivec2 pl = pixel_coords+ivec2(-1,0);
+	ivec2 pd = pixel_coords + ivec2(0, -1);
+    ivec2 pu = pixel_coords + ivec2(0, 1);
+    ivec2 pr = pixel_coords + ivec2(1, 0);
+    ivec2 pl = pixel_coords + ivec2(-1, 0);
 
 	//Vorticity
 	if (pixel_coords.x>0 && pixel_coords.x<1200-1
 		&& pixel_coords.y>0 && pixel_coords.y<720-1) {
-		float vort = 10.0, dt = 0.011;
+		float vort = 20.0, dt = 0.01;
+		float dird = is_wall(pd) ? 0 : abs(curl(pd));
+		float diru = is_wall(pu) ? 0 : abs(curl(pu));
+		float dirr = is_wall(pr) ? 0 : abs(curl(pr));
+		float dirl = is_wall(pl) ? 0 : abs(curl(pl));
 		vec2 dir;
-		float dird = abs(curl(pixel_coords+ivec2(0,-1)));
-		float diru = abs(curl(pixel_coords+ivec2(0,1)));
-		float dirr = abs(curl(pixel_coords+ivec2(1,0)));
-		float dirl = abs(curl(pixel_coords+ivec2(-1,0)));
-		dir.x = dird-diru;
-		dir.y = dirr-dirl;
-		dir = vort/(length(dir)+1e-5f)*dir;
-		va.xy = va.xy+dt*curl(pixel_coords)*dir;
+		dir.x = dird - diru;
+		dir.y = dirr - dirl;
+		dir = vort / (length(dir) + 1e-5f) * dir;
+		va.xy = va.xy + dt * curl(pixel_coords) * dir;
 	}
 
-	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
+    vec4 col;
+    col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
 	col.a = va.a;
 
 	imageStore(img_output, pixel_coords, col);
-	}
+}
