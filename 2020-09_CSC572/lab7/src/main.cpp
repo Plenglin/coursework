@@ -30,7 +30,7 @@ std::vector<float> bufInstance(RESX * RESY * 4);
 std::vector<unsigned char> buffer(RESX * RESY * 4);
 std::vector<unsigned char> buffer2(RESX * RESY * 4);
 
-GLuint computeProgram, computeProgramVort, computeProgramPaint, compute_program_uniform_center, compute_program_uniform_color, compute_program_uniform_radius;
+GLuint computeProgram, computeProgramVort, computeProgramPaint, computeProgramSurface, compute_program_uniform_center, compute_program_uniform_color, compute_program_uniform_radius;
 
 double get_last_elapsed_time()
 {
@@ -80,7 +80,7 @@ public:
 	//framebufferstuff
 	GLuint fb, depth_fb, FBOtex;
 	//texture data
-	GLuint Texture, Texture2, wall;
+	GLuint Texture, Texture2, wall, surface;
     GLuint CS_tex_A, CS_tex_B, CS_wall_tex;
 
     DragHandler<GLFW_MOUSE_BUTTON_1> left_drag;
@@ -239,6 +239,21 @@ public:
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, temp);
         glBindImageTexture(2, CS_wall_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
+        pic_data = stbi_load("../resources/surface.png", &width, &height, &channels, 4); //store the input data on the CPU memory and get the address
+        temp = (float*)malloc(RESX * RESY * 4 * sizeof(float));
+        for (int i = 0; i < RESX * RESY * 4; i++)
+            temp[i] = (float)pic_data[i] / 256;
+
+        //make a texture (buffer) on the GPU to store the output image
+        glGenTextures(1, &surface);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, surface);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, temp);
+
         stbi_image_free(temp);
 	}
 
@@ -265,43 +280,62 @@ public:
 		postproc->addAttribute("vertPos");
 		postproc->addAttribute("vertTex");
 
-		//load the compute shader
-		std::string ShaderString = readFileAsString("../resources/compute.glsl");
-		const char* shader = ShaderString.c_str();
-		GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
-		glShaderSource(computeShader, 1, &shader, nullptr);
-		GLint rc;
-		CHECKED_GL_CALL(glCompileShader(computeShader));
-		CHECKED_GL_CALL(glGetShaderiv(computeShader, GL_COMPILE_STATUS, &rc));
-		if (!rc)	//error compiling the shader file
-		{
-			GLSL::printShaderInfoLog(computeShader);
-			std::cout << "Error compiling fragment shader " << std::endl;
-			exit(1);
-		}
-		computeProgram = glCreateProgram();
-		glAttachShader(computeProgram, computeShader);
-		glLinkProgram(computeProgram);
-		glUseProgram(computeProgram);
+        //load the compute shader
+        std::string ShaderString = readFileAsString("../resources/compute.glsl");
+        const char* shader = ShaderString.c_str();
+        GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(computeShader, 1, &shader, nullptr);
+        GLint rc;
+        CHECKED_GL_CALL(glCompileShader(computeShader));
+        CHECKED_GL_CALL(glGetShaderiv(computeShader, GL_COMPILE_STATUS, &rc));
+        if (!rc)	//error compiling the shader file
+        {
+            GLSL::printShaderInfoLog(computeShader);
+            std::cout << "Error compiling fragment shader " << std::endl;
+            exit(1);
+        }
+        computeProgram = glCreateProgram();
+        glAttachShader(computeProgram, computeShader);
+        glLinkProgram(computeProgram);
+        glUseProgram(computeProgram);
 
-		//load the vorticity shader
-		std::string VortString = readFileAsString("../resources/compute_vort.glsl");
-		const char* shader_vort = VortString.c_str();
-		GLuint computeVort = glCreateShader(GL_COMPUTE_SHADER);
-		glShaderSource(computeVort, 1, &shader_vort, nullptr);
-		GLint rcv;
-		CHECKED_GL_CALL(glCompileShader(computeVort));
-		CHECKED_GL_CALL(glGetShaderiv(computeVort, GL_COMPILE_STATUS, &rcv));
-		if (!rcv)	//error compiling the shader file
-		{
-			GLSL::printShaderInfoLog(computeVort);
-			std::cout << "Error compiling vorticity shader " << std::endl;
-			exit(1);
-		}
-		computeProgramVort = glCreateProgram();
-		glAttachShader(computeProgramVort, computeVort);
-		glLinkProgram(computeProgramVort);
-		glUseProgram(computeProgramVort);
+        //load the vorticity shader
+        std::string VortString = readFileAsString("../resources/compute_vort.glsl");
+        const char* shader_vort = VortString.c_str();
+        GLuint computeVort = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(computeVort, 1, &shader_vort, nullptr);
+        GLint rcv;
+        CHECKED_GL_CALL(glCompileShader(computeVort));
+        CHECKED_GL_CALL(glGetShaderiv(computeVort, GL_COMPILE_STATUS, &rcv));
+        if (!rcv)	//error compiling the shader file
+        {
+            GLSL::printShaderInfoLog(computeVort);
+            std::cout << "Error compiling vorticity shader " << std::endl;
+            exit(1);
+        }
+        computeProgramVort = glCreateProgram();
+        glAttachShader(computeProgramVort, computeVort);
+        glLinkProgram(computeProgramVort);
+        glUseProgram(computeProgramVort);
+
+        //load the surface shader
+        std::string SurfaceString = readFileAsString("../resources/compute_vort.glsl");
+        const char* shader_surface = SurfaceString.c_str();
+        GLuint computeSurface = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(computeSurface, 1, &shader_surface, nullptr);
+        GLint rcs;
+        CHECKED_GL_CALL(glCompileShader(computeSurface));
+        CHECKED_GL_CALL(glGetShaderiv(computeSurface, GL_COMPILE_STATUS, &rcs));
+        if (!rcs)	//error compiling the shader file
+        {
+            GLSL::printShaderInfoLog(computeSurface);
+            std::cout << "Error compiling surface shader " << std::endl;
+            exit(1);
+        }
+        computeProgramSurface = glCreateProgram();
+        glAttachShader(computeProgramSurface, computeSurface);
+        glLinkProgram(computeProgramSurface);
+        glUseProgram(computeProgramSurface);
 
         // paint shader
         std::string paint_string = readFileAsString("../resources/paint.glsl");
