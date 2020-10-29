@@ -21,8 +21,8 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 using namespace std;
 using namespace glm;
 
-#define RESX 1920
-#define RESY 1080
+#define RESX 800
+#define RESY 450
 
 
 shared_ptr<Shape> shape;
