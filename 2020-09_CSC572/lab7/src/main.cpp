@@ -30,7 +30,7 @@ std::vector<float> bufInstance(RESX * RESY * 4);
 std::vector<unsigned char> buffer(RESX * RESY * 4);
 std::vector<unsigned char> buffer2(RESX * RESY * 4);
 
-GLuint computeProgram, computeProgramVort;
+GLuint computeProgram, computeProgramVort, computeProgramPaint ;
 
 double get_last_elapsed_time()
 {
@@ -40,6 +40,25 @@ double get_last_elapsed_time()
 	lasttime = actualtime;
 	return difference;
 }
+
+template <int button>
+class DragHandler {
+public:
+    vec2 position;
+    vec2 delta;
+
+    bool update(GLFWwindow *window) {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        auto current_pos = vec2((float)x, (float)y);
+        bool pressed = glfwGetMouseButton(window, button);
+
+        delta = pressed ? current_pos - position : vec2(0, 0);
+        position = current_pos;
+
+        return pressed;
+    }
+};
 
 
 class Application : public EventCallbacks
@@ -64,6 +83,9 @@ public:
 	GLuint Texture, Texture2, wall;
     GLuint CS_tex_A, CS_tex_B, CS_wall_tex;
 
+    DragHandler<GLFW_MOUSE_BUTTON_1> left_drag;
+    DragHandler<GLFW_MOUSE_BUTTON_2> right_drag;
+
 	int tex_w, tex_h;
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -72,17 +94,13 @@ public:
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
-		
 	}
 
-	// callback for the mouse when clicked move the triangle when helper functions
-	// written
 	void mouseCallback(GLFWwindow *window, int button, int action, int mods)
 	{
 		double posX, posY;
 		float newPt[2];
-		if (action == GLFW_PRESS)
-		{
+		if (action == GLFW_PRESS) {
 			glfwGetCursorPos(window, &posX, &posY);
 			std::cout << "Pos X " << posX <<  " Pos Y " << posY << std::endl;
 		}
@@ -100,8 +118,7 @@ public:
 	/*Note that any gl calls must always happen after a GL state is initialized */
 	void initGeom()
 	{
-
-		string resourceDirectory = "../resources";
+	    string resourceDirectory = "../resources";
 	
 
 		//screen plane
@@ -142,12 +159,6 @@ public:
 		//key function to get up how many elements to pull out at a time (3)
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 		glBindVertexArray(0);
-		
-
-
-		
-
-	
 
 		int width, height, channels;
 		char filepath[1000];
@@ -232,9 +243,7 @@ public:
 	}
 
 	//General OGL initialization - set OGL state here
-	void init(const std::string& resourceDirectory)
-	{
-		
+	void init(const std::string& resourceDirectory)	{
 		GLSL::checkVersion();
 
 		// Set background color.
@@ -243,7 +252,6 @@ public:
 		glEnable(GL_DEPTH_TEST);
 
 		// Initialize the GLSL program.
-		
 
 		//program for the postprocessing
 		postproc = std::make_shared<Program>();
@@ -294,6 +302,25 @@ public:
 		glAttachShader(computeProgramVort, computeVort);
 		glLinkProgram(computeProgramVort);
 		glUseProgram(computeProgramVort);
+
+        // paint shader
+        std::string paint_string = readFileAsString("../resources/paint.glsl");
+        const char* shader_paint = paint_string.c_str();
+        GLuint compute_paint = glCreateShader(GL_COMPUTE_SHADER);
+        glShaderSource(compute_paint, 1, &shader_paint, nullptr);
+        GLint rcp;
+        CHECKED_GL_CALL(glCompileShader(compute_paint));
+        CHECKED_GL_CALL(glGetShaderiv(compute_paint, GL_COMPILE_STATUS, &rcp));
+        if (!rc)	//error compiling the shader file
+        {
+            GLSL::printShaderInfoLog(compute_paint);
+            std::cout << "Error compiling vorticity shader " << std::endl;
+            exit(1);
+        }
+        computeProgramPaint = glCreateProgram();
+        glAttachShader(computeProgramPaint, compute_paint);
+        glLinkProgram(computeProgramPaint);
+        glUseProgram(computeProgramPaint);
 	}
 
 
@@ -304,6 +331,9 @@ public:
 	********/
 
 	int compute(int printframes) {
+        left_drag.update(windowManager->getHandle());
+        right_drag.update(windowManager->getHandle());
+
         static bool flap = 1;
         glUseProgram(computeProgram);
         glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
