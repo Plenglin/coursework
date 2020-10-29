@@ -80,7 +80,7 @@ public:
 	//framebufferstuff
 	GLuint fb, depth_fb, FBOtex;
 	//texture data
-	GLuint Texture, Texture2, wall, surface;
+	GLuint Texture, Texture2, wall, surface1, surface2;
     GLuint CS_tex_A, CS_tex_B, CS_wall_tex;
 
     DragHandler<GLFW_MOUSE_BUTTON_1> left_drag;
@@ -220,7 +220,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, nullptr);
         glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         pic_data = stbi_load("../resources/wall.png", &width, &height, &channels, 4); //store the input data on the CPU memory and get the address
@@ -239,20 +239,32 @@ public:
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, temp);
         glBindImageTexture(2, CS_wall_tex, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
+        stbi_image_free(temp);
+
         pic_data = stbi_load("../resources/surface.png", &width, &height, &channels, 4); //store the input data on the CPU memory and get the address
         temp = (float*)malloc(RESX * RESY * 4 * sizeof(float));
         for (int i = 0; i < RESX * RESY * 4; i++)
             temp[i] = (float)pic_data[i] / 256;
 
         //make a texture (buffer) on the GPU to store the output image
-        glGenTextures(1, &surface);
+        glGenTextures(1, &surface1);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, surface);
+        glBindTexture(GL_TEXTURE_2D, surface1);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, temp);
+        glBindImageTexture(3, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+        glGenTextures(1, &surface2);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, surface2);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, tex_w, tex_h, 0, GL_RGBA, GL_FLOAT, nullptr);
 
         stbi_image_free(temp);
 	}
@@ -319,7 +331,7 @@ public:
         glUseProgram(computeProgramVort);
 
         //load the surface shader
-        std::string SurfaceString = readFileAsString("../resources/compute_vort.glsl");
+        std::string SurfaceString = readFileAsString("../resources/compute_surface.glsl");
         const char* shader_surface = SurfaceString.c_str();
         GLuint computeSurface = glCreateShader(GL_COMPUTE_SHADER);
         glShaderSource(computeSurface, 1, &shader_surface, nullptr);
@@ -371,8 +383,6 @@ public:
         left_drag.update(windowManager->getHandle());
         right_drag.update(windowManager->getHandle());
 
-        static bool flap = 1;
-
         std::cout << left_drag.delta.x << ", " << left_drag.delta.y << std::endl;
         if (left_drag.delta.x != 0 && left_drag.delta.y != 0) {
             const int radius = 25;
@@ -388,8 +398,7 @@ public:
             pos = pos * ivec2(tex_w, tex_h) / ivec2(w, h);
 
             glUseProgram(computeProgramPaint);
-            glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-            glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
             glUniform1i(compute_program_uniform_radius, radius);
             glUniform2iv(compute_program_uniform_center, 1, &pos[0]);
             glUniform4fv(compute_program_uniform_color, 1, &color[0]);
@@ -399,16 +408,30 @@ public:
         }
 
         glUseProgram(computeProgram);
+        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
         glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         glUseProgram(computeProgramVort);
+        glBindImageTexture(0, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(1, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
         glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        glBindImageTexture(!flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+        glUseProgram(computeProgramSurface);
+        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(1, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(3, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glUseProgram(computeProgramSurface);
+        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(1, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(3, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 //		flap = !flap;
 
@@ -418,7 +441,7 @@ public:
             glBindTexture(GL_TEXTURE_2D, CS_tex_B);
             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer2.data());
         }*/
-        return flap;
+        return 0;
 	}
 	//*****************************************************************************************
 	void render(int texnum)
@@ -432,10 +455,7 @@ public:
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		postproc->bind();
 		glActiveTexture(GL_TEXTURE0);
-		if(texnum==0)
-			glBindTexture(GL_TEXTURE_2D, CS_tex_B);
-		else
-			glBindTexture(GL_TEXTURE_2D, CS_tex_A);
+        glBindTexture(GL_TEXTURE_2D, surface1);
 
 		glBindVertexArray(VertexArrayIDScreen);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
