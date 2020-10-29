@@ -40,6 +40,7 @@ void main() {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     if (is_wall(pixel_coords)) return;
 
+    ivec2 dims = imageSize(img_input);
 	vec4 va = getPixel(pixel_coords);
 
 	ivec2 pd = pixel_coords + ivec2(0, -1);
@@ -48,8 +49,7 @@ void main() {
     ivec2 pl = pixel_coords + ivec2(-1, 0);
 
 	//Vorticity
-	if (pixel_coords.x>0 && pixel_coords.x<1200-1
-		&& pixel_coords.y>0 && pixel_coords.y<720-1) {
+	if (pixel_coords.x>0 && pixel_coords.x<dims.x-1 && pixel_coords.y>0 && pixel_coords.y<dims.y-1) {
 		float vort = 10.0, dt = 0.01;
 		float dird = is_wall(pd) ? 0 : abs(curl(pd));
 		float diru = is_wall(pu) ? 0 : abs(curl(pu));

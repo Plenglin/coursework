@@ -351,7 +351,7 @@ public:
             glfwGetFramebufferSize(windowManager->getHandle(), &w, &h);
             ivec2 pos = left_drag.position;
             pos.y = h - pos.y;
-            pos = pos * ivec2(1920, 1080) / ivec2(w, h);
+            pos = pos * ivec2(tex_w, tex_h) / ivec2(w, h);
 
             glUseProgram(computeProgramPaint);
             glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);

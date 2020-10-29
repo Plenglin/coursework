@@ -40,6 +40,8 @@ void main() {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     if (is_wall(pixel_coords)) return;
 
+    ivec2 dims = imageSize(img_input);
+
     ivec2 pl = pixel_coords + ivec2(-1,0);
     ivec2 pu = pixel_coords + ivec2(0,-1);
     ivec2 pr = pixel_coords + ivec2(1,0);
@@ -56,8 +58,8 @@ void main() {
 	l=u=r=d=col;
 	if(pixel_coords.x>0)	l=imageLoad(img_input, pl);
 	if(pixel_coords.y>0)	d=imageLoad(img_input, pu);
-	if(pixel_coords.x<1920-1)	r=imageLoad(img_input, pr);
-	if(pixel_coords.y<1080-1)	u=imageLoad(img_input, pd);
+	if(pixel_coords.x<dims.x-1)	r=imageLoad(img_input, pr);
+	if(pixel_coords.y<dims.y-1)	u=imageLoad(img_input, pd);
 
 	vec4 va;
 	va.xyz = normalize(col.rgb - vec3(0.5,0.5,0.5)) * col.a;
@@ -69,7 +71,7 @@ void main() {
 
 	//Advection
 	float p = length(va.xy);
-	if(pixel_coords.x>0 && pixel_coords.y>0 && pixel_coords.x<1200-1 && pixel_coords.y<720-1) {
+	if(pixel_coords.x>0 && pixel_coords.y>0 && pixel_coords.x<dims.x-1 && pixel_coords.y<dims.y-1) {
 		vec2 pos = pixel_coords - p * va.xy;
 		va = bilinearInterp(pos);
 	}
