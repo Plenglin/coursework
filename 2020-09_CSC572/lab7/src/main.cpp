@@ -30,7 +30,7 @@ std::vector<float> bufInstance(RESX * RESY * 4);
 std::vector<unsigned char> buffer(RESX * RESY * 4);
 std::vector<unsigned char> buffer2(RESX * RESY * 4);
 
-GLuint computeProgram, computeProgramVort, computeProgramPaint ;
+GLuint computeProgram, computeProgramVort, computeProgramPaint, compute_program_uniform_center, compute_program_uniform_color, compute_program_uniform_radius;
 
 double get_last_elapsed_time()
 {
@@ -44,16 +44,16 @@ double get_last_elapsed_time()
 template <int button>
 class DragHandler {
 public:
-    vec2 position;
-    vec2 delta;
+    ivec2 position;
+    ivec2 delta;
 
     bool update(GLFWwindow *window) {
         double x, y;
         glfwGetCursorPos(window, &x, &y);
-        auto current_pos = vec2((float)x, (float)y);
+        auto current_pos = ivec2(x, 1080 - y);
         bool pressed = glfwGetMouseButton(window, button);
 
-        delta = pressed ? current_pos - position : vec2(0, 0);
+        delta = pressed ? current_pos - position : ivec2(0, 0);
         position = current_pos;
 
         return pressed;
@@ -292,7 +292,7 @@ public:
 		GLint rcv;
 		CHECKED_GL_CALL(glCompileShader(computeVort));
 		CHECKED_GL_CALL(glGetShaderiv(computeVort, GL_COMPILE_STATUS, &rcv));
-		if (!rc)	//error compiling the shader file
+		if (!rcv)	//error compiling the shader file
 		{
 			GLSL::printShaderInfoLog(computeVort);
 			std::cout << "Error compiling vorticity shader " << std::endl;
@@ -311,16 +311,19 @@ public:
         GLint rcp;
         CHECKED_GL_CALL(glCompileShader(compute_paint));
         CHECKED_GL_CALL(glGetShaderiv(compute_paint, GL_COMPILE_STATUS, &rcp));
-        if (!rc)	//error compiling the shader file
+        if (!rcp)	//error compiling the shader file
         {
             GLSL::printShaderInfoLog(compute_paint);
-            std::cout << "Error compiling vorticity shader " << std::endl;
+            std::cout << "Error compiling painting shader " << std::endl;
             exit(1);
         }
         computeProgramPaint = glCreateProgram();
         glAttachShader(computeProgramPaint, compute_paint);
         glLinkProgram(computeProgramPaint);
         glUseProgram(computeProgramPaint);
+        compute_program_uniform_radius = glGetUniformLocation(computeProgramPaint, "radius");
+        compute_program_uniform_center = glGetUniformLocation(computeProgramPaint, "center");
+        compute_program_uniform_color = glGetUniformLocation(computeProgramPaint, "color");
 	}
 
 
@@ -335,6 +338,22 @@ public:
         right_drag.update(windowManager->getHandle());
 
         static bool flap = 1;
+
+        std::cout << left_drag.delta.x << ", " << left_drag.delta.y << std::endl;
+        if (left_drag.delta.x != 0 && left_drag.delta.y != 0) {
+            const int radius = 25;
+            const vec4 color = vec4((normalize(vec2(left_drag.delta)) + 1.0f) / 2.0f, 1.0f, 1.0f);
+            glUseProgram(computeProgramPaint);
+            glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glUniform1i(compute_program_uniform_radius, radius);
+            glUniform2iv(compute_program_uniform_center, 1, &left_drag.position[0]);
+            glUniform4fv(compute_program_uniform_color, 1, &color[0]);
+            glDispatchCompute((GLuint)(radius * 2), (GLuint)(radius * 2), 1);
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        }
+
         glUseProgram(computeProgram);
         glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

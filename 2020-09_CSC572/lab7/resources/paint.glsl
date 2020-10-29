@@ -10,10 +10,10 @@ const ivec2 offset = center - radius;
 
 
 void main() {
-    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy) + offset;
     ivec2 delta = pixel_coords - center;
 
-    if (delta > radius * radius) return;
+    if (dot(delta, delta) > radius * radius) return;
 
-    imageStore(img_output, pixel_coords, color);
+    imageStore(img, pixel_coords, color);
 }
