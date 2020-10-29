@@ -2,7 +2,7 @@
 layout(local_size_x = 1, local_size_y = 1) in;											//local group of shaders
 layout(rgba32f, binding = 0) uniform image2D img_input;									//input image
 layout(rgba32f, binding = 1) uniform image2D img_output;									//output image
-void main() 
+void main()
 	{
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);				
 	vec4 l,u,r,d, ld,lu,rd,ru;//left up right down				

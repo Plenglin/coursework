@@ -75,17 +75,17 @@ void main() {
 	}
 
 	//Diffusion
-	float alpha = 0.9;
+	float alpha = 0.2;
 
 	// Differences
 	vec4 dvl = wl ? vec4(0, 0, 0, 0) : vec4(vl, l.a) - va;
 	vec4 dvu = wu ? vec4(0, 0, 0, 0) : vec4(vu, u.a) - va;
 	vec4 dvr = wr ? vec4(0, 0, 0, 0) : vec4(vr, r.a) - va;
 	vec4 dvd = wd ? vec4(0, 0, 0, 0) : vec4(vd, d.a) - va;
-    va += mix((dvl + dvr + dvd + dvu) / 5, vec4(0, 0, 0, 0), alpha);
+    va += alpha * (dvl + dvr + dvd + dvu) / 4;
 
 	//Pressure
-	float hrdx = 0.25;
+	float hrdx = 0.3;
 	// Walls have no pressure differentials
 	float dpl = wl ? 0 : l.a - va.a;
 	float dpu = wu ? 0 : u.a - va.a;

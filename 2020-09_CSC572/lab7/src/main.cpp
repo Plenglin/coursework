@@ -50,7 +50,7 @@ public:
     bool update(GLFWwindow *window) {
         double x, y;
         glfwGetCursorPos(window, &x, &y);
-        auto current_pos = ivec2(x, 1080 - y);
+        auto current_pos = ivec2(x, y);
         bool pressed = glfwGetMouseButton(window, button);
 
         delta = pressed ? current_pos - position : ivec2(0, 0);
@@ -119,7 +119,7 @@ public:
 	void initGeom()
 	{
 	    string resourceDirectory = "../resources";
-	
+
 
 		//screen plane
 		glGenVertexArrays(1, &VertexArrayIDScreen);
@@ -164,7 +164,7 @@ public:
 		char filepath[1000];
 
 		//texture 1
-	
+
 		//[TWOTEXTURES]
 		//set the 2 textures to the correct samplers in the fragment shader:
 		GLuint Tex1Location;
@@ -342,12 +342,22 @@ public:
         std::cout << left_drag.delta.x << ", " << left_drag.delta.y << std::endl;
         if (left_drag.delta.x != 0 && left_drag.delta.y != 0) {
             const int radius = 25;
-            const vec4 color = vec4((normalize(vec2(left_drag.delta)) + 1.0f) / 2.0f, 1.0f, 1.0f);
+            ivec2 delta = left_drag.delta;
+            delta.y = -delta.y;
+
+            const vec4 color = vec4((normalize(vec2(delta)) + 1.0f) / 2.0f, 1.0f, 1.0f);
+
+            int w, h;
+            glfwGetFramebufferSize(windowManager->getHandle(), &w, &h);
+            ivec2 pos = left_drag.position;
+            pos.y = h - pos.y;
+            pos = pos * ivec2(1920, 1080) / ivec2(w, h);
+
             glUseProgram(computeProgramPaint);
             glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
             glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
             glUniform1i(compute_program_uniform_radius, radius);
-            glUniform2iv(compute_program_uniform_center, 1, &left_drag.position[0]);
+            glUniform2iv(compute_program_uniform_center, 1, &pos[0]);
             glUniform4fv(compute_program_uniform_color, 1, &color[0]);
             glDispatchCompute((GLuint)(radius * 2), (GLuint)(radius * 2), 1);
 
@@ -379,7 +389,6 @@ public:
 	//*****************************************************************************************
 	void render(int texnum)
 	{
-		
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
