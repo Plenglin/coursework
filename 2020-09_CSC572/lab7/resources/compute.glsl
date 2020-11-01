@@ -87,7 +87,7 @@ void main() {
     va += alpha * (dvl + dvr + dvd + dvu) / 4;
 
 	//Pressure
-	float hrdx = 0.3;
+	float hrdx = 0.2;
 	// Walls have no pressure differentials
 	float dpl = wl ? 0 : l.a - va.a;
 	float dpu = wu ? 0 : u.a - va.a;
