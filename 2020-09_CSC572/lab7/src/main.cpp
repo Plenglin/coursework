@@ -419,20 +419,21 @@ public:
         glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        glUseProgram(computeProgramSurface);
         glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(1, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(3, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        glUseProgram(computeProgramSurface);
-        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(1, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(3, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        for (int i = 0; i < 3; i++) {
+            glUseProgram(computeProgramSurface);
+            glBindImageTexture(1, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(3, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+            glUseProgram(computeProgramSurface);
+            glBindImageTexture(1, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(3, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        }
 //		flap = !flap;
 
         /*if (printframes == 2) {

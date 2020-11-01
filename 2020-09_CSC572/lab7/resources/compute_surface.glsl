@@ -37,16 +37,22 @@ void main() {
     // Compute the influences
     vec4 this_color = imageLoad(img_input, pixel_coords);
     vec4 color_delta = vec4(0, 0, 0, 0);
+    uint count = 0;
     for (uint i = 0; i < 4; i++) {
         ivec2 dir = surrounding[i];
-        vec2 flow = getPixel(pixel_coords + dir).xy;
+        ivec2 pos = pixel_coords + dir;
+        if (is_wall(pos)) {
+            continue;
+        }
+        count++;
+        vec2 flow = getPixel(pos).xy;
         float outflow = dot(dir, flow);  // Color is biased by how much it's pushing into this
         vec4 this_delta = imageLoad(img_input, pixel_coords + dir) - this_color;
         color_delta -= outflow * this_delta;
         //color_delta.xy = flow;
     }
 
-    //this_color += 0.05 * color_delta;
+    //this_color += 0.2 * color_delta / count;
     this_color = imageLoad(img_flow, pixel_coords);
     this_color = clamp(this_color, vec4(0, 0, 0, 0), vec4(1, 1, 1, 1));
     this_color.a = 1;

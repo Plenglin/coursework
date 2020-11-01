@@ -95,8 +95,22 @@ void main() {
 	float dpd = wd ? 0 : d.a - va.a;
 	va.xy -= hrdx*vec2(dpr-dpl, dpu-dpd);
 
+	if (wu && va.y > 0) {
+	    va.y = -va.y;
+    }
+	if (wd && va.y < 0) {
+	    va.y = -va.y;
+    }
+	if (wr && va.x > 0) {
+	    va.x = -va.x;
+    }
+	if (wl && va.x < 0) {
+	    va.x = -va.x;
+    }
+
 	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
 	col.a = va.a;
+
 
 	imageStore(img_output, pixel_coords, col);
 }
