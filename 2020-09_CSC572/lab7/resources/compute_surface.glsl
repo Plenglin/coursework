@@ -25,7 +25,8 @@ vec4 getPixel(ivec2 pixel_coords) {
 void main() {
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     if (is_wall(pixel_coords)) {
-       	imageStore(img_output, pixel_coords, vec4(1, 1, 0, 1));
+       	imageStore(img_output, pixel_coords, vec4(0, 0, 0, 1));
+       	//imageStore(img_flow, pixel_coords, vec4(0.5, 0.5, 0, 0.5));
         return;
     }
 

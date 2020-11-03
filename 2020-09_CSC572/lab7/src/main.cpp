@@ -412,26 +412,6 @@ public:
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
 
-        for (int i = 0; i < 4; i++) {
-            glUseProgram(computeProgram);
-            glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-            glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-            glDispatchCompute((GLuint) tex_w, (GLuint) tex_h, 1);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-            swap_buffers();
-        }
-
-        for (int i = 0; i < 2; i++) {
-            glUseProgram(computeProgramVort);
-            glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-            glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-            glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-            swap_buffers();
-        }
-
-        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
         for (int i = 0; i < 1; i++) {
             glUseProgram(computeProgramSurface);
             glBindImageTexture(1, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -445,6 +425,29 @@ public:
             glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 1; j++) {
+                glUseProgram(computeProgram);
+                glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+                glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+                glDispatchCompute((GLuint) tex_w, (GLuint) tex_h, 1);
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                swap_buffers();
+            }
+
+            for (int j = 0; j < 1; j++) {
+                glUseProgram(computeProgramVort);
+                glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+                glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+                glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                swap_buffers();
+            }
+        }
+
+        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
         return 0;
 	}
 	//*****************************************************************************************

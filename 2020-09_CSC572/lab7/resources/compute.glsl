@@ -18,10 +18,10 @@ vec4 bilinearInterp(vec2 coords) {
     ivec2 ptr = coordsfloor + ivec2(1, 1);
 
     // Walls are unmoving
-	vec4 bl = is_wall(pbl) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, pbl);
-	vec4 br = is_wall(pbr) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, pbr);
-	vec4 tl = is_wall(ptl) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, ptl);
-	vec4 tr = is_wall(ptr) ? vec4(0.5, 0.5, 0.5, 0) : imageLoad(img_input, ptr);
+	vec4 bl = imageLoad(img_input, pbl);
+	vec4 br = imageLoad(img_input, pbr);
+	vec4 tl = imageLoad(img_input, ptl);
+	vec4 tr = imageLoad(img_input, ptr);
 
 	vec2 to_bl = weight;
 	vec2 to_br = vec2(-(1-weight.x), weight.y);
@@ -56,10 +56,10 @@ void main() {
 
 	vec4 l,u,r,d;//left up right down
 	l=u=r=d=col;
-	if(pixel_coords.x>0)	l=imageLoad(img_input, pl);
-	if(pixel_coords.y>0)	d=imageLoad(img_input, pu);
-	if(pixel_coords.x<dims.x-1)	r=imageLoad(img_input, pr);
-	if(pixel_coords.y<dims.y-1)	u=imageLoad(img_input, pd);
+	if(!wl && pixel_coords.x>0)         l=imageLoad(img_input, pl);
+	if(!wd && pixel_coords.y>0)         d=imageLoad(img_input, pu);
+	if(!wr && pixel_coords.x<dims.x-1)	r=imageLoad(img_input, pr);
+	if(!wu && pixel_coords.y<dims.y-1)	u=imageLoad(img_input, pd);
 
 	vec4 va;
 	va.xyz = normalize(col.rgb - vec3(0.5,0.5,0.5)) * col.a;
@@ -71,7 +71,7 @@ void main() {
 
 	//Advection
 	float p = length(va.xy);
-	if(pixel_coords.x>0 && pixel_coords.y>0 && pixel_coords.x<dims.x-1 && pixel_coords.y<dims.y-1) {
+	if(!wu && !wl && !wr && !wd && pixel_coords.x>0 && pixel_coords.y>0 && pixel_coords.x<dims.x-1 && pixel_coords.y<dims.y-1) {
 		vec2 pos = pixel_coords - p * va.xy;
 		va = bilinearInterp(pos);
 	}
@@ -80,34 +80,21 @@ void main() {
 	float alpha = 0.8;
 
 	// Differences
-	vec4 dvl = wl ? vec4(0, 0, 0, 0) : vec4(vl, l.a) - va;
-	vec4 dvu = wu ? vec4(0, 0, 0, 0) : vec4(vu, u.a) - va;
-	vec4 dvr = wr ? vec4(0, 0, 0, 0) : vec4(vr, r.a) - va;
-	vec4 dvd = wd ? vec4(0, 0, 0, 0) : vec4(vd, d.a) - va;
+	vec4 dvl = vec4(vl, l.a) - va;
+	vec4 dvu = vec4(vu, u.a) - va;
+	vec4 dvr = vec4(vr, r.a) - va;
+	vec4 dvd = vec4(vd, d.a) - va;
 	vec4 avg_diff = (dvl + dvr + dvd + dvu) / 4;
 	avg_diff = sign(avg_diff) * abs(avg_diff);
     va += alpha * avg_diff;
 
-    if (wu && va.y > 0) {
-        va.y = -va.y;
-    }
-    if (wd && va.y < 0) {
-        va.y = -va.y;
-    }
-    if (wr && va.x > 0) {
-        va.x = -va.x;
-    }
-    if (wl && va.x < 0) {
-        va.x = -va.x;
-    }
-
     //Pressure
 	float hrdx = 1;
 	// Walls have no pressure differentials
-	float dpl = wl ? 0 : l.a - va.a;
-	float dpu = wu ? 0 : u.a - va.a;
-	float dpr = wr ? 0 : r.a - va.a;
-	float dpd = wd ? 0 : d.a - va.a;
+	float dpl = l.a - va.a;
+	float dpu = u.a - va.a;
+	float dpr = r.a - va.a;
+	float dpd = d.a - va.a;
 	va.xy -= hrdx * vec2(dpr-dpl, dpu-dpd);
 
 	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
