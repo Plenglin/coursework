@@ -11,9 +11,14 @@ const ivec2 offset = center - radius;
 
 void main() {
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy) + offset;
-    ivec2 delta = pixel_coords - center;
+    ivec2 r_dist = pixel_coords - center;
+    if (dot(r_dist, r_dist) > radius * radius) return;
 
-    if (dot(delta, delta) > radius * radius) return;
+    float norm_dist = 1 - length(r_dist) / radius;
 
-    imageStore(img, pixel_coords, color);
+    vec4 existing = imageLoad(img, pixel_coords);
+    float a = 0.8 * norm_dist;
+    vec4 c_out = mix(existing, color, vec4(a, a, a, 0));
+
+    imageStore(img, pixel_coords, c_out);
 }

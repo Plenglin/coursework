@@ -372,7 +372,7 @@ public:
         compute_program_uniform_color = glGetUniformLocation(computeProgramPaint, "color");
 	}
 
-	void swap_buffers() {
+	inline void swap_buffers() {
         GLuint tmp = CS_tex_A;
         CS_tex_A = CS_tex_B;
         CS_tex_B = tmp;
@@ -412,7 +412,7 @@ public:
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 4; i++) {
             glUseProgram(computeProgram);
             glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
             glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);

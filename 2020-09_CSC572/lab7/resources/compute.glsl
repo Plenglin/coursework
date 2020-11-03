@@ -89,16 +89,16 @@ void main() {
     va += alpha * avg_diff;
 
     if (wu && va.y > 0) {
-        va.y = 0;
+        va.y = -va.y;
     }
     if (wd && va.y < 0) {
-        va.y = 0;
+        va.y = -va.y;
     }
     if (wr && va.x > 0) {
-        va.x = 0;
+        va.x = -va.x;
     }
     if (wl && va.x < 0) {
-        va.x = 0;
+        va.x = -va.x;
     }
 
     //Pressure
