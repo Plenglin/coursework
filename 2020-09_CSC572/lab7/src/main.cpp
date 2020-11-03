@@ -372,6 +372,11 @@ public:
         compute_program_uniform_color = glGetUniformLocation(computeProgramPaint, "color");
 	}
 
+	void swap_buffers() {
+        GLuint tmp = CS_tex_A;
+        CS_tex_A = CS_tex_B;
+        CS_tex_B = tmp;
+	}
 
 	/****DRAW
 	This is the most important function in your program - this is where you
@@ -407,21 +412,27 @@ public:
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
 
-        glUseProgram(computeProgram);
+        for (int i = 0; i < 2; i++) {
+            glUseProgram(computeProgram);
+            glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glDispatchCompute((GLuint) tex_w, (GLuint) tex_h, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            swap_buffers();
+        }
+
+        for (int i = 0; i < 2; i++) {
+            glUseProgram(computeProgramVort);
+            glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+            glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            swap_buffers();
+        }
+
         glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        glUseProgram(computeProgramVort);
-        glBindImageTexture(0, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(1, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-        glBindImageTexture(0, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 1; i++) {
             glUseProgram(computeProgramSurface);
             glBindImageTexture(1, surface2, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
             glBindImageTexture(3, surface1, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -434,14 +445,6 @@ public:
             glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
-//		flap = !flap;
-
-        /*if (printframes == 2) {
-            glBindTexture(GL_TEXTURE_2D, CS_tex_A);
-            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
-            glBindTexture(GL_TEXTURE_2D, CS_tex_B);
-            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer2.data());
-        }*/
         return 0;
 	}
 	//*****************************************************************************************

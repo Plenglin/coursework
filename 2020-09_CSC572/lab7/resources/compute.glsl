@@ -77,36 +77,38 @@ void main() {
 	}
 
 	//Diffusion
-	float alpha = 0.2;
+	float alpha = 0.8;
 
 	// Differences
 	vec4 dvl = wl ? vec4(0, 0, 0, 0) : vec4(vl, l.a) - va;
 	vec4 dvu = wu ? vec4(0, 0, 0, 0) : vec4(vu, u.a) - va;
 	vec4 dvr = wr ? vec4(0, 0, 0, 0) : vec4(vr, r.a) - va;
 	vec4 dvd = wd ? vec4(0, 0, 0, 0) : vec4(vd, d.a) - va;
-    va += alpha * (dvl + dvr + dvd + dvu) / 4;
+	vec4 avg_diff = (dvl + dvr + dvd + dvu) / 4;
+	avg_diff = sign(avg_diff) * abs(avg_diff);
+    va += alpha * avg_diff;
 
-	//Pressure
-	float hrdx = 0.2;
+    if (wu && va.y > 0) {
+        va.y = 0;
+    }
+    if (wd && va.y < 0) {
+        va.y = 0;
+    }
+    if (wr && va.x > 0) {
+        va.x = 0;
+    }
+    if (wl && va.x < 0) {
+        va.x = 0;
+    }
+
+    //Pressure
+	float hrdx = 1;
 	// Walls have no pressure differentials
 	float dpl = wl ? 0 : l.a - va.a;
 	float dpu = wu ? 0 : u.a - va.a;
 	float dpr = wr ? 0 : r.a - va.a;
 	float dpd = wd ? 0 : d.a - va.a;
-	va.xy -= hrdx*vec2(dpr-dpl, dpu-dpd);
-
-	if (wu && va.y > 0) {
-	    va.y = -va.y;
-    }
-	if (wd && va.y < 0) {
-	    va.y = -va.y;
-    }
-	if (wr && va.x > 0) {
-	    va.x = -va.x;
-    }
-	if (wl && va.x < 0) {
-	    va.x = -va.x;
-    }
+	va.xy -= hrdx * vec2(dpr-dpl, dpu-dpd);
 
 	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
 	col.a = va.a;
