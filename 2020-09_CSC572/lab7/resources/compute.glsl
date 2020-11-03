@@ -89,32 +89,31 @@ void main() {
     va += alpha * avg_diff;
 
     //Pressure
-	float hrdx = 0.7;
-	// Walls have no pressure differentials
+	float hrdx = 0.9;
 	float pl = l.a;
 	float pu = u.a;
 	float pr = r.a;
 	float pd = d.a;
 
-	float reflect = 0.2;
-	if (wl) {
-	    pl -= reflect * va.x;
+	float reflect = 0.5;
+	if (wl && va.x < 0) {
+	    pl = va.a - reflect * va.x;
 	    va.x = 0;
 	}
-	if (wr) {
-	    pr += reflect * va.x;
+	if (wr && va.x > 0) {
+	    pr = va.a + reflect * va.x;
 	    va.x = 0;
 	}
-	if (wu) {
-	    pu += reflect * va.y;
+	if (wu && va.y > 0) {
+	    pu = va.a + reflect * va.y;
 	    va.y = 0;
 	}
-	if (wd) {
-	    pd -= reflect * va.y;
+	if (wd && va.y < 0) {
+	    pd = va.a - reflect * va.y;
 	    va.y = 0;
 	}
 
-	va.xy -= hrdx * vec2(pr-pl, pu-pd);
+	va.xy += hrdx * vec2(pl - pr, pd - pu);
 
 	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
 	col.a = va.a;
