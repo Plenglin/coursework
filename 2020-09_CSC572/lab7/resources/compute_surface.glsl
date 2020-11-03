@@ -53,8 +53,8 @@ void main() {
         //color_delta.xy = flow;
     }
 
-    //this_color += 0.2 * color_delta / count;
-    this_color = imageLoad(img_flow, pixel_coords);
+    this_color += 0.1 * color_delta / count;
+    //this_color = imageLoad(img_flow, pixel_coords);
     this_color = clamp(this_color, vec4(0, 0, 0, 0), vec4(1, 1, 1, 1));
     this_color.a = 1;
 

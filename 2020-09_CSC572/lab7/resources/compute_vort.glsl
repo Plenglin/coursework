@@ -50,7 +50,7 @@ void main() {
 
 	//Vorticity
 	if (pixel_coords.x>0 && pixel_coords.x<dims.x-1 && pixel_coords.y>0 && pixel_coords.y<dims.y-1) {
-		float vort = 10.0, dt = 0.01;
+		float vort = 8.0, dt = 0.01;
 		float dird = is_wall(pd) ? 0 : abs(curl(pd));
 		float diru = is_wall(pu) ? 0 : abs(curl(pu));
 		float dirr = is_wall(pr) ? 0 : abs(curl(pr));

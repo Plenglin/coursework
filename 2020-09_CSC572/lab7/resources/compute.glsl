@@ -42,24 +42,24 @@ void main() {
 
     ivec2 dims = imageSize(img_input);
 
-    ivec2 pl = pixel_coords + ivec2(-1,0);
-    ivec2 pu = pixel_coords + ivec2(0,-1);
-    ivec2 pr = pixel_coords + ivec2(1,0);
-    ivec2 pd = pixel_coords + ivec2(0,1);
+    ivec2 ll = pixel_coords + ivec2(-1,0);
+    ivec2 lu = pixel_coords + ivec2(0,-1);
+    ivec2 lr = pixel_coords + ivec2(1,0);
+    ivec2 ld = pixel_coords + ivec2(0,1);
 
-	bool wl = is_wall(pl);
-    bool wu = is_wall(pu);
-    bool wr = is_wall(pr);
-    bool wd = is_wall(pd);
+	bool wl = is_wall(ll);
+    bool wu = is_wall(lu);
+    bool wr = is_wall(lr);
+    bool wd = is_wall(ld);
 
 	vec4 col=imageLoad(img_input, pixel_coords);
 
 	vec4 l,u,r,d;//left up right down
 	l=u=r=d=col;
-	if(!wl && pixel_coords.x>0)         l=imageLoad(img_input, pl);
-	if(!wd && pixel_coords.y>0)         d=imageLoad(img_input, pu);
-	if(!wr && pixel_coords.x<dims.x-1)	r=imageLoad(img_input, pr);
-	if(!wu && pixel_coords.y<dims.y-1)	u=imageLoad(img_input, pd);
+	if(!wl && pixel_coords.x>0)         l=imageLoad(img_input, ll);
+	if(!wd && pixel_coords.y>0)         d=imageLoad(img_input, lu);
+	if(!wr && pixel_coords.x<dims.x-1)	r=imageLoad(img_input, lr);
+	if(!wu && pixel_coords.y<dims.y-1)	u=imageLoad(img_input, ld);
 
 	vec4 va;
 	va.xyz = normalize(col.rgb - vec3(0.5,0.5,0.5)) * col.a;
@@ -89,13 +89,32 @@ void main() {
     va += alpha * avg_diff;
 
     //Pressure
-	float hrdx = 1;
+	float hrdx = 0.7;
 	// Walls have no pressure differentials
-	float dpl = l.a - va.a;
-	float dpu = u.a - va.a;
-	float dpr = r.a - va.a;
-	float dpd = d.a - va.a;
-	va.xy -= hrdx * vec2(dpr-dpl, dpu-dpd);
+	float pl = l.a;
+	float pu = u.a;
+	float pr = r.a;
+	float pd = d.a;
+
+	float reflect = 0.2;
+	if (wl) {
+	    pl -= reflect * va.x;
+	    va.x = 0;
+	}
+	if (wr) {
+	    pr += reflect * va.x;
+	    va.x = 0;
+	}
+	if (wu) {
+	    pu += reflect * va.y;
+	    va.y = 0;
+	}
+	if (wd) {
+	    pd -= reflect * va.y;
+	    va.y = 0;
+	}
+
+	va.xy -= hrdx * vec2(pr-pl, pu-pd);
 
 	col.rgb = normalize(va.xyz)/2. + vec3(0.5,0.5,0.5);
 	col.a = va.a;

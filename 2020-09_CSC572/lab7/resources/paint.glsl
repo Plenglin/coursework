@@ -17,7 +17,7 @@ void main() {
     float norm_dist = 1 - length(r_dist) / radius;
 
     vec4 existing = imageLoad(img, pixel_coords);
-    float a = 0.8 * norm_dist;
+    float a = 0.8 * norm_dist * norm_dist;
     vec4 c_out = mix(existing, color, vec4(a, a, a, 0));
 
     imageStore(img, pixel_coords, c_out);
