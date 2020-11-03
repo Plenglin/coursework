@@ -388,7 +388,6 @@ public:
         left_drag.update(windowManager->getHandle());
         right_drag.update(windowManager->getHandle());
 
-        std::cout << left_drag.delta.x << ", " << left_drag.delta.y << std::endl;
         if (left_drag.delta.x != 0 && left_drag.delta.y != 0) {
             const int radius = 25;
             ivec2 delta = left_drag.delta;

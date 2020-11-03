@@ -67,7 +67,7 @@ bool WindowManager::init(int const width, int const height)
 	std::cout << "GLSL version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
 	// Set vsync
-	glfwSwapInterval(0);
+	//glfwSwapInterval(0);
 
 	glfwSetKeyCallback(windowHandle, key_callback);
 	glfwSetMouseButtonCallback(windowHandle, mouse_callback);
