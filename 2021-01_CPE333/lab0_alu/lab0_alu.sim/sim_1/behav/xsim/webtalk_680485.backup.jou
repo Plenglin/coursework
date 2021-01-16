@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Webtalk v2020.2 (64-bit)
+# SW Build 3064766 on Wed Nov 18 09:12:47 MST 2020
+# IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
+# Start of session at: Tue Jan  5 08:54:16 2021
+# Process ID: 680485
+# Current directory: /home/astrid/Documents/coursework/2021-01_CPE333/lab0_alu/lab0_alu.sim/sim_1/behav/xsim
+# Command line: wbtcv -mode batch -source /home/astrid/Documents/coursework/2021-01_CPE333/lab0_alu/lab0_alu.sim/sim_1/behav/xsim/xsim.dir/ALUSim_behav/webtalk/xsim_webtalk.tcl -notrace
+# Log file: /home/astrid/Documents/coursework/2021-01_CPE333/lab0_alu/lab0_alu.sim/sim_1/behav/xsim/webtalk.log
+# Journal file: /home/astrid/Documents/coursework/2021-01_CPE333/lab0_alu/lab0_alu.sim/sim_1/behav/xsim/webtalk.jou
+#-----------------------------------------------------------
+source /home/astrid/Documents/coursework/2021-01_CPE333/lab0_alu/lab0_alu.sim/sim_1/behav/xsim/xsim.dir/ALUSim_behav/webtalk/xsim_webtalk.tcl -notrace
