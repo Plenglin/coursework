@@ -5,8 +5,8 @@ dpois(6, lambda)  # exactly 6
 # 2
 dpois(0, lambda)  # exactly 0
 
-# 3
-bulbs <- 25
+# 3 #Changed bulbs from 25 to 20
+bulbs <- 20
 p_red <- 0.01
 dbinom(0, bulbs, p_red)  # exactly 0
 
@@ -19,8 +19,8 @@ prob <- c(.93, .04, 0.02, 0.01)
 ev <- sum(failed * prob)  # exp. value
 ev
 
-# 6
-mean(prob * (failed - ev) ^ 2)  # variance
+# 6 #changed mean to sum
+sum(prob * (failed - ev) ^ 2)  # variance
 
 # 7
 pink <- 18
