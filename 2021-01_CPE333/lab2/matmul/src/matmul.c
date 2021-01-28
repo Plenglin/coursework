@@ -16,8 +16,15 @@ void matmul(int N,  const data_t A[], const data_t B[], data_t C[])
     }
   }
 }
-void main()
-{
-	static data_t results_data[ARRAY_SIZE];
-	matmul(DIM_SIZE, input1_data, input2_data, results_data);
+void matadd(int N, const data_t A[], const data_t B[], data_t C[]) {
+    for (int i = 0; i < N * N; i++) {
+        C[i] = A[i] + B[i];
+    }
 }
+
+void main() {
+    static data_t results_data[ARRAY_SIZE];
+    matadd(DIM_SIZE, input1_data, input2_data, results_data);
+    matmul(DIM_SIZE, input1_data, input2_data, results_data);
+}
+
